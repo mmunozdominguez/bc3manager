@@ -1,8 +1,8 @@
-// BC3 Manager Service Worker v1.0
-const CACHE = 'bc3-v1';
+// BC3 Manager Service Worker v1.1
+const CACHE = 'bc3-v2';
 const PRECACHE = [
   'https://mmunozdominguez.github.io/bc3manager/',
-  'https://mmunozdominguez.github.io/bc3manager/bc3_proyectos.html',
+  'https://mmunozdominguez.github.io/bc3manager/index.html',
   'https://mmunozdominguez.github.io/bc3manager/manifest.json',
   'https://mmunozdominguez.github.io/bc3manager/icon-192.png',
   'https://mmunozdominguez.github.io/bc3manager/icon-512.png',
@@ -26,7 +26,6 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  // CDN requests: cache-first with network fallback
   if (url.includes('cdn.jsdelivr.net') || url.includes('unpkg.com')) {
     e.respondWith(
       caches.open(CACHE).then(cache =>
@@ -41,13 +40,11 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // App shell: cache-first
   e.respondWith(
     caches.match(e.request).then(cached =>
       cached || fetch(e.request).then(resp => {
-        if (resp.ok && e.request.method === 'GET') {
+        if (resp.ok && e.request.method === 'GET')
           caches.open(CACHE).then(c => c.put(e.request, resp.clone()));
-        }
         return resp;
       })
     )

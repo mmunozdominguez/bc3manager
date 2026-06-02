@@ -2,7 +2,7 @@
   "name": "BC3 Manager",
   "short_name": "BC3",
   "description": "Visor de presupuestos BC3 con modelo IFC 3D",
-  "start_url": "https://mmunozdominguez.github.io/bc3manager/bc3_proyectos.html",
+  "start_url": "https://mmunozdominguez.github.io/bc3manager/",
   "scope": "https://mmunozdominguez.github.io/bc3manager/",
   "display": "standalone",
   "orientation": "any",
