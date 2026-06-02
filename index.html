@@ -307,7 +307,7 @@ button,input,select,textarea{-webkit-appearance:none;}
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-lifc">Vincular IFC</button>
-      <button class="btn p" id="bn-lifc2">⬆ Cargar IFC</button>
+      <label for="fif" class="btn p" style="cursor:pointer;">⬆ Cargar IFC</label>
     </div>
   </div>
   <div class="vb-body">
@@ -366,7 +366,7 @@ button,input,select,textarea{-webkit-appearance:none;}
         <div style="font-size:38px;opacity:.2">🧊</div>
         <div style="font-size:14px;font-weight:600;color:#4b5563;">Sin modelo IFC</div>
         <div style="font-size:11px;color:#6b7280;text-align:center;">Arrastra un .ifc aquí o usa "Cargar IFC"</div>
-        <button class="btn p" id="bn-lifc3" style="font-size:12px;margin-top:4px;">Cargar modelo IFC</button>
+        <label for="fif" class="btn p" style="font-size:12px;margin-top:4px;cursor:pointer;">Cargar modelo IFC</label>
       </div>
       <div id="tbl">
         <div class="t3g">
@@ -489,8 +489,11 @@ button,input,select,textarea{-webkit-appearance:none;}
     <div class="fr"><label>Estado</label><select id="i-vs"><option value="draft">Borrador</option><option value="current">Vigente</option><option value="closed">Cerrada</option></select></div>
     <div class="fr"><label>Notas</label><textarea id="i-vo"></textarea></div>
     <div class="fr"><label>Archivo BC3 *</label>
-      <div class="uz" id="bc3z">📂 Seleccionar archivo .bc3</div>
-      <input type="file" id="bc3f" accept=".bc3,.BC3,.bc2,.BC2" style="display:none">
+      <label for="bc3f" class="uz" id="bc3z" style="cursor:pointer;display:block;">
+        📂 Seleccionar archivo .bc3
+        <span style="display:block;font-size:10px;color:var(--muted);margin-top:3px;">En iPad: Archivos → selecciona el .bc3</span>
+      </label>
+      <input type="file" id="bc3f" accept=".bc3,.BC3,.bc2,.BC2,text/plain,*/*" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;">
     </div>
     <div class="ma"><button class="btn" id="bn-canv">Cancelar</button><button class="btn p" id="bn-okv">Guardar</button></div>
   </div>
@@ -503,7 +506,7 @@ button,input,select,textarea{-webkit-appearance:none;}
     <div class="ma"><button class="btn" id="bn-cani">Cancelar</button><button class="btn p" id="bn-oki">Guardar</button></div>
   </div>
 </div>
-<input type="file" id="fif" accept=".ifc,.IFC" style="display:none">
+<input type="file" id="fif" accept=".ifc,.IFC,*/*" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;">
 
 <script src="https://cdn.jsdelivr.net/npm/web-ifc@0.0.46/web-ifc-api-iife.js"></script>
 <script>
@@ -1313,8 +1316,7 @@ on('bn-dp','click',function(){if(!confirm('¿Eliminar la obra y todo su contenid
 on('bh2','click',loadHome);
 on('bp2','click',function(){if(curPJ)loadProj(curPJ);});
 on('bn-lifc','click',function(){showM('m-ifc');});
-on('bn-lifc2','click',function(){el('fif').click();});
-on('bn-lifc3','click',function(){el('fif').click();});
+// lifc2/lifc3 are now <label> elements — handled natively
 on('fif','change',function(){if(this.files[0])loadIFC(this.files[0]);});
 on('bh3','click',loadHome);
 on('bp3','click',function(){if(curPJ)loadProj(curPJ);});
@@ -1362,7 +1364,7 @@ on('bn-okp','click',function(){
   var p={id:'p'+Date.now(),name:name,address:el('i-pa').value.trim(),client:el('i-pc').value.trim(),notes:el('i-po').value.trim(),status:'active',createdAt:Date.now()};
   dbP('projects',p,function(){hideM('m-proj');['i-pn','i-pa','i-pc','i-po'].forEach(function(id){el(id).value='';});loadProj(p.id);});
 });
-on('bc3z','click',function(){el('bc3f').click();});
+// bc3z is now a <label> — no JS click needed on iOS
 var nvF=null;
 on('bc3f','change',function(){nvF=this.files[0];if(!nvF)return;el('bc3z').textContent='✓ '+nvF.name;el('bc3z').className='uz ok';});
 on('bn-canv','click',function(){hideM('m-ver');});
@@ -2159,8 +2161,7 @@ on('bn-dp','click',function(){if(!confirm('¿Eliminar la obra y todo su contenid
 on('bh2','click',loadHome);
 on('bp2','click',function(){if(curPJ)loadProj(curPJ);});
 on('bn-lifc','click',function(){showM('m-ifc');});
-on('bn-lifc2','click',function(){el('fif').click();});
-on('bn-lifc3','click',function(){el('fif').click();});
+// lifc2/lifc3 are now <label> elements — handled natively
 on('fif','change',function(){if(this.files[0])loadIFC(this.files[0]);});
 on('bh3','click',loadHome);
 on('bp3','click',function(){if(curPJ)loadProj(curPJ);});
@@ -2208,7 +2209,7 @@ on('bn-okp','click',function(){
   var p={id:'p'+Date.now(),name:name,address:el('i-pa').value.trim(),client:el('i-pc').value.trim(),notes:el('i-po').value.trim(),status:'active',createdAt:Date.now()};
   dbP('projects',p,function(){hideM('m-proj');['i-pn','i-pa','i-pc','i-po'].forEach(function(id){el(id).value='';});loadProj(p.id);});
 });
-on('bc3z','click',function(){el('bc3f').click();});
+// bc3z is now a <label> — no JS click needed on iOS
 var nvF=null;
 on('bc3f','change',function(){nvF=this.files[0];if(!nvF)return;el('bc3z').textContent='✓ '+nvF.name;el('bc3z').className='uz ok';});
 on('bn-canv','click',function(){hideM('m-ver');});
