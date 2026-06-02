@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="BC3 Manager">
 <meta name="theme-color" content="#2563eb">
 <title>BC3 Manager</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="https://mmunozdominguez.github.io/bc3manager/manifest.json">
+<link rel="apple-touch-icon" href="https://mmunozdominguez.github.io/bc3manager/icon-192.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -2235,7 +2235,7 @@ on('bn-oki','click',function(){
 
 // ═══ PWA ═════════════════════════════════════════════════════════════════
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').then(function(reg){
+  navigator.serviceWorker.register('https://mmunozdominguez.github.io/bc3manager/sw.js').then(function(reg){
     console.log('[PWA] SW registered:', reg.scope);
     reg.addEventListener('updatefound',function(){
       var nw=reg.installing;
