@@ -267,11 +267,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 </div>
 
 
-<div id="file-warn" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:#fef3c7;border-bottom:2px solid #f59e0b;padding:10px 16px;font-size:12px;font-weight:500;color:#92400e;display:flex;align-items:center;gap:12px;">
-  <span>⚠️ Abierto desde archivo local — el visor IFC no funcionará. Necesitas un servidor local.</span>
-  <span style="background:#92400e;color:#fef3c7;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:11px;" onclick="showServerHelp()">¿Cómo?</span>
-  <span style="margin-left:auto;cursor:pointer;font-size:16px;" onclick="this.parentElement.style.display='none'">✕</span>
-</div>
+
 <div id="v-home" class="view active">
   <div class="topbar">
     <div class="logo">BC3 <em>Manager</em></div>
@@ -625,23 +621,6 @@ function pT(BC,s){
 function showV(id){document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});el('v-'+id).classList.add('active');}
 
 // ═══ HOME ════════════════════════════════════════════════════════════════
-function showServerHelp(){
-  alert(
-    'Para usar el visor IFC necesitas abrir el archivo desde un servidor local.\n\n' +
-    'OPCIÓN 1 — Node.js (recomendado):\n' +
-    '  1. Descarga Node.js: https://nodejs.org\n' +
-    '  2. Haz doble clic en "iniciar_servidor.bat"\n' +
-    '  3. Abre Chrome en http://localhost:8080/bc3_proyectos.html\n\n' +
-    'OPCIÓN 2 — VS Code:\n' +
-    '  1. Abre VS Code\n' +
-    '  2. Instala extensión "Live Server" (ritwickdey.LiveServer)\n' +
-    '  3. Clic derecho en el .html → "Open with Live Server"\n\n' +
-    'OPCIÓN 3 — Chrome directo:\n' +
-    '  Abre Chrome con: chrome.exe --allow-file-access-from-files\n' +
-    '  (busca chrome.exe en Program Files y ejecuta con ese parámetro)'
-  );
-}
-
 function loadHome(){
   showV('home');
   dbA('projects',function(projs){dbA('versions',function(vers){
@@ -923,17 +902,7 @@ function fbCtrl(){
 
 var mBounds=null;
 async function loadIFC(file){
-  // Detectar file:// y avisar
-  if(location.protocol==='file:'){
-    var msg='⚠️ Para cargar IFC debes abrir este archivo desde un servidor local.\n\n'
-      +'Opciones:\n'
-      +'1. VS Code → instala "Live Server" → clic derecho → "Open with Live Server"\n'
-      +'2. Python: ejecuta  python -m http.server  en la carpeta del archivo\n'
-      +'3. Chrome: arrastra el archivo a una ventana ya abierta con --allow-file-access-from-files\n\n'
-      +'El BC3 y el presupuesto funcionan sin servidor. Solo el IFC lo necesita.';
-    alert(msg);
-    return;
-  }
+
   await ensT3();var T=T3;
   st3('Cargando IFC...','sp');pg3(5);
   try{
@@ -1390,10 +1359,6 @@ on('bn-oki','click',function(){
 });
 
 // ═══ INIT ════════════════════════════════════════════════════════════════
-if(location.protocol==='file:'){
-  var fw=document.getElementById('file-warn');
-  if(fw)fw.style.display='flex';
-}
 loadHome();
 </script>
 
@@ -1507,23 +1472,6 @@ function pT(BC,s){
 // ═══ VIEWS ═══════════════════════════════════════════════════════════════
 function showV(id){document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});el('v-'+id).classList.add('active');}
 // ═══ HOME ════════════════════════════════════════════════════════════════
-function showServerHelp(){
-  alert(
-    'Para usar el visor IFC necesitas abrir el archivo desde un servidor local.\n\n' +
-    'OPCIÓN 1 — Node.js (recomendado):\n' +
-    '  1. Descarga Node.js: https://nodejs.org\n' +
-    '  2. Haz doble clic en "iniciar_servidor.bat"\n' +
-    '  3. Abre Chrome en http://localhost:8080/bc3_proyectos.html\n\n' +
-    'OPCIÓN 2 — VS Code:\n' +
-    '  1. Abre VS Code\n' +
-    '  2. Instala extensión "Live Server" (ritwickdey.LiveServer)\n' +
-    '  3. Clic derecho en el .html → "Open with Live Server"\n\n' +
-    'OPCIÓN 3 — Chrome directo:\n' +
-    '  Abre Chrome con: chrome.exe --allow-file-access-from-files\n' +
-    '  (busca chrome.exe en Program Files y ejecuta con ese parámetro)'
-  );
-}
-
 function loadHome(){
   showV('home');
   dbA('projects',function(projs){dbA('versions',function(vers){
@@ -2269,10 +2217,6 @@ window.addEventListener('beforeinstallprompt',function(e){
 });
 
 // ═══ INIT ════════════════════════════════════════════════════════════════
-if(location.protocol==='file:'){
-  var fw=document.getElementById('file-warn');
-  if(fw)fw.style.display='flex';
-}
 loadHome();
 </script>
 </body>
