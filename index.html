@@ -297,7 +297,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v11</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button></div>
   </div>
   <div class="pc">
@@ -309,7 +309,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v11</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -326,9 +326,11 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v11</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
+      <label for="fbc3r" class="btn" style="cursor:pointer;" title="Vuelve a cargar el BC3 para actualizar datos">↺ BC3</label>
+      <input type="file" id="fbc3r" style="position:absolute;left:-9999px;" tabindex="-1">
       <button class="btn" id="bn-lifc">Vincular IFC</button>
       <label for="fif" class="btn p" style="cursor:pointer;">⬆ Cargar IFC</label>
     </div>
@@ -427,7 +429,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v11</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -1374,6 +1376,29 @@ on('bh2','click',loadHome);
 on('bp2','click',function(){if(curPJ)loadProj(curPJ);});
 on('bn-lifc','click',function(){showM('m-ifc');});
 // lifc2/lifc3 are now <label> elements — handled natively
+on('fbc3r','change',function(){
+  if(!this.files[0]||!curVR)return;
+  var f=this.files[0];
+  var rd=new FileReader();
+  rd.onload=function(e){
+    var bc3=parseBC3(e.target.result);
+    curBC=bc3;
+    dbP('bc3data',{vid:curVR,bc3:bc3});
+    // Update version metadata
+    dbG('versions',curVR,function(v){
+      if(v){
+        var nPar=Object.keys(bc3.c).filter(function(k){return !bc3.c[k].ch;}).length;
+        var nBim=Object.keys(bc3.g).filter(function(k){return (bc3.g[k]||[]).length>0;}).length;
+        v.nPartidas=nPar;v.nBimLinked=nBim;
+        dbP('versions',v);
+      }
+    });
+    renderTree();
+    alert('BC3 reimportado correctamente. ' + Object.keys(bc3.c).length + ' conceptos cargados.');
+  };
+  rd.readAsText(f,'latin1');
+  this.value='';
+});
 on('fif','change',function(){if(this.files[0])loadIFC(this.files[0]);});
 on('bh3','click',loadHome);
 on('bp3','click',function(){if(curPJ)loadProj(curPJ);});

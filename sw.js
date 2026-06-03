@@ -1,5 +1,5 @@
 // BC3 Manager Service Worker v8
-const CACHE = 'bc3-v10';
+const CACHE = 'bc3-v11';
 
 self.addEventListener('install', e => {
   // Activar inmediatamente sin esperar a que se cierren pestañas
