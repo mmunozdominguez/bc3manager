@@ -1109,24 +1109,9 @@ window.setView3d=function(v){
 function setView3d(v){window.setView3d(v);}
 
 
-// ═══ CAMERA ═══════════════════════════════════════════════════════════════
-function fitCam(){
-  if(!world||!curModel) return;
-  try{
-    if(world.camera.controls&&world.camera.controls.fitToSphere) world.camera.controls.fitToSphere(curModel, true);
-    else if(world.camera.fit) world.camera.fit();
-  }catch(e){}
-}
-function setView(v){
-  if(!world||!world.camera||!world.camera.controls) return;
-  var ctrls=world.camera.controls;
-  try{
-    if(v==='top') ctrls.setLookAt(0,100,0.01, 0,0,0, true);
-    else if(v==='front') ctrls.setLookAt(0,0,100, 0,0,0, true);
-    else ctrls.setLookAt(50,50,50, 0,0,0, true);
-    setTimeout(fitCam, 100);
-  }catch(e){}
-}
+// ═══ CAMERA (alias compat) ════════════════════════════════════════════════
+function setView(v){ setView3d(v); }
+window.setView=setView;
 
 // ═══ RESIZE PANELS ════════════════════════════════════════════════════════
 function mkRS(rsId,panelId){
