@@ -297,7 +297,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v8</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button></div>
   </div>
   <div class="pc">
@@ -309,7 +309,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v8</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -326,7 +326,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v8</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-lifc">Vincular IFC</button>
@@ -427,7 +427,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v8</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -539,36 +539,53 @@ function parseBC3(txt){
   var regs=[],cur='';
   raw.split('\n').forEach(function(l){if(l.charAt(0)==='~'){if(cur)regs.push(cur);cur=l;}else cur+='\n'+l;});
   if(cur)regs.push(cur);
-  var gRE=/#\s*([A-Za-z0-9+\/]{27,30}=*)\s*$/;
   regs.forEach(function(r){
     if(r.length<2)return;
     var t=r.slice(0,2),b=r.slice(3);
-    if(t==='~C')pC(BC,b);else if(t==='~D')pD(BC,b);else if(t==='~M')pM(BC,b,gRE);else if(t==='~T')pT(BC,b);
+    if(t==='~C')pC(BC,b);else if(t==='~D')pD(BC,b);else if(t==='~M')pM(BC,b);else if(t==='~T')pT(BC,b);
   });
   return BC;
 }
 function pC(BC,s){
   var p=s.split('|'),raw=(p[0]||'').trim();
-  var code=raw.replace(/#/g,'').replace(/\\+/g,'').trim();if(!code)return;
+  // code = first token before \, strip trailing # (chapter marker)
+  var codePart=raw.split('\\')[0].split('\\')[0];
+  // handle single backslash too
+  if(codePart===raw&&raw.indexOf('\\')>=0)codePart=raw.slice(0,raw.indexOf('\\'));
+  var isChap=codePart.indexOf('#')>=0;
+  var code=codePart.replace(/#/g,'').trim();
+  if(!code)return;
   var tf=(p[5]||'').replace(/\\/g,'').trim();
-  BC.c[code]={code:code,ch:raw.indexOf('#')>=0||tf==='0'||tf==='1',
+  BC.c[code]={code:code,ch:isChap||tf==='0'||tf==='1',
     ud:(p[1]||'').replace(/\\/g,'').trim(),
     desc:(p[2]||'').replace(/\\\\/g,' ').replace(/\\/g,' ').trim(),
     pr:parseFloat((p[3]||'0').replace(',','.'))||0};
 }
 function pD(BC,s){
   var p=s.split('|');
-  var par=(p[0]||'').replace(/#/g,'').replace(/\\+/g,'').trim();if(!par)return;
+  // parent = strip trailing # only (not # inside code)
+  var par=(p[0]||'').trim().replace(/#/g,'').trim();if(!par)return;
   if(!BC.h[par])BC.h[par]=[];
   var tk=(p[1]||'').split('\\').map(function(t){return t.trim();});
-  for(var i=0;i<tk.length;i+=3){var h=tk[i].replace(/#/g,'').trim();if(h)BC.h[par].push(h);}
+  // children: every 3 tokens = [code, factor, price]
+  for(var i=0;i<tk.length;i+=3){
+    var h=tk[i].replace(/#/g,'').trim();
+    if(h)BC.h[par].push(h);
+  }
 }
-function pM(BC,s,gRE){
+// Regex para extraer código de montaje al inicio de texto de medición
+// Coincide con: "ARM-101", "ARM-101.2", "FL-101.1", etc.
+var _asmRE=/^([A-Z]{2,5}-\d{3,4}(?:\.\d+)?)(?:\s|$)/;
+// Regex legado: GUID base64 al final precedido de #
+var _guidRE=/#\s*([A-Za-z0-9+\/]{27,30}=*)\s*$/;
+
+function pM(BC,s){
   var p=s.split('|');
   var c0=(p[0]||'').trim();
   var p0=c0.split('\\').map(function(t){return t.replace(/#/g,'').trim();}).filter(Boolean);
   var code=p0.length>=2?p0[1]:p0[0];if(!code)return;
   if(!BC.m[code])BC.m[code]=[];if(!BC.g[code])BC.g[code]=[];
+  // campo 4 = líneas medición (si existe), si no campo 1
   var ls=(p.length>=4&&p[3]&&p[3].length>1)?p[3]:((p[1]&&p[1].length>1)?p[1]:'');
   if(!ls)return;
   var tk=ls.split('\\');
@@ -580,8 +597,20 @@ function pM(BC,s,gRE){
     var parc=nd&&a&&b2?nd*a*b2:nd&&a?nd*a:a||0;
     if(txt||nd||a){
       BC.m[code].push({txt:txt,nd:nd,a:a,b:b2,parc:parc});
-      var gm=gRE.exec(txt);
-      if(gm){var g=gm[1];var i22=bc3ToIfc22(g);var esp=txt.slice(0,txt.lastIndexOf('#')).trim();BC.g[code].push({guid:g,ifc22:i22||g,esp:esp,med:nd||a});}
+      // Método 1: código de montaje al inicio del texto (nuevo sistema)
+      var am=_asmRE.exec(txt);
+      if(am){
+        var asmCode=am[1];
+        var desc=txt.slice(am[0].length).trim();
+        BC.g[code].push({asmCode:asmCode,esp:desc||txt,med:nd||a,type:'asm'});
+      }
+      // Método 2: GUID base64 al final precedido de # (sistema legado)
+      var gm=_guidRE.exec(txt);
+      if(gm){
+        var g=gm[1];var i22=bc3ToIfc22(g);
+        var esp=txt.slice(0,txt.lastIndexOf('#')).trim();
+        BC.g[code].push({guid:g,ifc22:i22||g,esp:esp,med:nd||a,type:'guid'});
+      }
     }
   }
 }
@@ -659,7 +688,7 @@ function openVer(vid){
   // Reset viewer state
   if(mid>=0&&ifcA){try{ifcA.CloseModel(mid);}catch(e){}mid=-1;}
   if(scene){meshes.forEach(function(m){scene.remove(m.mesh);if(m.mesh.geometry)m.mesh.geometry.dispose();});}
-  meshes=[];oMat.clear();g2e={};e2g={};mBounds=null;
+  meshes=[];oMat.clear();g2e={};e2g={};g2asm={};asm2g={};mBounds=null;
   el('dz').classList.remove('h');
   el('cv').style.display='none';
   if(el('tbl'))el('tbl').style.display='none';
@@ -816,16 +845,54 @@ function rBIM(){
   h+='<div class="dk">Descripción</div><div class="dv">'+esc(c.desc||'—')+'</div>';
   if(c.ud)h+='<div class="dk">Unidad</div><div class="dv">'+esc(c.ud)+'</div>';
   if(c.pr||mt){h+='<div class="pb">';if(c.pr)h+='<div class="pr"><span class="prl">Precio unit.</span><span class="prv">'+c.pr.toFixed(2)+' €/'+esc(c.ud||'ud')+'</span></div>';if(mt)h+='<div class="pr"><span class="prl">Medición</span><span class="prv">'+mt.toFixed(3)+' '+esc(c.ud||'')+'</span></div>';if(imp)h+='<div class="pr"><span class="prl">Importe</span><span class="prv a">'+fmt(imp)+' €</span></div>';h+='</div>';}
-  // Debug line — muestra datos crudos para diagnóstico
-  h+='<div style="margin-top:8px;font-size:9px;color:#aaa;border-top:1px solid #eee;padding-top:4px;">ms:'+ms.length+' mt:'+mt.toFixed(2)+' pr:'+(c.pr||0).toFixed(2)+' imp:'+imp.toFixed(2)+'</div>';
-  if(!gs.length)h+='<div class="dk" style="margin-top:10px">Sin elementos BIM</div>';
-  else{h+='<div class="dk" style="margin-top:10px">Elementos BIM ('+gs.length+')</div>';gs.forEach(function(g,i){h+='<div class="ec" id="ec'+i+'"><div class="es">'+esc(g.esp)+'</div><div class="eg">'+esc(g.ifc22||g.guid)+'</div><div class="em">'+g.med+' '+esc(c.ud||'')+'</div></div>';});}
+  // Count matches with loaded IFC
+  var nMatch=0;
+  gs.forEach(function(e){
+    if(e.type==='asm'&&asm2g[e.asmCode])nMatch+=(asm2g[e.asmCode]||[]).length;
+    else if(e.type==='guid'&&e.ifc22&&g2e[e.ifc22])nMatch++;
+  });
+  if(!gs.length)h+='<div class="dk" style="margin-top:10px">Sin elementos BIM vinculados</div>';
+  else{
+    h+='<div class="dk" style="margin-top:10px">Vínculos BIM ('+gs.length+')';
+    if(nMatch>0)h+=' <span style="color:var(--ok);font-size:9px;">· '+nMatch+' elem. en modelo</span>';
+    h+='</div>';
+    gs.forEach(function(g,i){
+      var tag='',tagColor='';
+      if(g.type==='asm'){
+        var cnt=(asm2g[g.asmCode]||[]).length;
+        tag=g.asmCode;
+        tagColor=cnt>0?'var(--ok)':'var(--muted)';
+        h+='<div class="ec" id="ec'+i+'">'
+          +'<div class="es">'+esc(g.esp||g.asmCode)+'</div>'
+          +'<div class="eg" style="color:'+tagColor+';font-weight:600;">'+esc(g.asmCode)+(cnt>0?' · '+cnt+' elem.':'  (sin IFC)')+'</div>'
+          +'<div class="em">'+g.med+' '+esc(c.ud||'')+'</div></div>';
+      } else {
+        h+='<div class="ec" id="ec'+i+'">'
+          +'<div class="es">'+esc(g.esp)+'</div>'
+          +'<div class="eg">'+esc(g.ifc22||g.guid)+'</div>'
+          +'<div class="em">'+g.med+' '+esc(c.ud||'')+'</div></div>';
+      }
+    });
+  }
   d.innerHTML=h;
   gs.forEach(function(g,i){var c2=el('ec'+i);if(c2)(function(gg,idx){c2.addEventListener('click',function(){
     document.querySelectorAll('.ec').forEach(function(x){x.classList.remove('h');});c2.classList.add('h');
-    selG=gg.ifc22||gg.guid;
-    if(ifcA&&mid>=0){clrHL();hlPart(selP,curBC);hlGuid(selG);showHC(gg.esp,selP,selG);}
-    else alert('Carga un IFC para ver en 3D.\nGUID: '+gg.guid);
+    if(ifcA&&mid>=0){
+      clrHL();hlPart(selP,curBC);
+      if(gg.type==='asm'){
+        // Highlight ALL elements with this assembly code
+        var guids=asm2g[gg.asmCode]||[];
+        guids.forEach(function(guid){hlGuid(guid);});
+        var label=(guids.length>0)?guids.length+' elementos':'Sin IFC';
+        showHC(gg.esp||gg.asmCode,selP,gg.asmCode+' · '+label);
+      } else {
+        selG=gg.ifc22||gg.guid;
+        hlGuid(selG);showHC(gg.esp,selP,selG);
+      }
+    } else {
+      var info=gg.type==='asm'?('Código: '+gg.asmCode):('GUID: '+(gg.guid||''));
+      alert('Carga un IFC para ver en 3D.\n'+info);
+    }
   });})(g,i);});
 }
 function rMED(){
@@ -852,6 +919,7 @@ function pg3(pct){var p=el('pg');if(!p)return;if(pct>=100){p.style.display='none
 // Estado Three.js / web-ifc
 var T3=null, ifcA=null, scene=null, cam=null, ren=null, ctrl=null, ray=null, mou3=null;
 var mid=-1, meshes=[], oMat=new Map(), mHL=null, mSL=null;
+var g2asm={}, asm2g={}; // GlobalId→assemblyCode, assemblyCode→[GlobalId]
 var IFC_TC={IFCWALL:'#d9c8a8',IFCWALLSTANDARDCASE:'#d9c8a8',IFCSLAB:'#b8b8b8',IFCCOLUMN:'#9aa5b1',IFCBEAM:'#8a95a1',IFCDOOR:'#c89858',IFCWINDOW:'#88c0d0',IFCROOF:'#a85432',IFCCOVERING:'#cfcabe',IFCPLATE:'#9aa5b1',IFCMEMBER:'#8a95a1',IFCSTAIR:'#b0a890',IFCFOOTING:'#888'};
 var tCol={};
 var mBounds=null;
@@ -972,6 +1040,65 @@ async function loadIFC(file){
     var TYPS=[{n:'IFCWALL',t:ifcMod.IFCWALL},{n:'IFCWALLSTANDARDCASE',t:ifcMod.IFCWALLSTANDARDCASE},{n:'IFCSLAB',t:ifcMod.IFCSLAB},{n:'IFCCOLUMN',t:ifcMod.IFCCOLUMN},{n:'IFCBEAM',t:ifcMod.IFCBEAM},{n:'IFCDOOR',t:ifcMod.IFCDOOR},{n:'IFCWINDOW',t:ifcMod.IFCWINDOW},{n:'IFCROOF',t:ifcMod.IFCROOF},{n:'IFCCOVERING',t:ifcMod.IFCCOVERING},{n:'IFCPLATE',t:ifcMod.IFCPLATE},{n:'IFCMEMBER',t:ifcMod.IFCMEMBER},{n:'IFCBUILDINGELEMENTPROXY',t:ifcMod.IFCBUILDINGELEMENTPROXY},{n:'IFCSTAIR',t:ifcMod.IFCSTAIR},{n:'IFCFOOTING',t:ifcMod.IFCFOOTING},{n:'IFCRAILING',t:ifcMod.IFCRAILING}].filter(function(x){return x.t;});
     var tCnt={};
     TYPS.forEach(function(it){try{var ids=ifcA.GetLineIDsWithType(mid,it.t);for(var i=0;i<ids.size();i++){var id=ids.get(i);e2t[id]=it.n;tCnt[it.n]=(tCnt[it.n]||0)+1;try{var pr=ifcA.GetLine(mid,id);if(pr&&pr.GlobalId&&pr.GlobalId.value){var g=pr.GlobalId.value;e2g[id]=g;if(!g2e[g])g2e[g]=[];g2e[g].push(id);}}catch(e2){}}}catch(e){}});
+    // ── Extraer Pset_QuantityTakeOff.Reference por elemento ──
+    pg3(55);st3('Leyendo códigos de montaje…','sp');
+    // g2asm: GlobalId -> assembly code (e.g. "ARM-101")
+    // asm2g: assembly code -> [GlobalId, ...]
+    var g2asm={}, asm2g={};
+    var _asmCodeRE=/^([A-Z]{2,5}-\d{3,4}(?:\.\d+)?)(?:\s|$)/;
+    try{
+      var psetType=ifcMod.IFCPROPERTYSET;
+      var propType=ifcMod.IFCPROPERTYSINGLEVALUE;
+      var relType=ifcMod.IFCRELDEFINESBYPROPERTIES;
+      if(psetType&&propType&&relType){
+        // Get all Pset_QuantityTakeOff property sets
+        var psetIds=ifcA.GetLineIDsWithType(mid,psetType);
+        var qtoMap={}; // psetExpressId -> referenceValue
+        for(var pi=0;pi<psetIds.size();pi++){
+          var psid=psetIds.get(pi);
+          try{
+            var ps=ifcA.GetLine(mid,psid,true);
+            if(ps&&ps.Name&&ps.Name.value==='Pset_QuantityTakeOff'&&ps.HasProperties){
+              var props=ps.HasProperties;
+              for(var qi=0;qi<(props.length||0);qi++){
+                var prop=props[qi];
+                if(prop&&prop.Name&&prop.Name.value==='Reference'&&prop.NominalValue){
+                  var refVal=prop.NominalValue.value||'';
+                  var am=_asmCodeRE.exec(refVal);
+                  if(am){qtoMap[psid]=am[1];}
+                  break;
+                }
+              }
+            }
+          }catch(e2){}
+        }
+        // Map elements via IfcRelDefinesByProperties
+        var relIds=ifcA.GetLineIDsWithType(mid,relType);
+        for(var ri=0;ri<relIds.size();ri++){
+          try{
+            var rel=ifcA.GetLine(mid,relIds.get(ri),true);
+            if(!rel||!rel.RelatingPropertyDefinition||!rel.RelatedObjects)continue;
+            var psDef=rel.RelatingPropertyDefinition;
+            var psExpId=psDef.expressID||psDef;
+            var asmCode=qtoMap[psExpId];
+            if(!asmCode)continue;
+            var relObjs=rel.RelatedObjects;
+            for(var oi=0;oi<(relObjs.length||0);oi++){
+              var obj=relObjs[oi];
+              var objId=obj.expressID||obj;
+              var guid=e2g[objId];
+              if(guid){
+                g2asm[guid]=asmCode;
+                if(!asm2g[asmCode])asm2g[asmCode]=[];
+                asm2g[asmCode].push(guid);
+              }
+            }
+          }catch(e2){}
+        }
+        var nAsm=Object.keys(g2asm).length;
+        console.log('[IFC] assembly codes mapped:',nAsm,'elements,',Object.keys(asm2g).length,'codes');
+      }
+    }catch(eAsm){console.warn('[IFC] assembly code extraction failed:',eAsm);}
     pg3(65);st3('Construyendo geometría…','sp');
     meshes.forEach(function(m){scene.remove(m.mesh);if(m.mesh.geometry)m.mesh.geometry.dispose();});
     meshes=[];oMat.clear();
@@ -1016,7 +1143,12 @@ async function loadIFC(file){
     if(el('tbr'))el('tbr').style.display='flex';
     if(el('zw'))el('zw').style.display='flex';
     var nG=Object.keys(e2g).length,nM=0;
-    if(curBC)Object.keys(curBC.g).forEach(function(p){(curBC.g[p]||[]).forEach(function(e){if(e.ifc22&&g2e[e.ifc22])nM++;});});
+    if(curBC)Object.keys(curBC.g).forEach(function(p){
+      (curBC.g[p]||[]).forEach(function(e){
+        if(e.type==='asm'&&asm2g[e.asmCode])nM++;
+        else if(e.type==='guid'&&e.ifc22&&g2e[e.ifc22])nM++;
+      });
+    });
     pg3(100);st3(nG+' elem · '+nM+' BC3','ok');
     if(el('sel'))el('sel').textContent=nG+' elem.';
     if(curVR){dbG('versions',curVR,function(v){if(v){v.ifcName=file.name;v.bimLinked=nM;dbP('versions',v);}});}
@@ -1047,11 +1179,23 @@ function fitCam(){
 // ═══ HIGHLIGHT / SELECCIÓN ════════════════════════════════════════════════
 function hlPart(p,BC){
   if(!meshes.length)return;
-  var ifc22s=new Set((BC.g[p]||[]).map(function(e){return e.ifc22;}).filter(Boolean));
+  // Build set of GlobalIds to highlight - supports both systems
+  var guidSet=new Set();
+  (BC.g[p]||[]).forEach(function(e){
+    if(e.type==='asm'){
+      // New system: assembly code -> [GlobalIds]
+      (asm2g[e.asmCode]||[]).forEach(function(g){guidSet.add(g);});
+    } else if(e.type==='guid'){
+      // Legacy: base64 GUID converted to IFC22
+      if(e.ifc22)guidSet.add(e.ifc22);
+    } else if(e.ifc22){
+      guidSet.add(e.ifc22);
+    }
+  });
   var n=0;
   meshes.forEach(function(m){
     var g=e2g[m.expressID];
-    if(g&&ifc22s.has(g)){m.mesh.material=mSL;n++;}
+    if(g&&guidSet.has(g)){m.mesh.material=mSL;n++;}
     else m.mesh.material=oMat.get(m.mesh)||m.mesh.material;
   });
   if(el('sel'))el('sel').textContent=n+' resaltados';
@@ -1084,7 +1228,25 @@ function onCanvasClick(e){
   var guid=e2g[eid];if(!guid)return;
   clrHL();if(selP&&curBC)hlPart(selP,curBC);hlGuid(guid);
   var fp=null,fe=null;
-  if(curBC)Object.keys(curBC.g).some(function(p){var es=curBC.g[p]||[];for(var j=0;j<es.length;j++){if(es[j].ifc22===guid){fp=p;fe=es[j];return true;}}return false;});
+  // New system: look up via assembly code
+  var asmCode=g2asm[guid];
+  if(asmCode&&curBC){
+    // Find partida that has this assembly code in its measurements
+    Object.keys(curBC.g).some(function(p){
+      return (curBC.g[p]||[]).some(function(e){
+        if(e.type==='asm'&&e.asmCode===asmCode){fp=p;fe=e;return true;}
+        // Also try base prefix match (e.g. IFC has "ARM-101.2", BC3 has "ARM-101")
+        if(e.type==='asm'&&asmCode.indexOf(e.asmCode)===0){fp=p;fe=e;return true;}
+        return false;
+      });
+    });
+  }
+  // Legacy fallback: search by ifc22 guid
+  if(!fp&&curBC)Object.keys(curBC.g).some(function(p){
+    return (curBC.g[p]||[]).some(function(e){
+      if(e.ifc22===guid){fp=p;fe=e;return true;}return false;
+    });
+  });
   showHC(fe?fe.esp:('ExpressID '+eid),fp,guid);
   if(fp){selP=fp;if(el('dt'))el('dt').textContent=fp;if(typeof renderDet==='function')renderDet();if(typeof navTo==='function')navTo(fp);}
 }
