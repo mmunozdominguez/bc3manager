@@ -297,7 +297,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v4</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v8</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button></div>
   </div>
   <div class="pc">
@@ -309,7 +309,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v4</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v8</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -326,7 +326,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v4</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v8</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-lifc">Vincular IFC</button>
@@ -427,7 +427,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v4</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v8</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -816,6 +816,8 @@ function rBIM(){
   h+='<div class="dk">Descripción</div><div class="dv">'+esc(c.desc||'—')+'</div>';
   if(c.ud)h+='<div class="dk">Unidad</div><div class="dv">'+esc(c.ud)+'</div>';
   if(c.pr||mt){h+='<div class="pb">';if(c.pr)h+='<div class="pr"><span class="prl">Precio unit.</span><span class="prv">'+c.pr.toFixed(2)+' €/'+esc(c.ud||'ud')+'</span></div>';if(mt)h+='<div class="pr"><span class="prl">Medición</span><span class="prv">'+mt.toFixed(3)+' '+esc(c.ud||'')+'</span></div>';if(imp)h+='<div class="pr"><span class="prl">Importe</span><span class="prv a">'+fmt(imp)+' €</span></div>';h+='</div>';}
+  // Debug line — muestra datos crudos para diagnóstico
+  h+='<div style="margin-top:8px;font-size:9px;color:#aaa;border-top:1px solid #eee;padding-top:4px;">ms:'+ms.length+' mt:'+mt.toFixed(2)+' pr:'+(c.pr||0).toFixed(2)+' imp:'+imp.toFixed(2)+'</div>';
   if(!gs.length)h+='<div class="dk" style="margin-top:10px">Sin elementos BIM</div>';
   else{h+='<div class="dk" style="margin-top:10px">Elementos BIM ('+gs.length+')</div>';gs.forEach(function(g,i){h+='<div class="ec" id="ec'+i+'"><div class="es">'+esc(g.esp)+'</div><div class="eg">'+esc(g.ifc22||g.guid)+'</div><div class="em">'+g.med+' '+esc(c.ud||'')+'</div></div>';});}
   d.innerHTML=h;
