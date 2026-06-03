@@ -357,6 +357,7 @@ button,input,select,textarea{-webkit-appearance:none;}
         <div class="ld-msg" id="ld-msg-txt">Cargando modelo IFC…</div>
         <div class="ld-sub" id="ld-sub-txt">Esto puede tardar unos segundos</div>
       </div>
+      <div id="dbg-log" style="display:none;position:absolute;top:10px;left:10px;right:10px;max-height:40%;overflow-y:auto;background:rgba(0,0,0,.85);color:#0f0;font-family:monospace;font-size:10px;padding:8px;border-radius:6px;z-index:100;white-space:pre-wrap;line-height:1.4;"></div>
       <div id="pg"></div>
       <div id="dz">
         <div style="font-size:38px;opacity:.2">🧊</div>
@@ -875,6 +876,10 @@ function rTXT(){
 // ═══ 3D / IFC (@thatopen/components) ════════════════════════════════════
 function st3(msg,state){el('sm').textContent=msg;var d=el('sd');d.className='sd'+(state?' '+state:'');}
 function pg3(pct){var p=el('pg');if(pct>=100){p.style.display='none';return;}p.style.display='block';p.style.width=pct+'%';}
+var DBG=[];
+function dbg(msg){DBG.push(msg);var d=el('dbg-log');if(d){d.style.display='block';d.textContent=DBG.slice(-25).join('\n');d.scrollTop=d.scrollHeight;}console.log('[BC3]',msg);}
+window.addEventListener('error',function(e){dbg('❌ ERROR: '+e.message+' @'+(e.filename||'').split('/').pop()+':'+e.lineno);});
+window.addEventListener('unhandledrejection',function(e){dbg('❌ PROMISE: '+(e.reason&&e.reason.message?e.reason.message:e.reason));});
 function showLoading(msg,sub){var ld=el('ifc-loading');ld.classList.add('show');if(msg)el('ld-msg-txt').textContent=msg;if(sub!==undefined)el('ld-sub-txt').textContent=sub;}
 function hideLoading(){el('ifc-loading').classList.remove('show');}
 
@@ -889,11 +894,16 @@ var selExpressID=null;
 // Cargar librerías @thatopen una sola vez
 async function ensViewer(){
   if(components)return;
+  dbg('ensViewer: inicio');
   showLoading('Inicializando visor 3D…','Cargando motor BIM (primera vez)');
   // Cargar módulos ES desde esm.sh (resuelve dependencias automáticamente)
+  dbg('cargando three...');
   THREE = await import('https://esm.sh/three@0.160.1');
+  dbg('three OK');
   OBC = await import('https://esm.sh/@thatopen/components@2.4.11');
+  dbg('OBC OK');
   OBF = await import('https://esm.sh/@thatopen/components-front@2.4.11');
+  dbg('OBF OK');
 
   var container = el('p3d');
   components = new OBC.Components();
@@ -903,6 +913,7 @@ async function ensViewer(){
   world.renderer = new OBC.SimpleRenderer(components, el('cv'));
   world.camera = new OBC.SimpleCamera(components);
   components.init();
+  dbg('components.init OK');
 
   world.scene.setup();
   world.scene.three.background = new THREE.Color(0xf0eff0);
@@ -912,7 +923,9 @@ async function ensViewer(){
 
   // IFC loader
   ifcLoader = components.get(OBC.IfcLoader);
+  dbg('ifcLoader.setup...');
   await ifcLoader.setup({ wasm: { path: 'https://unpkg.com/web-ifc@0.0.57/', absolute: true } });
+  dbg('ifcLoader OK');
 
   // Highlighter (selección)
   highlighter = components.get(OBF.Highlighter);
@@ -946,12 +959,17 @@ async function loadIFC(file){
   st3('Cargando IFC...','sp'); pg3(10);
   try{
     if(curModel){ try{ fragments.disposeGroup(curModel); }catch(e){} curModel=null; }
+    dbg('archivo: '+(file.size/1048576).toFixed(1)+'MB');
     var buf = new Uint8Array(await file.arrayBuffer());
+    dbg('buffer leido');
     pg3(30); showLoading('Convirtiendo a fragmentos…','');
+    dbg('ifcLoader.load...');
     var model = await ifcLoader.load(buf);
+    dbg('model cargado, items='+(model.items?model.items.size:'?'));
     curModel = model;
     world.scene.three.add(model);
     modelLoaded = true;
+    dbg('model añadido a escena');
     pg3(70); showLoading('Indexando elementos…','');
 
     await indexModel(model);
@@ -1024,9 +1042,26 @@ async function indexModel(model){
 }
 
 function finishLoad(name){
-  // Ajustar cámara al modelo
-  try{ if(world.camera.fit) world.camera.fit(world.meshes, 0.5);
-       else if(world.camera.controls) world.camera.controls.fitToSphere(curModel, true); }catch(e){}
+  dbg('finishLoad: '+name);
+  // Ajustar cámara al modelo usando bounding box real
+  try{
+    var box=new THREE.Box3().setFromObject(curModel);
+    if(!box.isEmpty()){
+      var c2=box.getCenter(new THREE.Vector3());
+      var sz=box.getSize(new THREE.Vector3());
+      var d=Math.max(sz.x,sz.y,sz.z);
+      if(!isFinite(d)||d<=0) d=50;
+      dbg('bbox center='+c2.x.toFixed(1)+','+c2.y.toFixed(1)+','+c2.z.toFixed(1)+' size='+d.toFixed(1));
+      if(world.camera.controls){
+        world.camera.controls.setLookAt(
+          c2.x+d, c2.y+d*0.7, c2.z+d,
+          c2.x, c2.y, c2.z, true
+        );
+      }
+    } else {
+      dbg('⚠ bbox vacío — modelo sin geometría visible');
+    }
+  }catch(e){ dbg('⚠ fit error: '+e.message); }
   el('dz').classList.add('h');
   el('cv').style.display='block';
   el('tbl').style.display='flex';
