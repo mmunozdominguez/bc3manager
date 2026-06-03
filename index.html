@@ -683,24 +683,21 @@ function loadProj(id){
 function openVer(vid){
   curVR=vid;
   // Reset viewer state
-  modelLoaded=false; curModel=null; g2e={}; e2g={};
+  if(mid>=0&&ifcA){try{ifcA.CloseModel(mid);}catch(e){}mid=-1;}
+  if(scene){meshes.forEach(function(m){scene.remove(m.mesh);if(m.mesh.geometry)m.mesh.geometry.dispose();});}
+  meshes=[];oMat.clear();g2e={};e2g={};mBounds=null;
   el('dz').classList.remove('h');
   el('cv').style.display='none';
-  el('tbl').style.display='none';
-  el('tbr').style.display='none';
-  el('zw').style.display='none';
+  if(el('tbl'))el('tbl').style.display='none';
+  if(el('tbr'))el('tbr').style.display='none';
+  if(el('zw'))el('zw').style.display='none';
   st3('Sin modelo IFC','');
+  if(el('sel'))el('sel').textContent='';
   dbG('versions',vid,function(v){dbG('projects',v.projectId,function(p){
     el('bp2').textContent=p.name;el('bv2').textContent=v.name;
     el('bt').textContent=v.name;el('bs').textContent=new Date(v.createdAt).toLocaleDateString('es-ES');
     dbG('bc3data',vid,function(d){if(d&&d.bc3){curBC=d.bc3;renderTree();}});
     showV('visor');
-    // Auto-cargar fragments IFC guardados si existen
-    if(v && v.hasFragments){
-      setTimeout(function(){ loadSavedFragments(vid).then(function(ok){
-        if(!ok){ st3('Modelo guardado no disponible — vuelve a cargar el IFC',''); }
-      }); }, 300);
-    }
   });});
 }
 
@@ -873,484 +870,244 @@ function rTXT(){
   d.innerHTML=txt?'<div style="white-space:pre-wrap;font-size:11px;line-height:1.85;padding:4px;">'+esc(txt)+'</div>':'<div style="padding:10px;font-size:11px;color:var(--muted)">Sin texto largo</div>';
 }
 
-// ═══ 3D / IFC (@thatopen/components) ════════════════════════════════════
-function st3(msg,state){el('sm').textContent=msg;var d=el('sd');d.className='sd'+(state?' '+state:'');}
-function pg3(pct){var p=el('pg');if(pct>=100){p.style.display='none';return;}p.style.display='block';p.style.width=pct+'%';}
-var DBG=[];
-function dbg(msg){DBG.push(msg);var d=el('dbg-log');if(d){d.style.display='block';d.textContent=DBG.slice(-25).join('\n');d.scrollTop=d.scrollHeight;}console.log('[BC3]',msg);}
-window.addEventListener('error',function(e){dbg('❌ ERROR: '+e.message+' @'+(e.filename||'').split('/').pop()+':'+e.lineno);});
-window.addEventListener('unhandledrejection',function(e){dbg('❌ PROMISE: '+(e.reason&&e.reason.message?e.reason.message:e.reason));});
-function showLoading(msg,sub){var ld=el('ifc-loading');ld.classList.add('show');if(msg)el('ld-msg-txt').textContent=msg;if(sub!==undefined)el('ld-sub-txt').textContent=sub;}
-function hideLoading(){el('ifc-loading').classList.remove('show');}
+// ═══ 3D / IFC (web-ifc simple) ═══════════════════════════════════════════
+function st3(msg,state){var sm=el('sm');if(sm)sm.textContent=msg;var d=el('sd');if(d)d.className='sd'+(state?' '+state:'');}
+function pg3(pct){var p=el('pg');if(!p)return;if(pct>=100){p.style.display='none';return;}p.style.display='block';p.style.width=pct+'%';}
 
-// Estado del visor @thatopen
-var OBC=null,OBF=null,THREE=null;
-var components=null,world=null,fragments=null,ifcLoader=null,highlighter=null,hider=null,clipper=null,casters=null;
-var curModel=null;          // FragmentsGroup actual
-var modelLoaded=false;
-var g2frag={};              // GlobalId -> {modelID, localIDs}
-var selExpressID=null;
+// Estado Three.js / web-ifc
+var T3=null, ifcA=null, scene=null, cam=null, ren=null, ctrl=null, ray=null, mou3=null;
+var mid=-1, meshes=[], oMat=new Map(), mHL=null, mSL=null;
+var IFC_TC={IFCWALL:'#d9c8a8',IFCWALLSTANDARDCASE:'#d9c8a8',IFCSLAB:'#b8b8b8',IFCCOLUMN:'#9aa5b1',IFCBEAM:'#8a95a1',IFCDOOR:'#c89858',IFCWINDOW:'#88c0d0',IFCROOF:'#a85432',IFCCOVERING:'#cfcabe',IFCPLATE:'#9aa5b1',IFCMEMBER:'#8a95a1',IFCSTAIR:'#b0a890',IFCFOOTING:'#888'};
+var tCol={};
+var mBounds=null;
 
-// Cargar librerías @thatopen una sola vez
-async function ensViewer(){
-  if(components)return;
-  dbg('ensViewer: inicio');
-  showLoading('Inicializando visor 3D…','Cargando motor BIM (primera vez)');
-  // Cargar módulos ES desde esm.sh (resuelve dependencias automáticamente)
-  dbg('cargando three...');
-  THREE = await import('https://esm.sh/three@0.160.1');
-  dbg('three OK');
-  OBC = await import('https://esm.sh/@thatopen/components@2.4.11');
-  dbg('OBC OK');
-  OBF = await import('https://esm.sh/@thatopen/components-front@2.4.11');
-  dbg('OBF OK');
-
-  var container = el('p3d');
-  components = new OBC.Components();
-  var worlds = components.get(OBC.Worlds);
-  world = worlds.create();
-  world.scene = new OBC.SimpleScene(components);
-  world.renderer = new OBC.SimpleRenderer(components, el('cv'));
-  world.camera = new OBC.SimpleCamera(components);
-  components.init();
-  dbg('components.init OK');
-
-  world.scene.setup();
-  world.scene.three.background = new THREE.Color(0xf0eff0);
-
-  // Fragments manager
-  fragments = components.get(OBC.FragmentsManager);
-
-  // IFC loader
-  ifcLoader = components.get(OBC.IfcLoader);
-  dbg('ifcLoader.setup...');
-  await ifcLoader.setup({ wasm: { path: 'https://unpkg.com/web-ifc@0.0.57/', absolute: true } });
-  dbg('ifcLoader OK');
-
-  // Highlighter (selección)
-  highlighter = components.get(OBF.Highlighter);
-  highlighter.setup({ world: world });
-  highlighter.zoomToSelection = false;
-
-  // Hider (ocultar/aislar)
-  hider = components.get(OBC.Hider);
-
-  // Clipper (secciones)
-  clipper = components.get(OBC.Clipper);
-
-  // Raycaster para clicks
-  casters = components.get(OBC.Raycasters);
-  casters.get(world);
-
-  // Resize
-  window.addEventListener('resize', function(){ world.renderer.resize(); world.camera.updateAspect(); });
-
-  // Click handler para selección
-  highlighter.events.select.onHighlight.add(function(sel){ onFragSelect(sel); });
-  highlighter.events.select.onClear.add(function(){ selExpressID=null; });
-
-  hideLoading();
+function initT3(THREE){
+  var canvas=el('cv'), cont=el('p3d');
+  ren=new THREE.WebGLRenderer({canvas:canvas,antialias:true});
+  ren.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  ren.setSize(cont.clientWidth,cont.clientHeight);
+  try{ren.outputColorSpace=THREE.SRGBColorSpace;}catch(e){}
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x15152a);
+  cam=new THREE.PerspectiveCamera(60,cont.clientWidth/cont.clientHeight,0.01,5000);
+  cam.position.set(10,10,10);
+  ray=new THREE.Raycaster();mou3=new THREE.Vector2();
+  scene.add(new THREE.AmbientLight(0xffffff,0.6));
+  var d1=new THREE.DirectionalLight(0xffffff,0.8);d1.position.set(1,2,1);scene.add(d1);
+  var d2=new THREE.DirectionalLight(0x88aaff,0.3);d2.position.set(-1,0.5,-1);scene.add(d2);
+  mHL=new THREE.MeshLambertMaterial({color:0xf59e0b,transparent:true,opacity:0.95,side:THREE.DoubleSide});
+  mSL=new THREE.MeshLambertMaterial({color:0x3b82f6,transparent:true,opacity:0.85,side:THREE.DoubleSide});
+  canvas.addEventListener('click',function(e){onCanvasClick(e);});
+  window.addEventListener('resize',function(){var w=cont.clientWidth,h=cont.clientHeight;if(!w||!h)return;cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);});
+  function animate(){requestAnimationFrame(animate);if(ctrl&&ctrl.update)ctrl.update();ren.render(scene,cam);}
+  animate();
 }
 
-// ═══ OPTIMIZADOR IFC (reduce tamaño eliminando instalaciones/mobiliario) ══
-var IFC_REMOVE_TYPES = [
-  'IFCFURNISHINGELEMENT','IFCFURNITURE','IFCSYSTEMFURNITUREELEMENT',
-  'IFCFLOWSEGMENT','IFCFLOWFITTING','IFCFLOWTERMINAL','IFCFLOWCONTROLLER',
-  'IFCFLOWMOVINGDEVICE','IFCFLOWSTORAGEDEVICE','IFCFLOWTREATMENTDEVICE',
-  'IFCSANITARYTERMINAL','IFCLIGHTFIXTURE','IFCELECTRICAPPLIANCE',
-  'IFCOUTLET','IFCSWITCHINGDEVICE','IFCCABLECARRIERSEGMENT','IFCCABLESEGMENT',
-  'IFCCABLECARRIERFITTING','IFCCABLEFITTING','IFCJUNCTIONBOX',
-  'IFCDUCTSEGMENT','IFCDUCTFITTING','IFCDUCTSILENCER','IFCPIPESEGMENT','IFCPIPEFITTING',
-  'IFCAIRTERMINAL','IFCAIRTERMINALBOX','IFCENERGYCONVERSIONDEVICE','IFCBOILER','IFCPUMP',
-  'IFCVALVE','IFCTANK','IFCSPACEHEATER','IFCFAN','IFCCHILLER','IFCCOIL','IFCCOMPRESSOR',
-  'IFCCONDENSER','IFCCOOLINGTOWER','IFCDAMPER','IFCFILTER','IFCHEATEXCHANGER',
-  'IFCHUMIDIFIER','IFCUNITARYEQUIPMENT','IFCEVAPORATOR','IFCEVAPORATIVECOOLER',
-  'IFCDISTRIBUTIONELEMENT','IFCDISTRIBUTIONFLOWELEMENT','IFCDISTRIBUTIONCONTROLELEMENT',
-  'IFCDISTRIBUTIONCHAMBERELEMENT','IFCELECTRICDISTRIBUTIONBOARD','IFCPROTECTIVEDEVICE',
-  'IFCMOTORCONNECTION','IFCTRANSFORMER','IFCELECTRICGENERATOR','IFCELECTRICMOTOR',
-  'IFCALARM','IFCSENSOR','IFCACTUATOR','IFCCONTROLLER','IFCFLOWINSTRUMENT',
-  'IFCTRANSPORTELEMENT','IFCGEOGRAPHICELEMENT','IFCBUILDINGELEMENTPROXY',
-  'IFCDISCRETEACCESSORY','IFCFASTENER','IFCMECHANICALFASTENER','IFCELECTRICFLOWSTORAGEDEVICE',
-  'IFCAUDIOVISUALAPPLIANCE','IFCCOMMUNICATIONSAPPLIANCE','IFCMEDICALDEVICE',
-  'IFCLAMP','IFCELECTRICTIMECONTROL','IFCSOLARDEVICE','IFCWASTETERMINAL'
-];
-
-// Tipos de geometría/soporte que pueden quedar huérfanos
-var IFC_ORPHAN_TYPES = ['IFCLOCALPLACEMENT','IFCPRODUCTDEFINITIONSHAPE','IFCSHAPEREPRESENTATION',
-  'IFCEXTRUDEDAREASOLID','IFCFACETEDBREP','IFCMAPPEDITEM','IFCREPRESENTATIONMAP',
-  'IFCBOOLEANCLIPPINGRESULT','IFCBOOLEANRESULT','IFCPOLYGONALBOUNDEDHALFSPACE',
-  'IFCHALFSPACESOLID','IFCSWEPTAREASOLID','IFCSURFACECURVESWEPTAREASOLID',
-  'IFCREVOLVEDAREASOLID','IFCTRIANGULATEDFACESET','IFCPOLYGONALFACESET',
-  'IFCSHELLBASEDSURFACEMODEL','IFCFACEBASEDSURFACEMODEL','IFCCLOSEDSHELL','IFCOPENSHELL',
-  'IFCCONNECTEDFACESET','IFCGEOMETRICSET','IFCGEOMETRICCURVESET'];
-
-var IFC_REL_TYPES = ['IFCRELCONTAINEDINSPATIALSTRUCTURE','IFCRELAGGREGATES',
-  'IFCRELDEFINESBYPROPERTIES','IFCRELASSOCIATESMATERIAL','IFCRELDEFINESBYTYPE',
-  'IFCRELCONNECTSELEMENTS','IFCRELVOIDSELEMENT','IFCRELFILLSELEMENT',
-  'IFCRELSPACEBOUNDARY','IFCRELCONNECTSPORTTOELEMENT'];
-
-// Optimiza un IFC (texto) eliminando tipos no deseados. Devuelve texto reducido.
-function optimizeIFC(text){
-  dbg('optimizando IFC...');
-  var removeSet={}; IFC_REMOVE_TYPES.forEach(function(t){removeSet[t]=1;});
-  var orphanSet={}; IFC_ORPHAN_TYPES.forEach(function(t){orphanSet[t]=1;});
-  var relSet={}; IFC_REL_TYPES.forEach(function(t){relSet[t]=1;});
-
-  // Separar cabecera/data/tail
-  var di=text.indexOf('DATA;');
-  var ei=text.indexOf('ENDSEC;', di);
-  if(di<0||ei<0){ dbg('⚠ IFC sin DATA section'); return text; }
-  var head=text.slice(0, di+5);
-  var dataStr=text.slice(di+5, ei);
-  var tail=text.slice(ei);
-
-  // Parsear entidades (regex por línea de entidad)
-  var entRe=/^#(\d+)\s*=\s*([A-Z0-9_]+)\s*\(/i;
-  var lines=dataStr.split('\n');
-  var ents={};      // id -> {type, line}
-  var order=[];     // mantener orden
-  for(var i=0;i<lines.length;i++){
-    var ln=lines[i].trim();
-    if(!ln)continue;
-    var m=entRe.exec(ln);
-    if(m){ var id=m[1], ty=m[2].toUpperCase(); ents[id]={type:ty,line:lines[i]}; order.push(id); }
-  }
-  dbg('entidades: '+order.length);
-
-  // Paso 1: marcar raíces a eliminar
-  var remove={};
-  var nRoot=0;
-  for(var k=0;k<order.length;k++){ var id=order[k]; if(removeSet[ents[id].type]){ remove[id]=1; nRoot++; } }
-  dbg('raices a eliminar: '+nRoot);
-
-  // Paso 2: limpiar relaciones (quitar refs a eliminados)
-  for(var k=0;k<order.length;k++){
-    var id=order[k]; var e=ents[id];
-    if(relSet[e.type]){
-      var nl=e.line;
-      Object.keys(remove).forEach(function(rid){
-        nl=nl.replace(new RegExp('#'+rid+'(?=[,\\)])','g'),'');
-      });
-      nl=nl.replace(/,+/g,',').replace(/\(,/g,'(').replace(/,\)/g,')');
-      e.line=nl;
-    }
-  }
-
-  // Paso 3: eliminar huérfanos iterativamente
-  for(var pass=0; pass<5; pass++){
-    var referenced={};
-    for(var k=0;k<order.length;k++){
-      var id=order[k]; if(remove[id])continue;
-      var refs=ents[id].line.match(/#\d+/g)||[];
-      for(var r=0;r<refs.length;r++){ var rr=refs[r].slice(1); if(rr!==id) referenced[rr]=1; }
-    }
-    var newRem=0;
-    for(var k=0;k<order.length;k++){
-      var id=order[k]; if(remove[id])continue;
-      if(orphanSet[ents[id].type] && !referenced[id]){ remove[id]=1; newRem++; }
-    }
-    if(!newRem)break;
-  }
-
-  // Reconstruir
-  var nRemoved=0, out=[head];
-  for(var k=0;k<order.length;k++){
-    var id=order[k]; if(remove[id]){nRemoved++;continue;}
-    out.push(ents[id].line);
-  }
-  out.push(tail);
-  dbg('eliminadas total: '+nRemoved+' / quedan '+(order.length-nRemoved));
-  return out.join('\n');
+async function ensT3(){
+  if(T3)return;
+  st3('Cargando motor 3D…','sp');
+  var mod=await import('https://unpkg.com/three@0.160.0/build/three.module.js');
+  T3=mod;
+  initT3(T3);
+  try{
+    var oc=await import('https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js');
+    ctrl=new oc.OrbitControls(cam,ren.domElement);
+    ctrl.enableDamping=true;ctrl.dampingFactor=0.08;
+  }catch(e){fbCtrl();}
+  st3('Motor 3D listo','ok');
 }
 
-// Cargar IFC desde archivo (primera vez) o desde fragments guardados
+function fbCtrl(){
+  ctrl={update:function(){},target:new T3.Vector3()};
+  var cv=el('cv'),dn=false,lx=0,ly=0,rX=0.4,rY=0.4,dist=30,tg=new T3.Vector3();
+  function upd(){cam.position.set(tg.x+Math.sin(rY)*Math.cos(rX)*dist,tg.y+Math.sin(rX)*dist,tg.z+Math.cos(rY)*Math.cos(rX)*dist);cam.lookAt(tg);}
+  ctrl.target=tg;
+  cv.addEventListener('mousedown',function(e){dn=true;lx=e.clientX;ly=e.clientY;});
+  window.addEventListener('mouseup',function(){dn=false;});
+  cv.addEventListener('mousemove',function(e){if(!dn)return;rY+=(e.clientX-lx)*0.005;rX+=(e.clientY-ly)*0.005;rX=Math.max(-1.5,Math.min(1.5,rX));lx=e.clientX;ly=e.clientY;upd();});
+  cv.addEventListener('wheel',function(e){e.preventDefault();dist=Math.max(0.5,dist+e.deltaY*0.05);upd();},{passive:false});
+  // Touch
+  var tdn=false,tlx=0,tly=0,pd=0;
+  cv.addEventListener('touchstart',function(e){if(e.touches.length===1){tdn=true;tlx=e.touches[0].clientX;tly=e.touches[0].clientY;}else if(e.touches.length===2){pd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:true});
+  cv.addEventListener('touchmove',function(e){if(e.touches.length===1&&tdn){rY+=(e.touches[0].clientX-tlx)*0.005;rX+=(e.touches[0].clientY-tly)*0.005;rX=Math.max(-1.5,Math.min(1.5,rX));tlx=e.touches[0].clientX;tly=e.touches[0].clientY;upd();}else if(e.touches.length===2){var nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);dist=Math.max(0.5,dist+(pd-nd)*0.05);pd=nd;upd();}},{passive:true});
+  cv.addEventListener('touchend',function(){tdn=false;});
+  ctrl.setDist=function(d){dist=d;upd();};
+  ctrl.fit=function(c,d){tg.copy(c);dist=d;upd();};
+}
+
 async function loadIFC(file){
-  await ensViewer();
-  showLoading('Procesando IFC…','Convirtiendo geometría (puede tardar)');
-  st3('Cargando IFC...','sp'); pg3(10);
+  await ensT3();
+  var THREE=T3;
+  st3('Cargando web-ifc…','sp');pg3(10);
   try{
-    if(curModel){ try{ fragments.disposeGroup(curModel); }catch(e){} curModel=null; }
-    dbg('archivo: '+(file.size/1048576).toFixed(1)+'MB');
-    showLoading('Leyendo archivo…','');
-    var rawText = await file.text();
-    dbg('texto: '+(rawText.length/1048576).toFixed(1)+'M chars');
-    pg3(15); showLoading('Optimizando modelo…','Eliminando instalaciones y mobiliario');
-    var optText = optimizeIFC(rawText);
-    rawText = null;
-    dbg('optimizado: '+(optText.length/1048576).toFixed(1)+'M chars');
-    var buf = new TextEncoder().encode(optText);
-    optText = null;
-    dbg('buffer: '+(buf.length/1048576).toFixed(1)+'MB');
-    pg3(35); showLoading('Convirtiendo a fragmentos…','');
-    dbg('ifcLoader.load...');
-    var model = await ifcLoader.load(buf);
-    buf = null;
-    dbg('model cargado, items='+(model.items?model.items.size:'?'));
-    curModel = model;
-    world.scene.three.add(model);
-    modelLoaded = true;
-    dbg('model añadido a escena');
-    pg3(70); showLoading('Indexando elementos…','');
-
-    await indexModel(model);
-    pg3(85);
-
-    // Exportar fragments y guardar en IndexedDB (envuelto para no crashear)
-    showLoading('Guardando modelo…','Para carga instantánea la próxima vez');
-    dbg('exportando fragments...');
-    try{
-      var fragData = fragments.export(model);
-      dbg('fragments: '+(fragData.length/1048576).toFixed(1)+'MB');
-      var props={};
-      try{ props = model.getLocalProperties ? model.getLocalProperties() : {}; }catch(e){}
-      if(curVR){
-        dbP('ifcfrag', { vid: curVR, frag: fragData, props: props, name: file.name });
-        dbG('versions', curVR, function(v){ if(v){ v.ifcName=file.name; v.hasFragments=true; dbP('versions', v); } });
-        dbg('guardado en IndexedDB OK');
-      }
-      fragData=null;
-    }catch(e){ dbg('⚠ guardado falló: '+e.message); }
-
-    finishLoad(file.name);
-  }catch(e){
-    hideLoading(); pg3(100); st3('Error: '+e.message,''); console.error('[IFC]',e);
-    alert('Error al cargar el IFC: '+e.message);
-  }
-}
-
-// Cargar fragments guardados (instantáneo)
-async function loadSavedFragments(vid){
-  await ensViewer();
-  showLoading('Cargando modelo guardado…','');
-  st3('Cargando modelo...','sp'); pg3(20);
-  try{
-    var rec = await new Promise(function(res){ dbG('ifcfrag', vid, res); });
-    if(!rec || !rec.frag){ hideLoading(); return false; }
-    if(curModel){ try{ fragments.disposeGroup(curModel); }catch(e){} curModel=null; }
-    pg3(50);
-    var model = fragments.load(rec.frag);
-    curModel = model;
-    if(rec.props && model.setLocalProperties) model.setLocalProperties(rec.props);
-    world.scene.three.add(model);
-    modelLoaded = true;
-    pg3(75);
-    await indexModel(model);
-    finishLoad(rec.name||'modelo.ifc');
-    return true;
-  }catch(e){
-    hideLoading(); console.error('[IFC] load fragments',e); return false;
-  }
-}
-
-// Indexar GlobalId -> elementos para vincular con BC3
-async function indexModel(model){
-  g2frag={}; e2g={}; g2e={};
-  try{
-    var ids = await model.getAllPropertiesIDs ? model.getAllPropertiesIDs() : [];
-  }catch(e){}
-  // web-ifc properties via model
-  try{
-    var props = model.getLocalProperties ? model.getLocalProperties() : null;
-    if(props){
-      Object.keys(props).forEach(function(eid){
-        var p = props[eid];
-        if(p && p.GlobalId && p.GlobalId.value){
-          var g = p.GlobalId.value;
-          e2g[eid]=g;
-          if(!g2e[g]) g2e[g]=[];
-          g2e[g].push(parseInt(eid));
-        }
-      });
+    if(!ifcA){
+      var ifcMod=await import('https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js');
+      ifcA=new ifcMod.IfcAPI();
+      ifcA.SetWasmPath('https://unpkg.com/web-ifc@0.0.46/');
+      await ifcA.Init();
+      window.__ifcMod=ifcMod;
     }
-  }catch(e){ console.warn('[IFC] index',e); }
-  console.log('[IFC] indexed GlobalIds:', Object.keys(g2e).length);
-}
-
-function finishLoad(name){
-  dbg('finishLoad: '+name);
-  // Ajustar cámara al modelo usando bounding box real
-  try{
-    var box=new THREE.Box3().setFromObject(curModel);
-    if(!box.isEmpty()){
-      var c2=box.getCenter(new THREE.Vector3());
-      var sz=box.getSize(new THREE.Vector3());
-      var d=Math.max(sz.x,sz.y,sz.z);
-      if(!isFinite(d)||d<=0) d=50;
-      dbg('bbox center='+c2.x.toFixed(1)+','+c2.y.toFixed(1)+','+c2.z.toFixed(1)+' size='+d.toFixed(1));
-      if(world.camera.controls){
-        world.camera.controls.setLookAt(
-          c2.x+d, c2.y+d*0.7, c2.z+d,
-          c2.x, c2.y, c2.z, true
-        );
+    var ifcMod=window.__ifcMod;
+    pg3(25);st3('Leyendo IFC…','sp');
+    var buf=await file.arrayBuffer();
+    if(mid>=0){try{ifcA.CloseModel(mid);}catch(e){}}
+    mid=ifcA.OpenModel(new Uint8Array(buf));
+    pg3(45);st3('Extrayendo GUIDs…','sp');
+    e2g={};g2e={};
+    var e2t={};
+    var TYPS=[{n:'IFCWALL',t:ifcMod.IFCWALL},{n:'IFCWALLSTANDARDCASE',t:ifcMod.IFCWALLSTANDARDCASE},{n:'IFCSLAB',t:ifcMod.IFCSLAB},{n:'IFCCOLUMN',t:ifcMod.IFCCOLUMN},{n:'IFCBEAM',t:ifcMod.IFCBEAM},{n:'IFCDOOR',t:ifcMod.IFCDOOR},{n:'IFCWINDOW',t:ifcMod.IFCWINDOW},{n:'IFCROOF',t:ifcMod.IFCROOF},{n:'IFCCOVERING',t:ifcMod.IFCCOVERING},{n:'IFCPLATE',t:ifcMod.IFCPLATE},{n:'IFCMEMBER',t:ifcMod.IFCMEMBER},{n:'IFCBUILDINGELEMENTPROXY',t:ifcMod.IFCBUILDINGELEMENTPROXY},{n:'IFCSTAIR',t:ifcMod.IFCSTAIR},{n:'IFCFOOTING',t:ifcMod.IFCFOOTING},{n:'IFCRAILING',t:ifcMod.IFCRAILING}].filter(function(x){return x.t;});
+    var tCnt={};
+    TYPS.forEach(function(it){try{var ids=ifcA.GetLineIDsWithType(mid,it.t);for(var i=0;i<ids.size();i++){var id=ids.get(i);e2t[id]=it.n;tCnt[it.n]=(tCnt[it.n]||0)+1;try{var pr=ifcA.GetLine(mid,id);if(pr&&pr.GlobalId&&pr.GlobalId.value){var g=pr.GlobalId.value;e2g[id]=g;if(!g2e[g])g2e[g]=[];g2e[g].push(id);}}catch(e2){}}}catch(e){}});
+    pg3(65);st3('Construyendo geometría…','sp');
+    meshes.forEach(function(m){scene.remove(m.mesh);if(m.mesh.geometry)m.mesh.geometry.dispose();});
+    meshes=[];oMat.clear();
+    var totalV=0,MAXV=2000000;
+    ifcA.StreamAllMeshes(mid,function(im){
+      var pg2=im.geometries;
+      for(var gi=0;gi<pg2.size();gi++){
+        var g=pg2.get(gi);
+        try{
+          var gd=ifcA.GetGeometry(mid,g.geometryExpressID);
+          var verts=ifcA.GetVertexArray(gd.GetVertexData(),gd.GetVertexDataSize());
+          var idxs=ifcA.GetIndexArray(gd.GetIndexData(),gd.GetIndexDataSize());
+          if(!verts||!idxs||verts.length<6){gd.delete();continue;}
+          var nv=verts.length/6;
+          if(totalV+nv>MAXV){gd.delete();continue;}
+          var geo=new THREE.BufferGeometry();
+          var pos=new Float32Array(nv*3),nor=new Float32Array(nv*3);
+          for(var vi=0;vi<nv;vi++){pos[vi*3]=verts[vi*6];pos[vi*3+1]=verts[vi*6+1];pos[vi*3+2]=verts[vi*6+2];nor[vi*3]=verts[vi*6+3];nor[vi*3+1]=verts[vi*6+4];nor[vi*3+2]=verts[vi*6+5];}
+          geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+          geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));
+          var idx2=new Uint32Array(idxs.length);for(var ii=0;ii<idxs.length;ii++)idx2[ii]=idxs[ii];
+          geo.setIndex(new THREE.BufferAttribute(idx2,1));
+          var col=g.color,isT=col.w<0.99;
+          var mat=new THREE.MeshLambertMaterial({color:new THREE.Color(col.x,col.y,col.z),transparent:isT,opacity:isT?Math.max(col.w,0.3):1,side:THREE.DoubleSide,depthWrite:!isT});
+          var matrix=new THREE.Matrix4().fromArray(g.flatTransformation);
+          var mesh=new THREE.Mesh(geo,mat);mesh.applyMatrix4(matrix);
+          if(isT)mesh.renderOrder=1;
+          mesh.userData.expressID=im.expressID;
+          mesh.userData.ifcType=e2t[im.expressID]||'IFCBUILDINGELEMENTPROXY';
+          scene.add(mesh);meshes.push({mesh:mesh,expressID:im.expressID});oMat.set(mesh,mat);
+          totalV+=nv;gd.delete();
+        }catch(e2){}
       }
-    } else {
-      dbg('⚠ bbox vacío — modelo sin geometría visible');
-    }
-  }catch(e){ dbg('⚠ fit error: '+e.message); }
-  el('dz').classList.add('h');
-  el('cv').style.display='block';
-  el('tbl').style.display='flex';
-  el('tbr').style.display='flex';
-  el('zw').style.display='flex';
-  var nG=Object.keys(e2g).length, nM=0;
-  if(curBC) Object.keys(curBC.g).forEach(function(p){ (curBC.g[p]||[]).forEach(function(e){ if(e.ifc22&&g2e[e.ifc22])nM++; }); });
-  pg3(100); hideLoading();
-  st3(nG+' elem · '+nM+' BC3', 'ok');
-  el('sel').textContent=nG+' elem.';
-  if(selP&&curBC) hlPart(selP,curBC);
-}
-
-// Selección desde el modelo 3D -> buscar partida BC3
-function onFragSelect(sel){
-  if(!curBC) return;
-  // sel = { modelID: Set(localIDs) }
-  var found=null, foundG=null;
-  Object.keys(sel).forEach(function(mid){
-    sel[mid].forEach(function(lid){
-      var g = e2g[lid];
-      if(g && !foundG){ foundG=g; }
     });
+    console.log('[IFC] meshes='+meshes.length+' verts='+totalV);
+    pg3(90);
+    if(typeof buildTP==='function')buildTP(tCnt);
+    fitCam();
+    el('dz').classList.add('h');
+    el('cv').style.display='block';
+    if(el('tbl'))el('tbl').style.display='flex';
+    if(el('tbr'))el('tbr').style.display='flex';
+    if(el('zw'))el('zw').style.display='flex';
+    var nG=Object.keys(e2g).length,nM=0;
+    if(curBC)Object.keys(curBC.g).forEach(function(p){(curBC.g[p]||[]).forEach(function(e){if(e.ifc22&&g2e[e.ifc22])nM++;});});
+    pg3(100);st3(nG+' elem · '+nM+' BC3','ok');
+    if(el('sel'))el('sel').textContent=nG+' elem.';
+    if(curVR){dbG('versions',curVR,function(v){if(v){v.ifcName=file.name;v.bimLinked=nM;dbP('versions',v);}});}
+    if(selP&&curBC)hlPart(selP,curBC);
+  }catch(e){pg3(100);st3('Error: '+e.message,'');console.error('[IFC]',e);alert('Error al cargar IFC: '+e.message);}
+}
+
+function fitCam(){
+  if(!T3||!meshes.length)return;
+  var box=new T3.Box3();
+  meshes.forEach(function(m){box.expandByObject(m.mesh);});
+  if(box.isEmpty())return;
+  var c=box.getCenter(new T3.Vector3());
+  var sz=box.getSize(new T3.Vector3());
+  var d=Math.max(sz.x,sz.y,sz.z)*1.6;if(!isFinite(d)||d<=0)d=50;
+  mBounds={cx:c.x,cy:c.y,cz:c.z,sx:sz.x,sy:sz.y,sz:sz.z};
+  cam.near=d*0.001;cam.far=d*20;cam.updateProjectionMatrix();
+  if(ctrl&&ctrl.fit){ctrl.fit(c,d);}
+  else{cam.position.set(c.x+d,c.y+d*0.6,c.z+d);if(ctrl&&ctrl.target)ctrl.target.copy(c);cam.lookAt(c);}
+}
+
+// ═══ HIGHLIGHT / SELECCIÓN ════════════════════════════════════════════════
+function hlPart(p,BC){
+  if(!meshes.length)return;
+  var ifc22s=new Set((BC.g[p]||[]).map(function(e){return e.ifc22;}).filter(Boolean));
+  var n=0;
+  meshes.forEach(function(m){
+    var g=e2g[m.expressID];
+    if(g&&ifc22s.has(g)){m.mesh.material=mSL;n++;}
+    else m.mesh.material=oMat.get(m.mesh)||m.mesh.material;
   });
-  if(!foundG) return;
-  selExpressID = foundG;
-  var fp=null, fe=null;
-  var ks=Object.keys(curBC.g);
-  for(var i=0;i<ks.length;i++){
-    var es=curBC.g[ks[i]]||[];
-    for(var j=0;j<es.length;j++){ if(es[j].ifc22===foundG){ fp=ks[i]; fe=es[j]; break; } }
-    if(fp) break;
-  }
-  showHC(fe?fe.esp:'', fp, foundG);
-  if(fp){ selP=fp; el('dt').textContent=fp; renderDet(); navTo(fp); }
+  if(el('sel'))el('sel').textContent=n+' resaltados';
 }
-
-// ═══ INTERACCIÓN 3D (@thatopen) ═════════════════════════════════════════
-// Resaltar elementos de una partida BC3 en el modelo
-function hlPart(p, BC){
-  if(!highlighter || !modelLoaded) return;
-  var ifc22s = (BC.g[p]||[]).map(function(e){return e.ifc22;}).filter(Boolean);
-  if(!ifc22s.length){ return; }
-  // Construir fragmentIdMap a partir de los GlobalIds
-  var localIDs=[];
-  ifc22s.forEach(function(g){ (g2e[g]||[]).forEach(function(lid){ localIDs.push(lid); }); });
-  if(!localIDs.length){ el('sel').textContent='0 en modelo'; return; }
-  try{
-    highlighter.clear('select');
-    var map = modelIdMapFromLocalIDs(localIDs);
-    highlighter.highlightByID('select', map, false, false);
-    el('sel').textContent = localIDs.length+' resaltados';
-  }catch(e){ console.warn('[hl]',e); }
-}
-
-// Construir el fragmentIdMap que espera @thatopen
-function modelIdMapFromLocalIDs(localIDs){
-  var map={};
-  if(!curModel) return map;
-  var idset = new Set(localIDs);
-  // Recorrer fragments del modelo
-  curModel.items.forEach(function(frag){
-    var ids=[];
-    frag.ids.forEach(function(id){ if(idset.has(id)) ids.push(id); });
-    if(ids.length){ map[frag.id]=new Set(ids); }
-  });
-  return map;
-}
-
 function hlGuid(ifc22){
-  if(!highlighter||!modelLoaded) return;
-  var localIDs = g2e[ifc22]||[];
-  if(!localIDs.length) return;
-  try{ highlighter.clear('select'); highlighter.highlightByID('select', modelIdMapFromLocalIDs(localIDs), false, false); }catch(e){}
+  var eids=new Set(g2e[ifc22]||[]);
+  meshes.forEach(function(m){if(eids.has(m.expressID))m.mesh.material=mHL;});
 }
-
-function clrHL(){
-  selExpressID=null; el('hc').style.display='none';
-  if(highlighter){ try{ highlighter.clear('select'); }catch(e){} }
-  if(selP&&curBC) hlPart(selP,curBC);
-}
-
+window.clrHL=function(){
+  if(el('hc'))el('hc').style.display='none';
+  meshes.forEach(function(m){m.mesh.material=oMat.get(m.mesh)||m.mesh.material;});
+  if(selP&&curBC)hlPart(selP,curBC);
+};
+function clrHL(){window.clrHL();}
 function showHC(sp,part,guid){
-  el('hct').textContent=sp||(guid?guid.slice(0,22)+'…':'Elemento');
-  el('hcp').textContent=part?'Partida: '+part:'Sin partida BC3';
-  el('hcg').textContent=guid||'';
-  el('hcgt').style.display=part?'block':'none';
-  if(part)lastFP=part;
-  el('hc').style.display='block';
+  if(el('hct'))el('hct').textContent=sp||'Elemento';
+  if(el('hcp'))el('hcp').textContent=part?'Partida: '+part:'Sin partida BC3';
+  if(el('hcg'))el('hcg').textContent=guid||'';
+  if(el('hc'))el('hc').style.display='block';
+}
+function onCanvasClick(e){
+  if(!ifcA||mid<0||!ray)return;
+  var rect=ren.domElement.getBoundingClientRect();
+  mou3.x=((e.clientX-rect.left)/rect.width)*2-1;
+  mou3.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  ray.setFromCamera(mou3,cam);
+  var hits=ray.intersectObjects(meshes.map(function(m){return m.mesh;}));
+  if(!hits.length)return;
+  var eid=hits[0].object.userData.expressID;
+  var guid=e2g[eid];if(!guid)return;
+  clrHL();if(selP&&curBC)hlPart(selP,curBC);hlGuid(guid);
+  var fp=null,fe=null;
+  if(curBC)Object.keys(curBC.g).some(function(p){var es=curBC.g[p]||[];for(var j=0;j<es.length;j++){if(es[j].ifc22===guid){fp=p;fe=es[j];return true;}}return false;});
+  showHC(fe?fe.esp:('ExpressID '+eid),fp,guid);
+  if(fp){selP=fp;if(el('dt'))el('dt').textContent=fp;if(typeof renderDet==='function')renderDet();if(typeof navTo==='function')navTo(fp);}
 }
 
-// Color por modo (gris / tipo / partida) — usando highlighter styles
-var cMode='grey';
-function applyColorMode(){
-  // @thatopen maneja colores via classifier; para simplicidad alternamos
-  // el material base. Implementación básica: solo cambia en clic.
-}
-
-// Aislar selección
-function isolateSel(){
-  if(!hider||!curBC||!selP) return;
-  var localIDs=[];
-  (curBC.g[selP]||[]).forEach(function(e){ (g2e[e.ifc22]||[]).forEach(function(l){localIDs.push(l);}); });
-  if(!localIDs.length) return;
-  try{
-    hider.set(false); // ocultar todo
-    hider.set(true, modelIdMapFromLocalIDs(localIDs)); // mostrar selección
-  }catch(e){ console.warn('[iso]',e); }
-}
-
-function showAll(){
-  if(hider){ try{ hider.set(true); }catch(e){} }
-}
-
-function hideSel(){
-  if(!hider) return;
-  if(selExpressID){
-    var localIDs=g2e[selExpressID]||[];
-    try{ hider.set(false, modelIdMapFromLocalIDs(localIDs)); }catch(e){}
-  }
-}
-
-// ═══ CLICKS 3D ════════════════════════════════════════════════════════════
-// Manejado por highlighter.events.select (ver onFragSelect)
-function doClick(e){ /* @thatopen highlighter handles this */ }
-function doRClick(e){ hideSel(); }
-function doMeas(e){ /* medición desactivada temporalmente con @thatopen */ }
-
-// ═══ SECCIÓN (@thatopen Clipper) ══════════════════════════════════════════
-var clipEnabled=false;
-function openCP(){
-  if(!clipper){ return; }
-  clipper.enabled = true;
-  clipEnabled = true;
-  el('cp').style.display='block';
-  el('bn-clip').classList.add('a');
-  el('cphi').style.display='flex';
-  el('cpht').textContent='Doble clic en una superficie para crear el plano de corte';
-  // doble clic crea plano
-}
-function closeCP(){
-  clipEnabled=false;
-  if(clipper){ try{ clipper.enabled=false; clipper.deleteAll(); }catch(e){} }
-  el('cp').style.display='none';
-  el('bn-clip').classList.remove('a');
-}
-
-// ═══ MEASURE (desactivado con @thatopen por ahora) ═══════════════════════
-var measM=false;
+// Isolate / show / hide
+window.isolateSel=function(){
+  if(!selP||!curBC)return;
+  var vis=new Set();
+  (curBC.g[selP]||[]).forEach(function(e){(g2e[e.ifc22]||[]).forEach(function(l){vis.add(l);});});
+  if(!vis.size)return;
+  meshes.forEach(function(m){m.mesh.visible=vis.has(m.expressID);});
+};
+function isolateSel(){window.isolateSel();}
+window.showAll=function(){meshes.forEach(function(m){m.mesh.visible=true;});};
+function showAll(){window.showAll();}
 
 // ═══ TYPE PANEL ═══════════════════════════════════════════════════════════
 function buildTP(counts){
-  var panel=el('tp');
-  panel.innerHTML='<div style="font-size:10px;font-weight:600;color:#374151;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Tipos IFC</div>';
-  if(!counts){ panel.innerHTML+='<div style="font-size:10px;color:#9ca3af;">Modelo cargado</div>'; return; }
+  var panel=el('tp');if(!panel)return;
+  panel.innerHTML='<div style="font-size:10px;font-weight:600;color:#cbd5e1;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Tipos IFC</div>';
+  if(!counts)return;
   Object.keys(counts).sort().forEach(function(t){
-    var row=document.createElement('div');row.className='tpr';
-    var dot=document.createElement('div');dot.className='tpd';dot.style.background=IFC_TC[t]||'#aaa';
-    var lbl=document.createElement('span');lbl.textContent=t.replace('IFC','');
-    var cnt=document.createElement('span');cnt.textContent=counts[t];cnt.style.cssText='margin-left:auto;color:#6b7280;';
+    var row=document.createElement('div');row.className='tpr';row.style.cssText='display:flex;align-items:center;gap:6px;font-size:10px;color:#cbd5e1;padding:2px 0;';
+    var dot=document.createElement('div');dot.style.cssText='width:9px;height:9px;border-radius:2px;flex-shrink:0;background:'+(IFC_TC[t]||'#aaa');
+    var lbl=document.createElement('span');lbl.textContent=t.replace('IFC','');lbl.style.flex='1';
+    var cnt=document.createElement('span');cnt.textContent=counts[t];cnt.style.color='#94a3b8';
     row.appendChild(dot);row.appendChild(lbl);row.appendChild(cnt);
     panel.appendChild(row);
   });
 }
+
+// ═══ VISTAS DE CÁMARA ═════════════════════════════════════════════════════
+window.setView3d=function(v){
+  if(!T3||!meshes.length||!mBounds)return;
+  var c=new T3.Vector3(mBounds.cx,mBounds.cy,mBounds.cz);
+  var d=Math.max(mBounds.sx,mBounds.sy,mBounds.sz)*1.6;
+  if(v==='front')cam.position.set(c.x,c.y,c.z+d);
+  else if(v==='top')cam.position.set(c.x,c.y+d*1.5,c.z+0.01);
+  else cam.position.set(c.x+d,c.y+d*0.7,c.z+d);
+  if(ctrl&&ctrl.target)ctrl.target.copy(c);
+  cam.lookAt(c);
+}
+function setView3d(v){window.setView3d(v);}
+
 
 // ═══ CAMERA ═══════════════════════════════════════════════════════════════
 function fitCam(){
@@ -1419,6 +1176,26 @@ function showM(id){el(id).classList.add('o');}
 function hideM(id){el(id).classList.remove('o');}
 document.querySelectorAll('.mb').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m)m.classList.remove('o');});});
 
+// ═══ COLOR MODE ═══════════════════════════════════════════════════════════
+function applyCMode(cm){
+  if(!meshes.length)return;
+  if(cm==='type'){
+    meshes.forEach(function(m){
+      var t=m.mesh.userData.ifcType||'IFCBUILDINGELEMENTPROXY';
+      var col=IFC_TC[t]||'#aaaaaa';
+      var nm=new T3.MeshLambertMaterial({color:new T3.Color(col),side:T3.DoubleSide});
+      m.mesh.material=nm;oMat.set(m.mesh,nm);
+    });
+  }else{
+    // restaurar color original gris/material base
+    meshes.forEach(function(m){
+      var nm=new T3.MeshLambertMaterial({color:0xc8d0d8,side:T3.DoubleSide});
+      m.mesh.material=nm;oMat.set(m.mesh,nm);
+    });
+  }
+  if(selP&&curBC)hlPart(selP,curBC);
+}
+
 // ═══ EVENTS ═══════════════════════════════════════════════════════════════
 on('bn-np','click',function(){showM('m-proj');});
 on('bh1','click',loadHome);
@@ -1441,25 +1218,26 @@ document.querySelectorAll('.ct').forEach(function(b){b.addEventListener('click',
 on('si','input',function(){filterTree(this.value);});
 document.querySelectorAll('#tbl .t3[data-v]').forEach(function(b){b.addEventListener('click',function(){setView(this.dataset.v);});});
 on('bn-fit','click',fitCam);
-document.querySelectorAll('#tbl .t3[data-cm]').forEach(function(b){b.addEventListener('click',function(){cMode=this.dataset.cm;document.querySelectorAll('#tbl .t3[data-cm]').forEach(function(x){x.classList.remove('a');});this.classList.add('a');applyColorMode();});});
-on('bn-ghost','click',function(){this.classList.toggle('a');/* ghost mode via @thatopen TODO */});
+// Color mode: aplica colores por tipo IFC o restaura
+document.querySelectorAll('#tbl .t3[data-cm]').forEach(function(b){b.addEventListener('click',function(){var cm=this.dataset.cm;document.querySelectorAll('#tbl .t3[data-cm]').forEach(function(x){x.classList.remove('a');});this.classList.add('a');applyCMode(cm);});});
+on('bn-ghost','click',function(){this.classList.toggle('a');meshes.forEach(function(m){var mt=m.mesh.material;if(mt){mt.transparent=true;mt.opacity=this.classList.contains('a')?0.35:(oMat.get(m.mesh)?oMat.get(m.mesh).opacity:1);}}.bind(this));});
 on('bn-iso','click',isolateSel);
 on('bn-show','click',showAll);
 on('bn-clr','click',clrHL);
-on('bn-clip','click',function(){if(cs2.active)closeCP();else openCP();});
-on('bn-cpc','click',closeCP);
-on('bn-cpof','click',function(){el('cpsl').value=0;cs2.flip=false;closeCP();});
-on('bn-cpfl','click',function(){cs2.flip=!cs2.flip;this.style.background=cs2.flip?'#eff6ff':'#fff';this.style.color=cs2.flip?'#2563eb':'#374151';updClip(parseInt(el('cpsl').value));});
-on('cpsl','input',function(){updClip(parseInt(this.value));});
-on('bn-mea','click',function(){measM=!measM;el('mb').style.display=measM?'flex':'none';this.classList[measM?'add':'remove']('a');if(!measM){measP=[];if(measL&&scene)scene.remove(measL);measL=null;}});
-on('bn-mc','click',function(){measP=[];if(measL&&scene)scene.remove(measL);measL=null;el('mv').textContent='Haz clic en el primer punto';});
+// Sección y medición desactivadas en el visor simple
+on('bn-clip','click',function(){alert('La sección estará disponible próximamente.');});
+on('bn-mea','click',function(){alert('La medición estará disponible próximamente.');});
 on('bn-flt','click',function(){var p=el('tp');p.style.display=p.style.display==='block'?'none':'block';});
 on('bn-hcc','click',clrHL);
 on('hcgt','click',function(){if(lastFP&&curBC){selP=lastFP;el('dt').textContent=lastFP;renderDet();navTo(lastFP);}});
 on('zsl','input',function(){
-  if(!world||!world.camera||!world.camera.controls)return;
+  if(!T3||!mBounds||!ctrl)return;
   var pct=parseFloat(this.value)/100;
-  try{ world.camera.controls.dollyTo(5+(1-pct)*95, true); }catch(e){}
+  var maxd=Math.max(mBounds.sx,mBounds.sy,mBounds.sz)*3;
+  var d=Math.max(maxd*0.05, maxd*(1-pct));
+  var c=new T3.Vector3(mBounds.cx,mBounds.cy,mBounds.cz);
+  if(ctrl.setDist){ctrl.setDist(d);}
+  else{var dir=cam.position.clone().sub(c).normalize();cam.position.copy(c.clone().add(dir.multiplyScalar(d)));if(ctrl.target)ctrl.target.copy(c);cam.lookAt(c);}
 });
 el('p3d').addEventListener('dragover',function(e){e.preventDefault();});
 el('p3d').addEventListener('drop',function(e){e.preventDefault();var f=e.dataTransfer.files[0];if(f&&f.name.toLowerCase().endsWith('.ifc'))loadIFC(f);});
