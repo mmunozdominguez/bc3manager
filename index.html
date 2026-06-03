@@ -72,25 +72,42 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .vbg.wn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd);}
 .vbg.bl{background:var(--sub-bg);color:var(--sub);border:1px solid var(--sub-bd);}
 .vbg.pu{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;}
-.vb-body{flex:1;display:flex;overflow:hidden;}
-#pbc3{width:320px;min-width:180px;background:var(--panel);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;position:relative;}
-#pdet{width:230px;min-width:150px;background:var(--panel);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;position:relative;}
-#p3d{flex:1;background:#f0eff0;position:relative;overflow:hidden;min-width:200px;}
-.ph{padding:9px 12px 7px;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;}
-.phl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);margin-bottom:2px;}
-.pht{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.phs{font-size:10px;color:var(--muted);}
-.sb{display:none;padding:5px 12px;border-bottom:1px solid var(--bd);background:var(--panel2);gap:10px;flex-shrink:0;align-items:center;}
+/* ── Layout responsive 3 columnas ── */
+#vb-body{flex:1;display:flex;overflow:hidden;position:relative;}
+.vcol{display:flex;flex-direction:column;overflow:hidden;background:var(--panel);min-width:0;position:relative;}
+.vcol.collapsed{flex:0 0 32px!important;min-width:32px!important;max-width:32px!important;}
+.vcol.collapsed .col-scroll,.vcol.collapsed .tabs,.vcol.collapsed .vtb,.vcol.collapsed .sb,.vcol.collapsed #dc,.vcol.collapsed #tv,.vcol.collapsed #p3d{display:none!important;}
+.vcol.collapsed .col-header{writing-mode:vertical-rl;text-orientation:mixed;justify-content:center;padding:12px 4px;}
+.vcol.collapsed .col-meta{display:none;}
+#col1{flex:0 0 300px;border-right:1px solid var(--bd);}
+#col2{flex:0 0 240px;border-right:1px solid var(--bd);}
+#col3{flex:1;background:#15152a;}
+/* Cabecera de columna */
+.col-header{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;min-height:34px;}
+.col-header>span:first-of-type{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted2);white-space:nowrap;}
+.col-meta{flex:1;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.col-tog{border:none;background:none;cursor:pointer;color:var(--muted2);font-size:14px;line-height:1;padding:2px 4px;border-radius:3px;flex-shrink:0;}
+.col-tog:hover{background:var(--bd);color:var(--text);}
+.col-tog-r{margin-right:auto;}
+/* Divisores arrastrables */
+.col-div{flex:0 0 5px;background:var(--bd);cursor:col-resize;position:relative;z-index:10;transition:background .15s;}
+.col-div:hover,.col-div.dragging{background:var(--acc);}
+.col-div::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:24px;border-radius:2px;background:var(--acc);opacity:0;transition:opacity .15s;}
+.col-div:hover::after,.col-div.dragging::after{opacity:1;}
+/* Scroll interno */
+.col-scroll{flex:1;overflow-y:auto;}
+/* Panel 3D ocupa todo col3 */
+#p3d{flex:1;position:relative;overflow:hidden;background:#15152a;}
+/* Stats bar */
+.sb{display:none;padding:4px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);gap:10px;flex-shrink:0;align-items:center;}
 .st{font-size:10px;color:var(--muted);}
 .st b{color:var(--text);font-weight:600;}
+/* Search bar */
 .vtb{display:flex;padding:5px 8px;border-bottom:1px solid var(--bd);gap:4px;flex-shrink:0;align-items:center;}
-.vt{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:500;cursor:pointer;color:var(--muted);border:1px solid transparent;}
-.vt:hover{background:var(--panel2);color:var(--text);}
-.vt.a{background:var(--acc-bg);color:var(--acc);border-color:var(--acc-bd);}
-.vtsp{width:1px;height:16px;background:var(--bd);margin:0 2px;}
 .sw{flex:1;position:relative;}
 .sw input{width:100%;padding:3px 8px;border:1px solid var(--bd);border-radius:4px;font-size:11px;background:var(--bg);color:var(--text);}
 .sw input:focus{outline:none;border-color:var(--acc);}
+/* Tree */
 #tv{flex:1;overflow-y:auto;}
 .tn{display:flex;align-items:center;cursor:pointer;border-left:2px solid transparent;min-height:26px;}
 .tn:hover{background:#f4f3ef;}
@@ -102,95 +119,27 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .tg.o svg{transform:rotate(90deg);}
 .tico{width:18px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;}
 .tl{flex:1;font-size:11.5px;padding:3px 3px 3px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.tbim{width:5px;height:5px;border-radius:50%;background:var(--hi);flex-shrink:0;margin-right:4px;}
-.tb{font-size:8px;font-weight:600;padding:1px 4px;border-radius:3px;border:1px solid;flex-shrink:0;margin-right:5px;}
-.b-o{background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe;}
-.b-c{background:var(--cap-bg);color:var(--cap);border-color:var(--cap-bd);}
-.b-s{background:var(--sub-bg);color:var(--sub);border-color:var(--sub-bd);}
-.b-p{background:var(--par-bg);color:var(--par);border-color:var(--par-bd);}
-.tc{display:none;}.tc.o{display:block;}
-#bv{flex:1;overflow:hidden;display:none;flex-direction:column;}
-.bvn{padding:5px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);display:flex;align-items:center;gap:4px;flex-shrink:0;font-size:11px;color:var(--muted);}
-.bc2{cursor:pointer;color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;}
-.bc2:hover{text-decoration:underline;}
-.bc2.cur{color:var(--text);cursor:default;}
-.ctb{display:flex;gap:4px;padding:4px 8px;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;align-items:center;}
-.ctb span{font-size:10px;color:var(--muted);margin-right:2px;}
-.ct{font-size:10px;font-weight:500;padding:2px 6px;border-radius:3px;border:1px solid var(--bd);cursor:pointer;color:var(--muted);background:var(--panel);}
-.ct.on{background:var(--acc-bg);color:var(--acc);border-color:var(--acc-bd);}
-#bvt{flex:1;overflow-y:auto;}
-.bvh{display:flex;align-items:center;border-bottom:1.5px solid var(--bd2);background:var(--panel2);position:sticky;top:0;z-index:2;min-height:26px;font-size:9.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
-.bvr{display:flex;align-items:center;border-bottom:1px solid var(--bd);cursor:pointer;min-height:32px;transition:background .08s;}
-.bvr:hover{background:var(--panel2);}
-.bvr.s{background:var(--acc-bg);}
-.bvr.cap{background:#fafaf8;}.bvr.cap:hover{background:#f4f3ef;}
-.bic{width:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.bic svg{width:13px;height:13px;}
-.bds{flex:1;padding:3px 6px;overflow:hidden;}
-.bdm{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.bdc{font-size:10px;color:var(--muted);font-family:JetBrains Mono,monospace;}
-.bc3{padding:3px 6px;flex-shrink:0;font-size:11px;text-align:right;font-family:JetBrains Mono,monospace;color:var(--muted);}
-.bc3.st{font-weight:600;color:var(--text);}
-.bud{width:40px;}.bqt{width:64px;}.bpr{width:70px;}.bto{width:80px;font-weight:500;color:var(--text);}.bbi{width:22px;text-align:center;}
-.tabs{border-bottom:1px solid var(--bd);display:flex;padding:0 8px;flex-shrink:0;}
-.tab{padding:6px 9px;font-size:11px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;font-weight:500;}
+.ta{font-size:10px;color:var(--muted);padding-right:8px;white-space:nowrap;}
+.tb{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-right:4px;}
+/* Detalle */
+.tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;}
+.tab{flex:1;text-align:center;padding:6px 4px;font-size:10px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
 .tab:hover{color:var(--text);}
 .tab.a{color:var(--acc);border-bottom-color:var(--acc);}
-#dc{flex:1;overflow-y:auto;padding:10px;}
-.dk{font-size:10px;font-weight:600;color:var(--muted2);margin-bottom:2px;margin-top:10px;text-transform:uppercase;letter-spacing:.05em;}
-.dk:first-child{margin-top:0;}
-.dv{font-size:12px;font-weight:500;line-height:1.4;}
-.pb{background:var(--panel2);border:1px solid var(--bd);border-radius:6px;padding:8px 10px;margin-top:8px;}
-.pr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;font-size:11px;}
-.pr:last-child{margin-bottom:0;padding-top:4px;border-top:1px solid var(--bd);font-weight:600;font-size:12px;}
-.prl{color:var(--muted);}
-.prv{font-family:JetBrains Mono,monospace;font-weight:600;}
-.prv.a{color:var(--acc);}
-.ec{padding:5px 7px;border-radius:5px;background:var(--panel2);border:1px solid var(--bd);cursor:pointer;margin-bottom:3px;}
-.ec:hover{background:var(--acc-bg);border-color:var(--acc-bd);}
-.ec.h{background:var(--warn-bg);border-color:var(--warn-bd);}
-.ec .es{font-size:10px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ec .eg{font-size:9px;color:var(--muted2);font-family:JetBrains Mono,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
-.ec .em{font-size:9px;color:var(--acc);}
-.mt{width:100%;border-collapse:collapse;font-size:10.5px;}
-.mt th{text-align:left;padding:4px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--bd);font-size:9.5px;text-transform:uppercase;}
-.mt td{padding:4px;border-bottom:1px solid #f0ede8;}
-.mt .nr{text-align:right;font-family:JetBrains Mono,monospace;}
-.mt .tf{font-weight:600;background:var(--panel2);}
-.ed{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--muted2);text-align:center;padding:16px;font-size:11px;}
-#cv{position:absolute;inset:0;width:100%;height:100%;display:none;}
-#dz{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#6b7280;}
-#dz.h{display:none;}
-#sb3{position:absolute;bottom:0;left:0;right:0;padding:5px 12px;background:rgba(255,255,255,.88);color:#374151;font-size:10px;display:flex;align-items:center;gap:8px;border-top:1px solid #e5e7eb;}
-.sd{width:6px;height:6px;border-radius:50%;background:#9ca3af;flex-shrink:0;}
-.sd.ok{background:#16a34a;}.sd.sp{background:#d97706;animation:blink 1s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-#pg{position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0;display:none;}
-#hc{position:absolute;bottom:40px;right:10px;background:rgba(255,255,255,.97);color:#18181b;border-radius:8px;padding:10px 12px;font-size:11px;max-width:240px;display:none;border:1px solid #e5e7eb;box-shadow:0 4px 16px rgba(0,0,0,.12);}
-.hcc{position:absolute;top:5px;right:8px;cursor:pointer;color:#9ca3af;font-size:13px;line-height:1;background:none;border:none;}
-.hct{font-weight:600;color:#111827;font-size:12px;margin-bottom:3px;padding-right:14px;}
-.hcp{color:#d97706;font-size:10px;margin-bottom:2px;font-weight:500;}
-.hcg{font-family:JetBrains Mono,monospace;font-size:8.5px;color:#9ca3af;word-break:break-all;}
-#hcgt{display:none;margin-top:7px;width:100%;padding:4px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;color:#2563eb;font-size:10px;cursor:pointer;font-weight:600;}
-#tbl{position:absolute;top:10px;left:10px;display:none;flex-direction:column;gap:4px;z-index:5;}
-#tbr{position:absolute;top:10px;right:10px;display:none;flex-direction:column;gap:4px;z-index:5;}
-.t3{width:30px;height:30px;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.14);border-radius:6px;color:#374151;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .1s;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.1);position:relative;}
-.t3:hover{background:#fff;border-color:rgba(0,0,0,.25);}
-.t3.a{background:#fef3c7;border-color:#fcd34d;color:#d97706;}
-.t3sp{height:1px;background:rgba(0,0,0,.1);margin:2px 0;}
-.t3g{display:flex;flex-direction:column;gap:3px;}
-.t3::after{content:attr(title);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);background:rgba(17,24,39,.9);color:#f9fafb;font-size:10px;font-weight:500;white-space:nowrap;padding:4px 8px;border-radius:5px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;}
-#tbr .t3::after{left:auto;right:calc(100% + 8px);}
-.t3:hover::after{opacity:1;}
-#cp{display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;box-shadow:0 4px 20px rgba(0,0,0,.13);min-width:280px;z-index:20;}
-#mb{display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);border:1px solid #fcd34d;border-radius:8px;padding:5px 12px;align-items:center;gap:8px;color:#d97706;font-size:11px;}
-#tp{display:none;position:absolute;top:10px;right:46px;background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;width:175px;max-height:280px;overflow-y:auto;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,.1);}
-.tpr{display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;font-size:10px;color:#374151;}
-.tpd{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
-.t3i{height:22px;padding:0 7px;background:transparent;border:none;color:#6b7280;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;}
-.t3i:hover{color:#111827;}
-.rs{width:4px;background:transparent;cursor:col-resize;position:absolute;right:0;top:0;bottom:0;z-index:10;}
-.rs:hover,.rs.d{background:var(--acc);}
+#dc{flex:1;overflow-y:auto;}
+/* Responsive: portrait → visor debajo */
+@media (orientation:portrait),(max-width:700px){
+  #vb-body{flex-direction:column;}
+  .col-div{flex:0 0 5px;cursor:row-resize;}
+  .col-div::after{width:24px;height:3px;}
+  #col1,#col2{flex:0 0 auto;max-height:35vh;border-right:none;border-bottom:1px solid var(--bd);}
+  #col2{max-height:30vh;}
+  #col3{flex:1;min-height:200px;}
+  .vcol.collapsed{flex:0 0 28px!important;min-width:0!important;max-width:none!important;max-height:28px!important;}
+  .vcol.collapsed .col-header{writing-mode:horizontal-tb;padding:4px 10px;}
+}
+/* Header/status del visor */
+#sm-wrap{display:flex;align-items:center;gap:4px;flex:1;justify-content:flex-end;}
 .cg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
 .cc{background:var(--panel);border:1px solid var(--bd);border-radius:8px;overflow:hidden;}
 .cch{padding:8px 12px;border-bottom:1px solid var(--bd);background:var(--panel2);font-size:11px;font-weight:600;}
@@ -306,146 +255,94 @@ button,input,select,textarea{-webkit-appearance:none;}
       <label for="fif" class="btn p" style="cursor:pointer;">⬆ Cargar IFC</label>
     </div>
   </div>
-  <div class="vb-body">
-    <div id="pbc3">
-      <div class="ph"><div class="phl">Presupuesto</div><div class="pht" id="bt">—</div><div class="phs" id="bs">—</div></div>
+  <!-- 3-column resizable layout -->
+  <div id="vb-body">
+    <!-- COL 1: Árbol BC3 -->
+    <div id="col1" class="vcol">
+      <div class="col-header">
+        <span>Presupuesto</span>
+        <div class="col-meta"><span id="bt">—</span> · <span id="bs">—</span></div>
+        <button class="col-tog" id="tog-col1" title="Colapsar columna">‹</button>
+      </div>
       <div class="sb" id="stb">
         <div class="st"><b id="sc">0</b> cap.</div>
         <div class="st"><b id="ss">0</b> sub.</div>
-        <div class="st"><b id="sp">0</b> partidas</div>
+        <div class="st"><b id="sp">0</b> part.</div>
         <div class="st"><b id="sbim">0</b> BIM</div>
       </div>
       <div class="vtb">
-        <div class="vt a" id="vtt">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18M3 12h12M3 19h7"/></svg>Árbol
-        </div>
-        <div class="vt" id="vtb2">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Presupuesto
-        </div>
-        <div class="vtsp"></div>
         <div class="sw"><input type="text" placeholder="Buscar…" id="si"></div>
       </div>
-      <div id="tv"></div>
-      <div id="bv">
-        <div class="bvn" id="bvn"></div>
-        <div class="ctb"><span>Col:</span>
-          <div class="ct on" data-c="ud">Ud.</div>
-          <div class="ct on" data-c="qty">Cant.</div>
-          <div class="ct on" data-c="pr">Precio</div>
-          <div class="ct on" data-c="tot">Importe</div>
-          <div class="ct on" data-c="bim">BIM</div>
-        </div>
-        <div id="bvt"></div>
-      </div>
-      <div class="rs" id="rs1"></div>
+      <div id="tv" class="col-scroll"></div>
     </div>
-    <div id="pdet">
-      <div class="ph"><div class="phl">Detalle</div><div class="pht" id="dt">—</div></div>
+    <!-- DIVIDER 1-2 -->
+    <div class="col-div" id="div12" data-cols="col1,col2"></div>
+    <!-- COL 2: Detalle partida -->
+    <div id="col2" class="vcol">
+      <div class="col-header">
+        <span>Detalle</span>
+        <div class="col-meta" id="dt">—</div>
+        <button class="col-tog" id="tog-col2" title="Colapsar columna">‹</button>
+      </div>
       <div class="tabs">
         <div class="tab a" data-t="bim">BIM</div>
         <div class="tab" data-t="med">Medición</div>
         <div class="tab" data-t="txt">Texto</div>
       </div>
-      <div id="dc"><div class="ed"><p>Selecciona una partida</p></div></div>
-      <div class="rs" id="rs2"></div>
+      <div id="dc" class="col-scroll"><div class="ed"><p>Selecciona una partida</p></div></div>
     </div>
-    <div id="p3d">
-      <canvas id="cv"></canvas>
-      <!-- IFC Loading overlay -->
-      <div id="ifc-loading">
-        <div class="ld-ring"></div>
-        <div class="ld-msg" id="ld-msg-txt">Cargando modelo IFC…</div>
-        <div class="ld-sub" id="ld-sub-txt">Esto puede tardar unos segundos</div>
+    <!-- DIVIDER 2-3 -->
+    <div class="col-div" id="div23" data-cols="col2,col3"></div>
+    <!-- COL 3: Visor IFC -->
+    <div id="col3" class="vcol" id="p3d-col">
+      <div class="col-header">
+        <button class="col-tog col-tog-r" id="tog-col3" title="Colapsar columna">›</button>
+        <span>Modelo IFC</span>
+        <span id="sel" style="color:#6b7280;font-size:10px;margin-left:4px;"></span>
+        <div id="sm-wrap"><span id="sd" class="sd"></span><span id="sm" style="font-size:10px;color:#6b7280;margin-left:4px;">Sin modelo IFC</span></div>
       </div>
-      <div id="dbg-log" style="display:none;position:absolute;top:10px;left:10px;right:10px;max-height:40%;overflow-y:auto;background:rgba(0,0,0,.85);color:#0f0;font-family:monospace;font-size:10px;padding:8px;border-radius:6px;z-index:100;white-space:pre-wrap;line-height:1.4;"></div>
-      <div id="pg"></div>
-      <div id="dz">
-        <div style="font-size:38px;opacity:.2">🧊</div>
-        <div style="font-size:14px;font-weight:600;color:#4b5563;">Sin modelo IFC</div>
-        <div style="font-size:11px;color:#6b7280;text-align:center;">Arrastra un .ifc aquí o usa "Cargar IFC"</div>
-        <label for="fif" class="btn p" style="font-size:12px;margin-top:4px;cursor:pointer;">Cargar modelo IFC</label>
-      </div>
-      <div id="tbl">
-        <div class="t3g">
-          <div class="t3" title="Vista isométrica" data-v="iso"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
-          <div class="t3" title="Vista planta" data-v="top"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
-          <div class="t3" title="Vista frontal" data-v="front"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="1"/></svg></div>
-          <div class="t3" title="Encuadrar modelo" id="bn-fit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></div>
+      <div id="p3d">
+        <canvas id="cv"></canvas>
+        <div id="pg"></div>
+        <div id="dz">
+          <div style="font-size:38px;opacity:.2">🧊</div>
+          <div style="font-size:14px;font-weight:600;color:#4b5563;">Sin modelo IFC</div>
+          <div style="font-size:11px;color:#6b7280;text-align:center;">Arrastra un .ifc aquí o usa "Cargar IFC"</div>
+          <label for="fif" class="btn p" style="font-size:12px;margin-top:4px;cursor:pointer;">Cargar modelo IFC</label>
         </div>
-        <div class="t3sp"></div>
-        <div class="t3g">
-          <div class="t3 a" title="Sin color (gris)" id="bn-grey" data-cm="grey"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></div>
-          <div class="t3" title="Color por tipo IFC" id="bn-type" data-cm="type"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
-          <div class="t3" title="Color por partida BC3" id="bn-part" data-cm="part"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        </div>
-        <div class="t3sp"></div>
-        <div class="t3g">
-          <div class="t3" title="Transparencia — ver interiores" id="bn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></div>
-          <div class="t3" title="Aislar selección" id="bn-iso"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></div>
-          <div class="t3" title="Mostrar todo" id="bn-show"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
-        </div>
-        <div class="t3sp"></div>
-        <div class="t3" title="Quitar selección" id="bn-clr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
-      </div>
-      <div id="tbr">
-        <div class="t3" title="Sección inteligente — clic en elemento" id="bn-clip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20"/><circle cx="12" cy="12" r="3"/></svg></div>
-        <div class="t3sp"></div>
-        <div class="t3" title="Medir distancia" id="bn-mea"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M2 12l4-4M2 12l4 4"/></svg></div>
-        <div class="t3sp"></div>
-        <div class="t3" title="Filtrar tipos IFC" id="bn-flt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div>
-      </div>
-      <div id="cp">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <span style="font-size:11px;font-weight:600;color:#374151;">Plano de sección</span>
-          <button id="bn-cpc" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px;padding:0;line-height:1;">✕</button>
-        </div>
-        <div id="cphi" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:#1e40af;display:flex;align-items:center;gap:6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span id="cpht">Haz clic en un elemento del modelo</span>
-        </div>
-        <div id="cppi" style="display:none;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-            <div id="cpic" style="width:28px;height:28px;border-radius:6px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;"></div>
-            <div><div id="cpty" style="font-size:11px;font-weight:600;color:#111827;"></div><div id="cpde" style="font-size:10px;color:#6b7280;"></div></div>
+        <div id="tbl" style="display:none;">
+          <div class="t3g">
+            <div class="t3" title="Vista isométrica" data-v="iso"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+            <div class="t3" title="Vista planta" data-v="top"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+            <div class="t3" title="Vista frontal" data-v="front"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="1"/></svg></div>
+            <div class="t3" title="Encuadrar modelo" id="bn-fit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></div>
           </div>
-        </div>
-        <div style="margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#6b7280;margin-bottom:5px;">
-            <span>Desplazamiento</span>
-            <span id="cpv" style="font-weight:600;color:#2563eb;font-family:monospace;">0.0 m</span>
+          <div class="t3sp"></div>
+          <div class="t3g">
+            <div class="t3 a" title="Sin color" data-cm="grey"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></div>
+            <div class="t3" title="Color por tipo IFC" data-cm="type"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
           </div>
-          <input type="range" id="cpsl" min="-100" max="100" value="0" step="1" style="width:100%;accent-color:#2563eb;">
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;margin-top:2px;">
-            <span id="cpl1">←</span><span style="font-weight:500">Centro del elemento</span><span id="cpl2">→</span>
+          <div class="t3sp"></div>
+          <div class="t3g">
+            <div class="t3" title="Transparencia" id="bn-ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></div>
+            <div class="t3" title="Aislar selección" id="bn-iso"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></div>
+            <div class="t3" title="Mostrar todo" id="bn-show"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
           </div>
+          <div class="t3sp"></div>
+          <div class="t3" title="Quitar selección" id="bn-clr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
         </div>
-        <div style="display:flex;gap:6px;">
-          <button id="bn-cpfl" style="flex:1;padding:5px;border-radius:5px;border:1px solid #d1d5db;background:#fff;color:#374151;font-size:10px;font-weight:500;cursor:pointer;">⟺ Invertir</button>
-          <button id="bn-cpof" style="flex:1;padding:5px;border-radius:5px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;font-size:10px;font-weight:500;cursor:pointer;">✕ Quitar</button>
+        <div id="tbr" style="display:none;">
+          <div class="t3" title="Sección" id="bn-clip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M12 2v20"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="t3sp"></div>
+          <div class="t3" title="Medir" id="bn-mea"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M2 12l4-4M2 12l4 4"/></svg></div>
         </div>
-      </div>
-      <div id="mb">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M2 12l4-4M2 12l4 4"/></svg>
-        <span id="mv">Haz clic en el primer punto</span>
-        <button id="bn-mc" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#d97706;font-size:13px;">✕</button>
-      </div>
-      <div id="tp"></div>
-      <div id="hc">
-        <button class="hcc" id="bn-hcc">✕</button>
-        <div class="hct" id="hct">—</div>
-        <div class="hcp" id="hcp">—</div>
-        <div class="hcg" id="hcg">—</div>
-        <button id="hcgt">→ Ir a partida</button>
-      </div>
-      <div id="sb3">
-        <div class="sd" id="sd"></div>
-        <span id="sm">Sin modelo IFC</span>
-        <span style="flex:1"></span>
-        <div id="zw" style="display:none;align-items:center;gap:5px;font-size:10px;color:#6b7280;">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="range" id="zsl" min="1" max="100" value="50" style="width:70px;height:3px;accent-color:#2563eb;">
+        <div id="hc" style="display:none;position:absolute;bottom:60px;left:8px;right:8px;background:rgba(15,15,40,.93);color:#e2e8f0;border-radius:8px;padding:10px 12px;font-size:11px;z-index:30;pointer-events:none;">
+          <div style="font-weight:700;font-size:12px;margin-bottom:3px;" id="hct">—</div>
+          <div id="hcp" style="color:#94a3b8;margin-bottom:2px;"></div>
+          <div id="hcg" style="color:#64748b;font-size:9px;font-family:monospace;"></div>
         </div>
-        <span id="sel" style="color:#6b7280;font-size:10px;"></span>
+        <div id="zw" style="display:none;"><input type="range" id="zsl" min="0" max="100" value="50" style="width:80px;"></div>
+        <div id="tp" style="position:absolute;top:50px;right:8px;background:rgba(15,15,40,.87);border-radius:7px;padding:8px 10px;min-width:90px;display:none;z-index:20;"></div>
       </div>
     </div>
   </div>
@@ -771,7 +668,7 @@ function renderBV(){
   var cur=bvPth.length?bvPth[bvPth.length-1]:null;
   var children=cur?(BC.h[cur]||[]).slice():roots;
   children.sort(function(a,b){return a.localeCompare(b,'es',{numeric:true});});
-  var nav=el('bvn');nav.innerHTML='';
+  var nav=el('bvn');if(nav)nav.innerHTML='';
   var r0=document.createElement('span');r0.className='bc2'+(bvPth.length===0?' cur':'');r0.textContent='Raíz';
   r0.addEventListener('click',function(){bvPth=[];renderBV();});nav.appendChild(r0);
   bvPth.forEach(function(code,i){
@@ -781,7 +678,7 @@ function renderBV(){
     nav.appendChild(cr);
   });
   if(bvPth.length){var bk=document.createElement('button');bk.className='btn g';bk.style.cssText='font-size:11px;padding:1px 7px;margin-left:auto;';bk.textContent='← Atrás';bk.addEventListener('click',function(){bvPth.pop();renderBV();});nav.appendChild(bk);}
-  var tbl=el('bvt');tbl.innerHTML='';
+  var tbl=el('bvt');if(!tbl)return;tbl.innerHTML='';
   var v=colV;
   var hdr=document.createElement('div');hdr.className='bvh';
   hdr.innerHTML='<div class="bic"></div><div class="bds">Descripción</div>'+(v.ud?'<div class="bc3 bud">Ud.</div>':'')+(v.qty?'<div class="bc3 bqt">Cant.</div>':'')+(v.pr?'<div class="bc3 bpr">Precio</div>':'')+(v.tot?'<div class="bc3 bto">Importe</div>':'')+(v.bim?'<div class="bc3 bbi">●</div>':'');
@@ -957,7 +854,7 @@ function fbCtrl(){
   ctrl={update:function(){},target:new T3.Vector3()};
   var cv=el('cv'),dn=false,lx=0,ly=0,rX=0.4,rY=0.4,dist=30,tg=new T3.Vector3();
   function upd(){cam.position.set(tg.x+Math.sin(rY)*Math.cos(rX)*dist,tg.y+Math.sin(rX)*dist,tg.z+Math.cos(rY)*Math.cos(rX)*dist);cam.lookAt(tg);}
-  ctrl.target=tg;
+  ctrl.target=tg; ctrl._rX=function(v){if(v!==undefined){rX=v;}return rX;}; ctrl._rY=function(v){if(v!==undefined){rY=v;}return rY;}; ctrl._upd=upd;
   cv.addEventListener('mousedown',function(e){dn=true;lx=e.clientX;ly=e.clientY;});
   window.addEventListener('mouseup',function(){dn=false;});
   cv.addEventListener('mousemove',function(e){if(!dn)return;rY+=(e.clientX-lx)*0.005;rX+=(e.clientY-ly)*0.005;rX=Math.max(-1.5,Math.min(1.5,rX));lx=e.clientX;ly=e.clientY;upd();});
@@ -1234,8 +1131,7 @@ on('bp3','click',function(){if(curPJ)loadProj(curPJ);});
 on('bn-bc','click',function(){if(curPJ)loadProj(curPJ);});
 on('ca','change',runCmp);on('cb','change',runCmp);
 document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('a');});this.classList.add('a');curDT=this.dataset.t;renderDet();});});
-on('vtt','click',function(){viewM='tree';this.classList.add('a');el('vtb2').classList.remove('a');el('tv').style.display='block';el('bv').style.display='none';});
-on('vtb2','click',function(){viewM='budget';this.classList.add('a');el('vtt').classList.remove('a');el('tv').style.display='none';el('bv').style.display='flex';renderBV();});
+// Vista presupuesto eliminada — solo árbol
 document.querySelectorAll('.ct').forEach(function(b){b.addEventListener('click',function(){var c=this.dataset.c;colV[c]=!colV[c];this.classList[colV[c]?'add':'remove']('on');if(viewM==='budget')renderBV();});});
 on('si','input',function(){filterTree(this.value);});
 document.querySelectorAll('#tbl .t3[data-v]').forEach(function(b){b.addEventListener('click',function(){setView(this.dataset.v);});});
@@ -1327,6 +1223,141 @@ window.addEventListener('beforeinstallprompt',function(e){
   var prompt=el('install-prompt');
   if(prompt)prompt.classList.add('show');
 });
+
+
+// ═══ COLUMNAS REDIMENSIONABLES ════════════════════════════════════════════
+(function(){
+  // Divisores drag
+  document.querySelectorAll('.col-div').forEach(function(div){
+    var cols = div.dataset.cols.split(',');
+    var c1 = el(cols[0]), c2 = el(cols[1]);
+    var dragging = false, startX, startY, s1, s2;
+    function isPortrait(){ return window.innerHeight > window.innerWidth || window.innerWidth < 700; }
+    function startDrag(x,y){ dragging=true; startX=x; startY=y;
+      s1 = isPortrait() ? c1.offsetHeight : c1.offsetWidth;
+      s2 = isPortrait() ? c2.offsetHeight : c2.offsetWidth;
+      div.classList.add('dragging'); document.body.style.cursor=isPortrait()?'row-resize':'col-resize'; document.body.style.userSelect='none';}
+    function doDrag(x,y){ if(!dragging)return;
+      var delta = isPortrait() ? (y-startY) : (x-startX);
+      var n1=Math.max(32,s1+delta), n2=Math.max(32,s2-delta);
+      if(isPortrait()){c1.style.flex='0 0 '+n1+'px'; c1.style.maxHeight=n1+'px'; c2.style.flex='0 0 '+n2+'px'; c2.style.maxHeight=n2+'px';}
+      else{c1.style.flex='0 0 '+n1+'px'; c2.style.flex='0 0 '+n2+'px';}
+      if(typeof rsz3==='function')rsz3();}
+    function endDrag(){ dragging=false; div.classList.remove('dragging'); document.body.style.cursor=''; document.body.style.userSelect='';}
+    div.addEventListener('mousedown',function(e){startDrag(e.clientX,e.clientY);e.preventDefault();});
+    div.addEventListener('touchstart',function(e){var t=e.touches[0];startDrag(t.clientX,t.clientY);},{passive:true});
+    window.addEventListener('mousemove',function(e){doDrag(e.clientX,e.clientY);});
+    window.addEventListener('touchmove',function(e){var t=e.touches[0];doDrag(t.clientX,t.clientY);},{passive:true});
+    window.addEventListener('mouseup',endDrag);
+    window.addEventListener('touchend',endDrag);
+  });
+
+  // Botones colapsar/expandir
+  function setupTog(btnId, colId, isRight){
+    var btn = el(btnId), col = el(colId);
+    if(!btn||!col) return;
+    var collapsed = false;
+    btn.addEventListener('click', function(){
+      collapsed = !collapsed;
+      col.classList.toggle('collapsed', collapsed);
+      btn.textContent = collapsed ? (isRight ? '‹' : '›') : (isRight ? '›' : '‹');
+      if(typeof rsz3==='function') setTimeout(rsz3, 50);
+    });
+  }
+  setupTog('tog-col1','col1',false);
+  setupTog('tog-col2','col2',false);
+  setupTog('tog-col3','col3',true);
+
+  // Reajustar canvas al cambiar orientación
+  window.addEventListener('resize',function(){ if(typeof rsz3==='function') setTimeout(rsz3,100); });
+  screen.orientation && screen.orientation.addEventListener('change',function(){ setTimeout(function(){if(typeof rsz3==='function')rsz3();},200); });
+})();
+
+// ═══ GESTOS TÁCTILES 3D ══════════════════════════════════════════════════
+// Se instalan sobre el canvas cuando ensT3 está listo
+function installTouchGestures(canvas){
+  if(!canvas || canvas.__tgInstalled) return;
+  canvas.__tgInstalled = true;
+  var t0={}, ptDist=0, ptMid={x:0,y:0};
+  var lastTap=0;
+
+  function getCtrl(){ return ctrl; }
+
+  canvas.addEventListener('touchstart', function(e){
+    if(e.touches.length===1){
+      t0 = {x:e.touches[0].clientX, y:e.touches[0].clientY};
+    } else if(e.touches.length===2){
+      var a=e.touches[0],b=e.touches[1];
+      ptDist = Math.hypot(b.clientX-a.clientX, b.clientY-a.clientY);
+      ptMid = {x:(a.clientX+b.clientX)/2, y:(a.clientY+b.clientY)/2};
+    }
+  },{passive:true});
+
+  canvas.addEventListener('touchmove', function(e){
+    e.preventDefault();
+    if(!T3||!cam) return;
+
+    if(e.touches.length===1){
+      // 1 dedo → orbitar
+      var dx=(e.touches[0].clientX-t0.x)*0.005;
+      var dy=(e.touches[0].clientY-t0.y)*0.005;
+      t0={x:e.touches[0].clientX,y:e.touches[0].clientY};
+      if(ctrl&&ctrl.target!==undefined){
+        // OrbitControls: girar via simulación
+        if(ctrl.rotateLeft){ctrl.rotateLeft(dx);ctrl.rotateUp(dy);}
+        else{
+          // fbCtrl: ajustar ángulos directamente
+          if(ctrl._rX!==undefined){ ctrl._rX-=dy; ctrl._rY-=dx; ctrl._upd&&ctrl._upd(); }
+          else{
+            // Fallback genérico: rotar cámara alrededor del target
+            var tg = ctrl.target;
+            var offset = cam.position.clone().sub(tg);
+            var spherical = new T3.Spherical().setFromVector3(offset);
+            spherical.theta -= dx;
+            spherical.phi = Math.max(0.05, Math.min(Math.PI-0.05, spherical.phi - dy));
+            offset.setFromSpherical(spherical);
+            cam.position.copy(tg.clone().add(offset));
+            cam.lookAt(tg);
+          }
+        }
+      }
+    } else if(e.touches.length===2){
+      var a=e.touches[0],b=e.touches[1];
+      var newDist = Math.hypot(b.clientX-a.clientX, b.clientY-a.clientY);
+      var newMid = {x:(a.clientX+b.clientX)/2, y:(a.clientY+b.clientY)/2};
+      var scale = ptDist>0 ? ptDist/newDist : 1;
+
+      // Pinza → zoom (dolly)
+      if(ctrl&&ctrl.target!==undefined){
+        var tg = ctrl.target;
+        var dist = cam.position.distanceTo(tg);
+        var newD = Math.max(0.5, dist * scale);
+        var dir = cam.position.clone().sub(tg).normalize();
+        cam.position.copy(tg.clone().add(dir.multiplyScalar(newD)));
+        cam.lookAt(tg);
+      }
+
+      // 2 dedos movimiento → pan
+      var panDX = (newMid.x - ptMid.x) * 0.005;
+      var panDY = (newMid.y - ptMid.y) * 0.005;
+      if((Math.abs(panDX)>0.001||Math.abs(panDY)>0.001) && ctrl&&ctrl.target){
+        var right = new T3.Vector3().crossVectors(cam.getWorldDirection(new T3.Vector3()), cam.up).normalize();
+        var up = cam.up.clone().normalize();
+        var tg = ctrl.target;
+        var d = cam.position.distanceTo(tg)*0.5;
+        var panV = right.multiplyScalar(-panDX*d).add(up.multiplyScalar(panDY*d));
+        cam.position.add(panV); tg.add(panV);
+      }
+
+      ptDist = newDist; ptMid = newMid;
+    }
+  },{passive:false});
+}
+// Instalar gestos una vez el canvas esté listo
+var _tgTimer = setInterval(function(){
+  var cv = el('cv');
+  if(cv && T3 && ctrl){ installTouchGestures(cv); clearInterval(_tgTimer); }
+},500);
 
 // ═══ INIT ════════════════════════════════════════════════════════════════
 loadHome();
