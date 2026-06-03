@@ -881,14 +881,21 @@ var IFC_TC={IFCWALL:'#d9c8a8',IFCWALLSTANDARDCASE:'#d9c8a8',IFCSLAB:'#b8b8b8',IF
 var tCol={};
 var mBounds=null;
 
+var t3RAF=null, ctxLost=false;
 function initT3(THREE){
   var canvas=el('cv'), cont=el('p3d');
-  ren=new THREE.WebGLRenderer({canvas:canvas,antialias:true});
+  var w=cont.clientWidth||cont.offsetWidth||800, h=cont.clientHeight||cont.offsetHeight||600;
+  ren=new THREE.WebGLRenderer({
+    canvas:canvas, antialias:true, alpha:false,
+    powerPreference:'high-performance',
+    failIfMajorPerformanceCaveat:false,
+    preserveDrawingBuffer:false
+  });
   ren.setPixelRatio(Math.min(window.devicePixelRatio,2));
-  ren.setSize(cont.clientWidth,cont.clientHeight);
+  ren.setSize(w,h,false);
   try{ren.outputColorSpace=THREE.SRGBColorSpace;}catch(e){}
   scene=new THREE.Scene();scene.background=new THREE.Color(0x15152a);
-  cam=new THREE.PerspectiveCamera(60,cont.clientWidth/cont.clientHeight,0.01,5000);
+  cam=new THREE.PerspectiveCamera(60,w/h,0.01,5000);
   cam.position.set(10,10,10);
   ray=new THREE.Raycaster();mou3=new THREE.Vector2();
   scene.add(new THREE.AmbientLight(0xffffff,0.6));
@@ -897,22 +904,52 @@ function initT3(THREE){
   mHL=new THREE.MeshLambertMaterial({color:0xf59e0b,transparent:true,opacity:0.95,side:THREE.DoubleSide});
   mSL=new THREE.MeshLambertMaterial({color:0x3b82f6,transparent:true,opacity:0.85,side:THREE.DoubleSide});
   canvas.addEventListener('click',function(e){onCanvasClick(e);});
-  window.addEventListener('resize',function(){var w=cont.clientWidth,h=cont.clientHeight;if(!w||!h)return;cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);});
-  function animate(){requestAnimationFrame(animate);if(ctrl&&ctrl.update)ctrl.update();ren.render(scene,cam);}
+  // Manejar pérdida/recuperación de contexto WebGL
+  canvas.addEventListener('webglcontextlost',function(e){e.preventDefault();ctxLost=true;st3('Contexto 3D perdido — recargando…','');console.warn('[WebGL] context lost');},false);
+  canvas.addEventListener('webglcontextrestored',function(){ctxLost=false;st3('Contexto 3D restaurado','ok');console.log('[WebGL] context restored');},false);
+  window.addEventListener('resize',rsz3);
+  function animate(){t3RAF=requestAnimationFrame(animate);if(ctxLost)return;if(ctrl&&ctrl.update)ctrl.update();try{ren.render(scene,cam);}catch(e){}}
   animate();
 }
+function rsz3(){var cont=el('p3d');if(!cont||!ren||!cam)return;var w=cont.clientWidth,h=cont.clientHeight;if(!w||!h)return;cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h,false);}
+// Espera a que el panel 3D tenga tamaño real antes de crear el renderer
+function waitForSize(elm,cb,tries){
+  tries=tries||0;
+  var w=elm.clientWidth, h=elm.clientHeight;
+  if((w>0&&h>0)||tries>40){cb(w,h);return;}
+  requestAnimationFrame(function(){waitForSize(elm,cb,tries+1);});
+}
 
+function webglOK(){
+  try{var c=document.createElement('canvas');return !!(window.WebGLRenderingContext&&(c.getContext('webgl')||c.getContext('experimental-webgl')));}catch(e){return false;}
+}
 async function ensT3(){
-  if(T3)return;
+  if(T3&&ren)return;
+  if(!webglOK()){st3('Tu navegador no permite WebGL (3D)','');alert('Este navegador no permite WebGL, necesario para el visor 3D. Activa la aceleración por hardware o prueba en otra ventana.');throw new Error('no-webgl');}
   st3('Cargando motor 3D…','sp');
-  var mod=await import('https://unpkg.com/three@0.160.0/build/three.module.js');
-  T3=mod;
-  initT3(T3);
+  // Asegurar que el canvas es visible y el panel tiene tamaño antes de crear el contexto
+  var cv=el('cv'); if(cv){cv.style.display='block'; cv.style.visibility='hidden';}
+  await new Promise(function(res){ waitForSize(el('p3d'), function(){ res(); }); });
+  if(cv){cv.style.visibility='';}
+  if(!T3){
+    var mod=await import('https://unpkg.com/three@0.160.0/build/three.module.js');
+    T3=mod;
+  }
+  try{
+    initT3(T3);
+  }catch(err){
+    st3('No se pudo crear el contexto 3D','');
+    console.error('[WebGL] init failed',err);
+    alert('No se pudo inicializar el 3D. Cierra otras pestañas con contenido 3D, desactiva extensiones (wallets) y recarga la página.');
+    throw err;
+  }
   try{
     var oc=await import('https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js');
     ctrl=new oc.OrbitControls(cam,ren.domElement);
     ctrl.enableDamping=true;ctrl.dampingFactor=0.08;
   }catch(e){fbCtrl();}
+  // ajustar tamaño una vez listo
+  rsz3();
   st3('Motor 3D listo','ok');
 }
 
