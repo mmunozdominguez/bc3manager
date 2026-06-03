@@ -952,6 +952,117 @@ async function ensViewer(){
   hideLoading();
 }
 
+// ═══ OPTIMIZADOR IFC (reduce tamaño eliminando instalaciones/mobiliario) ══
+var IFC_REMOVE_TYPES = [
+  'IFCFURNISHINGELEMENT','IFCFURNITURE','IFCSYSTEMFURNITUREELEMENT',
+  'IFCFLOWSEGMENT','IFCFLOWFITTING','IFCFLOWTERMINAL','IFCFLOWCONTROLLER',
+  'IFCFLOWMOVINGDEVICE','IFCFLOWSTORAGEDEVICE','IFCFLOWTREATMENTDEVICE',
+  'IFCSANITARYTERMINAL','IFCLIGHTFIXTURE','IFCELECTRICAPPLIANCE',
+  'IFCOUTLET','IFCSWITCHINGDEVICE','IFCCABLECARRIERSEGMENT','IFCCABLESEGMENT',
+  'IFCCABLECARRIERFITTING','IFCCABLEFITTING','IFCJUNCTIONBOX',
+  'IFCDUCTSEGMENT','IFCDUCTFITTING','IFCDUCTSILENCER','IFCPIPESEGMENT','IFCPIPEFITTING',
+  'IFCAIRTERMINAL','IFCAIRTERMINALBOX','IFCENERGYCONVERSIONDEVICE','IFCBOILER','IFCPUMP',
+  'IFCVALVE','IFCTANK','IFCSPACEHEATER','IFCFAN','IFCCHILLER','IFCCOIL','IFCCOMPRESSOR',
+  'IFCCONDENSER','IFCCOOLINGTOWER','IFCDAMPER','IFCFILTER','IFCHEATEXCHANGER',
+  'IFCHUMIDIFIER','IFCUNITARYEQUIPMENT','IFCEVAPORATOR','IFCEVAPORATIVECOOLER',
+  'IFCDISTRIBUTIONELEMENT','IFCDISTRIBUTIONFLOWELEMENT','IFCDISTRIBUTIONCONTROLELEMENT',
+  'IFCDISTRIBUTIONCHAMBERELEMENT','IFCELECTRICDISTRIBUTIONBOARD','IFCPROTECTIVEDEVICE',
+  'IFCMOTORCONNECTION','IFCTRANSFORMER','IFCELECTRICGENERATOR','IFCELECTRICMOTOR',
+  'IFCALARM','IFCSENSOR','IFCACTUATOR','IFCCONTROLLER','IFCFLOWINSTRUMENT',
+  'IFCTRANSPORTELEMENT','IFCGEOGRAPHICELEMENT','IFCBUILDINGELEMENTPROXY',
+  'IFCDISCRETEACCESSORY','IFCFASTENER','IFCMECHANICALFASTENER','IFCELECTRICFLOWSTORAGEDEVICE',
+  'IFCAUDIOVISUALAPPLIANCE','IFCCOMMUNICATIONSAPPLIANCE','IFCMEDICALDEVICE',
+  'IFCLAMP','IFCELECTRICTIMECONTROL','IFCSOLARDEVICE','IFCWASTETERMINAL'
+];
+
+// Tipos de geometría/soporte que pueden quedar huérfanos
+var IFC_ORPHAN_TYPES = ['IFCLOCALPLACEMENT','IFCPRODUCTDEFINITIONSHAPE','IFCSHAPEREPRESENTATION',
+  'IFCEXTRUDEDAREASOLID','IFCFACETEDBREP','IFCMAPPEDITEM','IFCREPRESENTATIONMAP',
+  'IFCBOOLEANCLIPPINGRESULT','IFCBOOLEANRESULT','IFCPOLYGONALBOUNDEDHALFSPACE',
+  'IFCHALFSPACESOLID','IFCSWEPTAREASOLID','IFCSURFACECURVESWEPTAREASOLID',
+  'IFCREVOLVEDAREASOLID','IFCTRIANGULATEDFACESET','IFCPOLYGONALFACESET',
+  'IFCSHELLBASEDSURFACEMODEL','IFCFACEBASEDSURFACEMODEL','IFCCLOSEDSHELL','IFCOPENSHELL',
+  'IFCCONNECTEDFACESET','IFCGEOMETRICSET','IFCGEOMETRICCURVESET'];
+
+var IFC_REL_TYPES = ['IFCRELCONTAINEDINSPATIALSTRUCTURE','IFCRELAGGREGATES',
+  'IFCRELDEFINESBYPROPERTIES','IFCRELASSOCIATESMATERIAL','IFCRELDEFINESBYTYPE',
+  'IFCRELCONNECTSELEMENTS','IFCRELVOIDSELEMENT','IFCRELFILLSELEMENT',
+  'IFCRELSPACEBOUNDARY','IFCRELCONNECTSPORTTOELEMENT'];
+
+// Optimiza un IFC (texto) eliminando tipos no deseados. Devuelve texto reducido.
+function optimizeIFC(text){
+  dbg('optimizando IFC...');
+  var removeSet={}; IFC_REMOVE_TYPES.forEach(function(t){removeSet[t]=1;});
+  var orphanSet={}; IFC_ORPHAN_TYPES.forEach(function(t){orphanSet[t]=1;});
+  var relSet={}; IFC_REL_TYPES.forEach(function(t){relSet[t]=1;});
+
+  // Separar cabecera/data/tail
+  var di=text.indexOf('DATA;');
+  var ei=text.indexOf('ENDSEC;', di);
+  if(di<0||ei<0){ dbg('⚠ IFC sin DATA section'); return text; }
+  var head=text.slice(0, di+5);
+  var dataStr=text.slice(di+5, ei);
+  var tail=text.slice(ei);
+
+  // Parsear entidades (regex por línea de entidad)
+  var entRe=/^#(\d+)\s*=\s*([A-Z0-9_]+)\s*\(/i;
+  var lines=dataStr.split('\n');
+  var ents={};      // id -> {type, line}
+  var order=[];     // mantener orden
+  for(var i=0;i<lines.length;i++){
+    var ln=lines[i].trim();
+    if(!ln)continue;
+    var m=entRe.exec(ln);
+    if(m){ var id=m[1], ty=m[2].toUpperCase(); ents[id]={type:ty,line:lines[i]}; order.push(id); }
+  }
+  dbg('entidades: '+order.length);
+
+  // Paso 1: marcar raíces a eliminar
+  var remove={};
+  var nRoot=0;
+  for(var k=0;k<order.length;k++){ var id=order[k]; if(removeSet[ents[id].type]){ remove[id]=1; nRoot++; } }
+  dbg('raices a eliminar: '+nRoot);
+
+  // Paso 2: limpiar relaciones (quitar refs a eliminados)
+  for(var k=0;k<order.length;k++){
+    var id=order[k]; var e=ents[id];
+    if(relSet[e.type]){
+      var nl=e.line;
+      Object.keys(remove).forEach(function(rid){
+        nl=nl.replace(new RegExp('#'+rid+'(?=[,\\)])','g'),'');
+      });
+      nl=nl.replace(/,+/g,',').replace(/\(,/g,'(').replace(/,\)/g,')');
+      e.line=nl;
+    }
+  }
+
+  // Paso 3: eliminar huérfanos iterativamente
+  for(var pass=0; pass<5; pass++){
+    var referenced={};
+    for(var k=0;k<order.length;k++){
+      var id=order[k]; if(remove[id])continue;
+      var refs=ents[id].line.match(/#\d+/g)||[];
+      for(var r=0;r<refs.length;r++){ var rr=refs[r].slice(1); if(rr!==id) referenced[rr]=1; }
+    }
+    var newRem=0;
+    for(var k=0;k<order.length;k++){
+      var id=order[k]; if(remove[id])continue;
+      if(orphanSet[ents[id].type] && !referenced[id]){ remove[id]=1; newRem++; }
+    }
+    if(!newRem)break;
+  }
+
+  // Reconstruir
+  var nRemoved=0, out=[head];
+  for(var k=0;k<order.length;k++){
+    var id=order[k]; if(remove[id]){nRemoved++;continue;}
+    out.push(ents[id].line);
+  }
+  out.push(tail);
+  dbg('eliminadas total: '+nRemoved+' / quedan '+(order.length-nRemoved));
+  return out.join('\n');
+}
+
 // Cargar IFC desde archivo (primera vez) o desde fragments guardados
 async function loadIFC(file){
   await ensViewer();
@@ -960,11 +1071,20 @@ async function loadIFC(file){
   try{
     if(curModel){ try{ fragments.disposeGroup(curModel); }catch(e){} curModel=null; }
     dbg('archivo: '+(file.size/1048576).toFixed(1)+'MB');
-    var buf = new Uint8Array(await file.arrayBuffer());
-    dbg('buffer leido');
-    pg3(30); showLoading('Convirtiendo a fragmentos…','');
+    showLoading('Leyendo archivo…','');
+    var rawText = await file.text();
+    dbg('texto: '+(rawText.length/1048576).toFixed(1)+'M chars');
+    pg3(15); showLoading('Optimizando modelo…','Eliminando instalaciones y mobiliario');
+    var optText = optimizeIFC(rawText);
+    rawText = null;
+    dbg('optimizado: '+(optText.length/1048576).toFixed(1)+'M chars');
+    var buf = new TextEncoder().encode(optText);
+    optText = null;
+    dbg('buffer: '+(buf.length/1048576).toFixed(1)+'MB');
+    pg3(35); showLoading('Convirtiendo a fragmentos…','');
     dbg('ifcLoader.load...');
     var model = await ifcLoader.load(buf);
+    buf = null;
     dbg('model cargado, items='+(model.items?model.items.size:'?'));
     curModel = model;
     world.scene.three.add(model);
@@ -975,16 +1095,21 @@ async function loadIFC(file){
     await indexModel(model);
     pg3(85);
 
-    // Exportar fragments y guardar en IndexedDB
+    // Exportar fragments y guardar en IndexedDB (envuelto para no crashear)
     showLoading('Guardando modelo…','Para carga instantánea la próxima vez');
+    dbg('exportando fragments...');
     try{
-      var fragData = fragments.export(model);          // Uint8Array
-      var props = model.getLocalProperties ? model.getLocalProperties() : (model._properties||{});
+      var fragData = fragments.export(model);
+      dbg('fragments: '+(fragData.length/1048576).toFixed(1)+'MB');
+      var props={};
+      try{ props = model.getLocalProperties ? model.getLocalProperties() : {}; }catch(e){}
       if(curVR){
         dbP('ifcfrag', { vid: curVR, frag: fragData, props: props, name: file.name });
         dbG('versions', curVR, function(v){ if(v){ v.ifcName=file.name; v.hasFragments=true; dbP('versions', v); } });
+        dbg('guardado en IndexedDB OK');
       }
-    }catch(e){ console.warn('[IFC] export failed', e); }
+      fragData=null;
+    }catch(e){ dbg('⚠ guardado falló: '+e.message); }
 
     finishLoad(file.name);
   }catch(e){
