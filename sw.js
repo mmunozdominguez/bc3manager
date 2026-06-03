@@ -1,5 +1,5 @@
 // BC3 Manager Service Worker v1.2
-const CACHE = 'bc3-v3';
+const CACHE = 'bc3-v4';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
