@@ -83,7 +83,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .vcol.collapsed .col-meta{display:none;}
 #col1{flex:0 0 300px;border-right:1px solid var(--bd);}
 #col2{flex:0 0 240px;border-right:1px solid var(--bd);}
-#col3{flex:1;background:#15152a;}
+#col3{flex:1;background:#f0eff8;display:flex;flex-direction:column;}
 /* Cabecera de columna */
 .col-header{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;min-height:34px;}
 .col-header>span:first-of-type{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted2);white-space:nowrap;}
@@ -99,7 +99,34 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 /* Scroll interno */
 .col-scroll{flex:1;overflow-y:auto;}
 /* Panel 3D ocupa todo col3 */
-#p3d{flex:1;position:relative;overflow:hidden;background:#15152a;}
+#p3d{flex:1;position:relative;overflow:hidden;background:#f0eff8;min-height:0;}
+/* ── Visor 3D interno ── */
+#cv{position:absolute;top:0;left:0;width:100%;height:100%;display:none;outline:none;}
+#dz{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#6b7280;background:#f0eff8;z-index:1;}
+#dz.h{display:none;}
+#pg{position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0;transition:width .3s;display:none;z-index:20;}
+/* Toolbars flotantes sobre el canvas */
+#tbl,#tbr{position:absolute;display:flex;flex-direction:column;gap:4px;z-index:10;top:10px;}
+#tbl{left:8px;}
+#tbr{right:8px;}
+.t3g{display:flex;flex-direction:column;gap:2px;}
+.t3{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:6px;cursor:pointer;background:rgba(255,255,255,.88);border:1px solid rgba(0,0,0,.1);box-shadow:0 1px 3px rgba(0,0,0,.1);color:#374151;transition:all .12s;}
+.t3:hover{background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);}
+.t3.a{background:var(--acc-bg);color:var(--acc);border-color:var(--acc-bd);}
+.t3sp{height:6px;}
+#zw{position:absolute;bottom:40px;right:8px;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:10;}
+#zsl{writing-mode:vertical-lr;direction:rtl;height:80px;width:4px;cursor:pointer;accent-color:var(--acc);}
+/* Info card al hacer clic en elemento */
+#hc{position:absolute;bottom:50px;left:8px;right:8px;background:rgba(255,255,255,.95);color:#18181b;border-radius:8px;padding:10px 12px;font-size:11px;z-index:30;border:1px solid var(--bd);box-shadow:0 2px 8px rgba(0,0,0,.12);display:none;}
+/* Status bar en la parte inferior */
+#sm-wrap{display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end;}
+.sd{width:7px;height:7px;border-radius:50%;background:#9ca3af;flex-shrink:0;display:inline-block;}
+.sd.ok{background:#22c55e;}
+.sd.sp{background:#f59e0b;animation:blink3 1s infinite;}
+@keyframes blink3{0%,100%{opacity:1}50%{opacity:.3}}
+/* Type panel */
+#tp{position:absolute;top:50px;right:48px;background:rgba(255,255,255,.93);border-radius:7px;padding:8px 10px;min-width:90px;z-index:20;border:1px solid var(--bd);box-shadow:0 2px 6px rgba(0,0,0,.1);}
+
 /* Stats bar */
 .sb{display:none;padding:4px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);gap:10px;flex-shrink:0;align-items:center;}
 .st{font-size:10px;color:var(--muted);}
@@ -831,8 +858,11 @@ var mBounds=null;
 
 var t3RAF=null, ctxLost=false;
 function initT3(THREE){
-  var canvas=el('cv'), cont=el('p3d');
-  var w=cont.clientWidth||cont.offsetWidth||800, h=cont.clientHeight||cont.offsetHeight||600;
+  var canvas=el('cv'), cont=el('col3');
+  var hdr=cont?cont.querySelector('.col-header'):null;
+  var hh=hdr?hdr.offsetHeight:34;
+  var w=cont?cont.clientWidth:800, h=cont?(cont.clientHeight-hh):600;
+  if(!w||w<10)w=800; if(!h||h<10)h=600;
   ren=new THREE.WebGLRenderer({
     canvas:canvas, antialias:true, alpha:false,
     powerPreference:'high-performance',
@@ -842,7 +872,7 @@ function initT3(THREE){
   ren.setPixelRatio(Math.min(window.devicePixelRatio,2));
   ren.setSize(w,h,false);
   try{ren.outputColorSpace=THREE.SRGBColorSpace;}catch(e){}
-  scene=new THREE.Scene();scene.background=new THREE.Color(0x15152a);
+  scene=new THREE.Scene();scene.background=new THREE.Color(0xf5f4f2);
   cam=new THREE.PerspectiveCamera(60,w/h,0.01,5000);
   cam.position.set(10,10,10);
   ray=new THREE.Raycaster();mou3=new THREE.Vector2();
@@ -859,7 +889,7 @@ function initT3(THREE){
   function animate(){t3RAF=requestAnimationFrame(animate);if(ctxLost)return;if(ctrl&&ctrl.update)ctrl.update();try{ren.render(scene,cam);}catch(e){}}
   animate();
 }
-function rsz3(){var cont=el('p3d');if(!cont||!ren||!cam)return;var w=cont.clientWidth,h=cont.clientHeight;if(!w||!h)return;cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h,false);}
+function rsz3(){var cont=el('col3');if(!cont||!ren||!cam)return;var hdr=cont.querySelector('.col-header');var hh=hdr?hdr.offsetHeight:0;var w=cont.clientWidth,h=cont.clientHeight-hh;if(!w||!h)return;cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h,false);}
 // Espera a que el panel 3D tenga tamaño real antes de crear el renderer
 function waitForSize(elm,cb,tries){
   tries=tries||0;
@@ -999,13 +1029,19 @@ function fitCam(){
   var box=new T3.Box3();
   meshes.forEach(function(m){box.expandByObject(m.mesh);});
   if(box.isEmpty())return;
-  var c=box.getCenter(new T3.Vector3());
+  var center=box.getCenter(new T3.Vector3());
   var sz=box.getSize(new T3.Vector3());
-  var d=Math.max(sz.x,sz.y,sz.z)*1.6;if(!isFinite(d)||d<=0)d=50;
-  mBounds={cx:c.x,cy:c.y,cz:c.z,sx:sz.x,sy:sz.y,sz:sz.z};
-  cam.near=d*0.001;cam.far=d*20;cam.updateProjectionMatrix();
-  if(ctrl&&ctrl.fit){ctrl.fit(c,d);}
-  else{cam.position.set(c.x+d,c.y+d*0.6,c.z+d);if(ctrl&&ctrl.target)ctrl.target.copy(c);cam.lookAt(c);}
+  var maxSz=Math.max(sz.x,sz.y,sz.z);
+  if(!isFinite(maxSz)||maxSz<=0)maxSz=50;
+  // Distance based on FOV and model size
+  var fov=cam.fov*(Math.PI/180);
+  var dist=maxSz/(2*Math.tan(fov/2))*1.5;
+  mBounds={cx:center.x,cy:center.y,cz:center.z,sx:sz.x,sy:sz.y,sz:sz.z};
+  cam.near=dist*0.001;cam.far=dist*30;cam.updateProjectionMatrix();
+  // Position camera at isometric angle looking at center
+  cam.position.set(center.x+dist*0.8,center.y+dist*0.6,center.z+dist*0.8);
+  if(ctrl&&ctrl.target){ctrl.target.copy(center);if(ctrl.update)ctrl.update();}
+  cam.lookAt(center);
 }
 
 // ═══ HIGHLIGHT / SELECCIÓN ════════════════════════════════════════════════
