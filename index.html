@@ -155,7 +155,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .tab{flex:1;text-align:center;padding:6px 4px;font-size:10px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
 .tab:hover{color:var(--text);}
 .tab.a{color:var(--acc);border-bottom-color:var(--acc);}
-#dc{flex:1;overflow-y:auto;}
+#dc{flex:1;overflow-y:auto;padding:10px 10px;}
 /* Responsive: portrait → visor debajo */
 @media (orientation:portrait),(max-width:700px){
   #vb-body{flex-direction:column;}
@@ -811,7 +811,7 @@ function renderDet(){if(curDT==='bim')rBIM();else if(curDT==='med')rMED();else r
 function rBIM(){
   var d=el('dc');if(!selP||!curBC){d.innerHTML='<div class="ed"><p>Selecciona una partida</p></div>';return;}
   var c=curBC.c[selP]||{},gs=curBC.g[selP]||[],ms=curBC.m[selP]||[];
-  var mt=ms.reduce(function(s,m){return s+m.parc;},0);var imp=c.pr&&mt?c.pr*mt:0;
+  var mt=ms.reduce(function(s,m){var p=m.parc!=null?m.parc:(m.nd&&m.a&&m.b?m.nd*m.a*m.b:m.nd&&m.a?m.nd*m.a:m.a||0);return s+p;},0);var imp=c.pr&&mt?c.pr*mt:0;
   var h='<div class="dk">Código</div><div class="dv" style="font-family:JetBrains Mono,monospace;font-size:11px;">'+esc(selP)+'</div>';
   h+='<div class="dk">Descripción</div><div class="dv">'+esc(c.desc||'—')+'</div>';
   if(c.ud)h+='<div class="dk">Unidad</div><div class="dv">'+esc(c.ud)+'</div>';
@@ -832,7 +832,7 @@ function rMED(){
   if(!ms.length){d.innerHTML='<div style="padding:10px;font-size:11px;color:var(--muted)">Sin mediciones</div>';return;}
   var tot=0;
   var h='<table class="mt"><thead><tr><th>Desc.</th><th class="nr">Nº</th><th class="nr">A</th><th class="nr">B</th><th class="nr">Parc.</th></tr></thead><tbody>';
-  ms.forEach(function(m){tot+=m.parc;h+='<tr><td>'+esc(m.txt||'—')+'</td><td class="nr">'+(m.nd||'')+'</td><td class="nr">'+(m.a||'')+'</td><td class="nr">'+(m.b||'')+'</td><td class="nr">'+(m.parc?m.parc.toFixed(3):'')+'</td></tr>';});
+  ms.forEach(function(m){var parc=m.parc!=null?m.parc:(m.nd&&m.a&&m.b?m.nd*m.a*m.b:m.nd&&m.a?m.nd*m.a:m.a||0);tot+=parc;h+='<tr><td>'+esc(m.txt||'—')+'</td><td class="nr">'+(m.nd||'')+'</td><td class="nr">'+(m.a||'')+'</td><td class="nr">'+(m.b||'')+'</td><td class="nr">'+(parc?parc.toFixed(3):'')+'</td></tr>';});
   h+='<tr class="tf"><td colspan="4" style="text-align:right">Total</td><td class="nr">'+tot.toFixed(3)+' '+esc(c.ud||'')+'</td></tr></tbody></table>';
   if(c.pr&&tot){var imp=c.pr*tot;h+='<div class="pb" style="margin-top:8px"><div class="pr"><span class="prl">Medición</span><span class="prv">'+tot.toFixed(3)+' '+esc(c.ud||'')+'</span></div><div class="pr"><span class="prl">Precio</span><span class="prv">'+c.pr.toFixed(2)+' €</span></div><div class="pr"><span class="prl">Importe</span><span class="prv a">'+fmt(imp)+' €</span></div></div>';}
   d.innerHTML=h;
