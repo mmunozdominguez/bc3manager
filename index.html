@@ -895,8 +895,20 @@ async function initXeokit(){
   try{
     var XK=await import('./xeokit-sdk.min.es.js');
     window._XK=XK;
+    // Ensure col3 and p3d are visible with real dimensions
+    var col3=el('col3'),p3d=el('p3d');
+    if(p3d){p3d.style.display='block';p3d.style.flex='1';}
+    // Ensure canvas is visible and has explicit size
     var canvas=el('cv');
+    var w=col3?col3.clientWidth:800;
+    var hdr=col3?col3.querySelector('.col-header'):null;
+    var h=col3?(col3.clientHeight-(hdr?hdr.offsetHeight:34)):600;
+    if(!w||w<10)w=800; if(!h||h<10)h=600;
     canvas.style.display='block';
+    canvas.style.width=w+'px';
+    canvas.style.height=h+'px';
+    canvas.width=w; canvas.height=h;
+    console.log('[XK] canvas size:', w, h);
     xv=new XK.Viewer({canvasId:'cv',transparent:false,antialias:true,
       backgroundColor:[0.95,0.94,0.92]});
     xscene=xv.scene;
@@ -952,6 +964,7 @@ async function loadXkt(xktBuffer, metaJson){
       edges:false,saoEnabled:false,pbrEnabled:false});
     xModel.on('loaded',function(){
       pg3(100);
+      console.log('[XK] model loaded, objects:', Object.keys(xscene.objects).length);
       if(metaJson&&metaJson.objects){
         metaJson.objects.forEach(function(o){
           if(o.assemblyCode){g2asm[o.id]=o.assemblyCode;
@@ -964,10 +977,19 @@ async function loadXkt(xktBuffer, metaJson){
       st3(n+' elem · '+nb+' vinculados','ok');
       el('dz').classList.add('h');
       el('cv').style.display='block';
-      xv.cameraFlight.flyTo(xModel);
+      // Resize canvas to fit parent
+      var col3=el('col3'),hdr=col3?col3.querySelector('.col-header'):null;
+      var w=col3?col3.clientWidth:800;
+      var h=col3?(col3.clientHeight-(hdr?hdr.offsetHeight:34)):600;
+      if(w>10&&h>10){el('cv').style.width=w+'px';el('cv').style.height=h+'px';}
+      xv.scene.canvas.resolutionScale=1;
+      setTimeout(function(){xv.cameraFlight.flyTo(xModel);},100);
       if(selP&&curBC)hlPart(selP,curBC);
     });
-    xModel.on('error',function(e){st3('Error cargando modelo','');});
+    xModel.on('error',function(e){
+      st3('Error cargando modelo: '+e,'');
+      console.error('[XK] model error:',e);
+    });
   }catch(e){st3('Error: '+e.message,'');console.error('[XK]',e);}
 }
 
