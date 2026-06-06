@@ -357,7 +357,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v17</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button>
       <label for="fimport-home" class="btn" style="cursor:pointer;" title="Importar .bc3m desde OneDrive/archivo">⬆ Importar .bc3m</label>
       <input type="file" id="fimport-home" style="position:absolute;left:-9999px;" tabindex="-1" accept=".bc3m"></div>
@@ -371,7 +371,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v17</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -390,7 +390,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v17</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <label for="fbc3r" class="btn" style="cursor:pointer;" title="Vuelve a cargar el BC3 para actualizar datos">↺ BC3</label>
@@ -494,7 +494,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v17</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -1085,28 +1085,69 @@ function webglOK(){
 }
 async function ensT3(){
   if(T3&&ren) return Promise.resolve();
-  if(!webglOK()){st3('Tu navegador no permite WebGL (3D)','');
+  if(!webglOK()){st3('Tu navegador no permite WebGL','');
     return Promise.reject(new Error('no-webgl'));}
   st3('Cargando motor 3D…','sp');
   return new Promise(function(resolve,reject){
-    var cv=el('cv');
-    if(cv){cv.style.display='block';cv.style.width='100%';cv.style.height='100%';}
-    var p3=el('p3d'),col3=el('col3');
-    if(p3&&col3){p3.style.display='block';}
-    var THREE_URL='https://unpkg.com/three@0.160.0/build/three.module.js';
-    var OC_URL='https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-    if(T3&&ren){resolve();return;}  if(T3){try{initT3(T3,window._oc||{});resolve();}catch(e){reject(e);}return;}
-    import(THREE_URL).then(function(THREE){
-      T3=THREE;window._T3=THREE;
-      return import(OC_URL);
-    }).then(function(oc){
-      window._oc=oc;
-      try{initT3(THREE,oc);resolve();}catch(e){reject(e);}
-    }).catch(function(e){
-      st3('Error cargando Three.js','');reject(e);
-    });
+    // Cargar Three.js como IIFE (script tag, compatible con proxies corporativos)
+    // Intentar múltiples CDNs por si alguno está bloqueado
+    var CDNS = [
+      'https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js',
+      'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js',
+      'https://unpkg.com/three@0.160.0/build/three.min.js'
+    ];
+    var OC_CDNS = [
+      'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js',
+      'https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js'
+    ];
+
+    if(T3&&ren){resolve();return;}
+    if(T3){
+      loadOC(OC_CDNS,0,function(ok){
+        try{initT3(T3,window.THREE?{OrbitControls:window.THREE.OrbitControls}:{});resolve();}
+        catch(e){reject(e);}
+      });
+      return;
+    }
+
+    function loadScript(url,cb){
+      var s=document.createElement('script');s.src=url;
+      s.onload=function(){cb(true);};
+      s.onerror=function(){cb(false);};
+      document.head.appendChild(s);
+    }
+
+    function tryThree(i){
+      if(i>=CDNS.length){reject(new Error('Three.js no disponible. Verifica conexión a internet.'));return;}
+      st3('Cargando Three.js ('+CDNS[i].split('/')[2]+')...','sp');
+      loadScript(CDNS[i],function(ok){
+        if(ok&&typeof THREE!=='undefined'){
+          T3=THREE;window._T3=THREE;window.THREE=THREE;
+          loadOC(OC_CDNS,0,function(){
+            var oc=window._oc||{OrbitControls:window.THREE&&window.THREE.OrbitControls};
+            try{initT3(T3,oc);resolve();}catch(e){reject(e);}
+          });
+        } else {
+          tryThree(i+1);
+        }
+      });
+    }
+
+    function loadOC(urls,i,cb){
+      if(i>=urls.length){cb(false);return;}
+      loadScript(urls[i],function(ok){
+        if(ok&&typeof THREE!=='undefined'){
+          window._oc={OrbitControls:THREE.OrbitControls||null};cb(true);
+        } else {
+          loadOC(urls,i+1,cb);
+        }
+      });
+    }
+
+    tryThree(0);
   });
 }
+
 
 async function loadIFC(file){
   await ensT3();
