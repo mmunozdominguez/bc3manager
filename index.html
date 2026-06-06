@@ -357,7 +357,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v18</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v19</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button>
       <label for="fimport-home" class="btn" style="cursor:pointer;" title="Importar .bc3m desde OneDrive/archivo">⬆ Importar .bc3m</label>
       <input type="file" id="fimport-home" style="position:absolute;left:-9999px;" tabindex="-1" accept=".bc3m"></div>
@@ -371,7 +371,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v18</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v19</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -390,7 +390,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v18</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v19</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <label for="fbc3r" class="btn" style="cursor:pointer;" title="Vuelve a cargar el BC3 para actualizar datos">↺ BC3</label>
@@ -494,7 +494,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v18</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v19</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -529,9 +529,23 @@ button,input,select,textarea{-webkit-appearance:none;}
     <div class="fr"><label>Archivo BC3 *</label>
       <label for="bc3f" class="uz" id="bc3z" style="cursor:pointer;display:block;">
         📂 Seleccionar archivo .bc3
-        <span style="display:block;font-size:10px;color:var(--muted);margin-top:3px;">En iPad: Archivos → selecciona el .bc3</span>
       </label>
       <input type="file" id="bc3f" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;">
+    </div>
+    <div class="fr"><label>Modelo IFC <span style="color:var(--muted);font-weight:400;">(opcional — convierte y guarda para visor 3D)</span></label>
+      <label for="ifcf" class="uz" id="ifcz" style="cursor:pointer;display:block;opacity:.6;">
+        📂 Seleccionar archivo .ifc <span style="font-size:10px;color:var(--muted);">(recomendado desde PC)</span>
+      </label>
+      <input type="file" id="ifcf" style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;" accept=".ifc,.IFC">
+    </div>
+    <div id="ifc-prog-wrap" style="display:none;flex-direction:column;gap:6px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;color:var(--muted);" id="ifc-prog-msg">Procesando IFC…</span>
+        <span style="font-size:10px;font-family:monospace;color:var(--muted);" id="ifc-prog-pct">0%</span>
+      </div>
+      <div style="height:3px;background:var(--bd);border-radius:2px;overflow:hidden;">
+        <div id="ifc-prog-bar" style="height:100%;width:0%;background:var(--acc);transition:width .3s;border-radius:2px;"></div>
+      </div>
     </div>
     <div class="ma"><button class="btn" id="bn-canv">Cancelar</button><button class="btn p" id="bn-okv">Guardar</button></div>
   </div>
@@ -1902,6 +1916,129 @@ async function loadJSZip(){
     document.head.appendChild(s);
   });
 }
+
+// ═══ PROCESAR IFC PARA VERSIÓN ════════════════════════════════════════════
+// Convierte IFC a .bin y lo guarda en IndexedDB para la versión indicada.
+// Muestra progreso en la barra de estado del visor si está abierto.
+
+async function processIfcForVersion(vid, ifcFile){
+  var progMsg = function(msg,pct){
+    st3(msg,'sp');
+    if(pct!==undefined)pg3(pct);
+    console.log('[IFC2BIN]',msg,pct!==undefined?pct+'%':'');
+  };
+
+  try{
+    progMsg('Cargando motor IFC…',5);
+    // Load Three.js first (needed for generateBin)
+    await ensT3();
+
+    // Load web-ifc
+    progMsg('Iniciando web-ifc…',10);
+    if(!ifcA){
+      var ifcMod=await import('https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js');
+      ifcA=new ifcMod.IfcAPI();
+      ifcA.SetWasmPath('https://unpkg.com/web-ifc@0.0.46/');
+      await ifcA.Init();
+      window.__ifcMod=ifcMod;
+    }
+    var ifcMod=window.__ifcMod;
+
+    progMsg('Leyendo IFC…',15);
+    var buf=await ifcFile.arrayBuffer();
+    if(mid>=0){try{ifcA.CloseModel(mid);}catch(e){}mid=-1;}
+    mid=ifcA.OpenModel(new Uint8Array(buf));
+
+    // Extract GUIDs
+    progMsg('Extrayendo elementos…',20);
+    var TYPES_LIST_IFC=[
+      ifcMod.IFCWALL,ifcMod.IFCWALLSTANDARDCASE,ifcMod.IFCSLAB,ifcMod.IFCCOLUMN,ifcMod.IFCBEAM,
+      ifcMod.IFCDOOR,ifcMod.IFCWINDOW,ifcMod.IFCROOF,ifcMod.IFCCOVERING,ifcMod.IFCMEMBER,
+      ifcMod.IFCPLATE,ifcMod.IFCSTAIR,ifcMod.IFCFOOTING,ifcMod.IFCRAILING,ifcMod.IFCBUILDINGELEMENTPROXY
+    ].filter(Boolean);
+    var TYPES_NAMES_IFC=['IFCWALL','IFCWALLSTANDARDCASE','IFCSLAB','IFCCOLUMN','IFCBEAM',
+      'IFCDOOR','IFCWINDOW','IFCROOF','IFCCOVERING','IFCMEMBER','IFCPLATE',
+      'IFCSTAIR','IFCFOOTING','IFCRAILING','IFCBUILDINGELEMENTPROXY'];
+    var e2info={},g2eL={},e2tL={};
+    for(var ti=0;ti<TYPES_LIST_IFC.length;ti++){
+      var ids=ifcA.GetLineIDsWithType(mid,TYPES_LIST_IFC[ti]);
+      for(var i=0;i<ids.size();i++){
+        var id=ids.get(i);
+        try{var ln=ifcA.GetLine(mid,id);if(ln&&ln.GlobalId&&ln.GlobalId.value){
+          var g=ln.GlobalId.value;
+          e2info[id]={guid:g,type:TYPES_NAMES_IFC[ti]};
+          g2eL[g]=id;e2tL[id]=TYPES_NAMES_IFC[ti];
+        }}catch(e2){}
+      }
+    }
+    progMsg(Object.keys(e2info).length+' elementos encontrados',28);
+
+    // Assembly codes
+    progMsg('Leyendo códigos de montaje…',30);
+    var g2asmL={},asm2gL={};
+    var asmR=/^([A-Z]{2,5}-\d{3,4}(?:\.\d+)?)(?:\s|$)/;
+    try{
+      var psetIds=ifcA.GetLineIDsWithType(mid,ifcMod.IFCPROPERTYSET);
+      var qtoMap={};
+      for(var i=0;i<psetIds.size();i++){
+        try{
+          var ps=ifcA.GetLine(mid,psetIds.get(i),true);
+          if(ps&&ps.Name&&ps.Name.value==='Pset_QuantityTakeOff'&&ps.HasProperties){
+            for(var pi=0;pi<ps.HasProperties.length;pi++){
+              var prop=ps.HasProperties[pi];
+              if(prop&&prop.Name&&prop.Name.value==='Reference'&&prop.NominalValue){
+                var m=asmR.exec(prop.NominalValue.value||'');
+                if(m){qtoMap[psetIds.get(i)]=m[1];break;}
+              }
+            }
+          }
+        }catch(e2){}
+      }
+      var relIds=ifcA.GetLineIDsWithType(mid,ifcMod.IFCRELDEFINESBYPROPERTIES);
+      for(var i=0;i<relIds.size();i++){
+        try{
+          var rel=ifcA.GetLine(mid,relIds.get(i),true);
+          if(!rel||!rel.RelatingPropertyDefinition||!rel.RelatedObjects)continue;
+          var code=qtoMap[rel.RelatingPropertyDefinition.expressID];
+          if(!code)continue;
+          for(var oi=0;oi<rel.RelatedObjects.length;oi++){
+            var obj=rel.RelatedObjects[oi];
+            var info=e2info[obj.expressID];
+            if(info){g2asmL[info.guid]=code;if(!asm2gL[code])asm2gL[code]=[];asm2gL[code].push(info.guid);}
+          }
+        }catch(e2){}
+      }
+    }catch(e2){console.warn('[IFC2BIN] Pset error:',e2);}
+    progMsg(Object.keys(g2asmL).length+' códigos de montaje',38);
+
+    // Generate bin
+    progMsg('Extrayendo geometría…',40);
+    var binData=generateBin(ifcA,mid,ifcMod,
+      (function(){var m={};Object.keys(e2info).forEach(function(k){m[k]=e2info[k].guid;});return m;})(),
+      g2asmL,e2tL);
+    progMsg('Guardando modelo…',90);
+
+    // Close IFC model
+    try{ifcA.CloseModel(mid);mid=-1;}catch(e2){}
+
+    // Save to DB
+    saveBinToDB(vid, binData, ifcFile.name, function(){
+      progMsg(Object.keys(e2info).length+' elem · modelo guardado','ok');
+      pg3(100);
+      // Update maps for current session if this is the open version
+      if(curVR===vid){
+        g2asm=g2asmL;asm2g=asm2gL;
+        // Load the bin visually
+        loadBin(binData);
+      }
+    });
+
+  }catch(e){
+    st3('Error procesando IFC: '+e.message,'');
+    console.error('[IFC2BIN]',e);
+  }
+}
+
 // ═══ EVENTS ═══════════════════════════════════════════════════════════════
 on('bn-np','click',function(){showM('m-proj');});
 on('bh1','click',loadHome);
@@ -1988,21 +2125,64 @@ on('bn-okp','click',function(){
   dbP('projects',p,function(){hideM('m-proj');['i-pn','i-pa','i-pc','i-po'].forEach(function(id){el(id).value='';});loadProj(p.id);});
 });
 // bc3z is now a <label> — no JS click needed on iOS
-var nvF=null;
+var nvF=null,nvIfc=null;
 on('bc3f','change',function(){nvF=this.files[0];if(!nvF)return;el('bc3z').textContent='✓ '+nvF.name;el('bc3z').className='uz ok';});
+on('ifcf','change',function(){nvIfc=this.files[0];if(!nvIfc)return;el('ifcz').textContent='✓ '+nvIfc.name+' ('+(nvIfc.size/1024/1024).toFixed(0)+' MB)';el('ifcz').style.opacity='1';el('ifcz').style.color='var(--ok)';});
 on('bn-canv','click',function(){hideM('m-ver');});
 on('bn-okv','click',function(){
-  var name=el('i-vn').value.trim();if(!name){alert('Nombre obligatorio');return;}if(!nvF){alert('Selecciona un BC3');return;}
+  var name=el('i-vn').value.trim();
+  if(!name){alert('Nombre obligatorio');return;}
+  if(!nvF){alert('Selecciona un BC3');return;}
+  // Disable button during processing
+  el('bn-okv').disabled=true;el('bn-okv').textContent='Guardando…';
   var reader=new FileReader();
   reader.onload=function(e){
     var bc3=parseBC3(e.target.result);
     var nP=Object.values(bc3.c).filter(function(c){return !c.ch;}).length;
     var nB=Object.keys(bc3.g).filter(function(k){return bc3.g[k].length>0;}).length;
     var status=el('i-vs').value;
-    var ver={id:'v'+Date.now(),projectId:curPJ,name:name,status:status,notes:el('i-vo').value.trim(),fileName:nvF.name,nConceptos:Object.keys(bc3.c).length,nPartidas:nP,nBimLinked:nB,createdAt:Date.now()};
-    function save(){dbP('versions',ver);dbP('bc3data',{vid:ver.id,bc3:bc3},function(){hideM('m-ver');nvF=null;el('i-vn').value='';el('i-vo').value='';el('bc3z').textContent='📂 Seleccionar archivo .bc3';el('bc3z').className='uz';loadProj(curPJ);});}
-    if(status==='current'){dbA('versions',function(vers){vers.filter(function(v){return v.projectId===curPJ&&v.status==='current';}).forEach(function(v){v.status='closed';dbP('versions',v);});save();});}
-    else save();
+    var vid='v'+Date.now();
+    var ver={id:vid,projectId:curPJ,name:name,status:status,notes:el('i-vo').value.trim(),
+      fileName:nvF.name,nConceptos:Object.keys(bc3.c).length,nPartidas:nP,nBimLinked:nB,
+      createdAt:Date.now(),hasBin:false};
+
+    function resetModal(){
+      nvF=null;nvIfc=null;
+      el('i-vn').value='';el('i-vo').value='';
+      el('bc3z').textContent='📂 Seleccionar archivo .bc3';el('bc3z').className='uz';
+      el('ifcz').textContent='📂 Seleccionar archivo .ifc';el('ifcz').style.opacity='0.6';el('ifcz').style.color='';
+      el('ifc-prog-wrap').style.display='none';
+      el('bn-okv').disabled=false;el('bn-okv').textContent='Guardar';
+    }
+
+    function afterSaveBC3(){
+      hideM('m-ver');resetModal();
+      // If IFC provided, process it in the background after opening visor
+      if(nvIfc){
+        var ifcFile=nvIfc;
+        loadProj(curPJ);
+        // Small delay then process IFC
+        setTimeout(function(){processIfcForVersion(vid,ifcFile);},300);
+      } else {
+        loadProj(curPJ);
+      }
+    }
+
+    function save(){
+      dbP('versions',ver,function(){
+        dbP('bc3data',{vid:vid,bc3:bc3},function(){
+          afterSaveBC3();
+        });
+      });
+    }
+
+    if(status==='current'){
+      dbA('versions',function(vers){
+        vers.filter(function(v){return v.projectId===curPJ&&v.status==='current';})
+          .forEach(function(v){v.status='closed';dbP('versions',v);});
+        save();
+      });
+    } else save();
   };
   reader.readAsText(nvF,'latin1');
 });
