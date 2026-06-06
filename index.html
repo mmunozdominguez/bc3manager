@@ -357,7 +357,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v14</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button>
       <label for="fimport-home" class="btn" style="cursor:pointer;" title="Importar .bc3m desde OneDrive/archivo">⬆ Importar .bc3m</label>
       <input type="file" id="fimport-home" style="position:absolute;left:-9999px;" tabindex="-1" accept=".bc3m"></div>
@@ -371,7 +371,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v14</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -390,7 +390,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v14</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <label for="fbc3r" class="btn" style="cursor:pointer;" title="Vuelve a cargar el BC3 para actualizar datos">↺ BC3</label>
@@ -494,7 +494,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v14</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -1028,7 +1028,7 @@ var tCol={};
 var mBounds=null;
 
 var t3RAF=null, ctxLost=false;
-function initT3(THREE){
+function initT3(THREE,oc){
   var canvas=el('cv'), cont=el('col3');
   var hdr=cont?cont.querySelector('.col-header'):null;
   var hh=hdr?hdr.offsetHeight:34;
@@ -1052,6 +1052,17 @@ function initT3(THREE){
   var d2=new THREE.DirectionalLight(0x88aaff,0.3);d2.position.set(-1,0.5,-1);scene.add(d2);
   mHL=new THREE.MeshLambertMaterial({color:0xf59e0b,transparent:true,opacity:0.95,side:THREE.DoubleSide});
   mSL=new THREE.MeshLambertMaterial({color:0x3b82f6,transparent:true,opacity:0.85,side:THREE.DoubleSide});
+  // Crear OrbitControls
+  try{
+    var OC=oc&&oc.OrbitControls?oc.OrbitControls:(window._oc&&window._oc.OrbitControls?window._oc.OrbitControls:null);
+    if(OC){
+      ctrl=new OC(cam,ren.domElement);
+      ctrl.enableDamping=true;ctrl.dampingFactor=0.08;
+      ctrl.enablePan=true;ctrl.screenSpacePanning=true;
+      ctrl.minDistance=0.1;ctrl.maxDistance=10000;
+    }
+    installTouchGestures(canvas);
+  }catch(e2){console.warn('[OrbitControls]',e2);}
   canvas.addEventListener('click',function(e){onCanvasClick(e);});
   // Manejar pérdida/recuperación de contexto WebGL
   canvas.addEventListener('webglcontextlost',function(e){e.preventDefault();ctxLost=true;st3('Contexto 3D perdido — recargando…','');console.warn('[WebGL] context lost');},false);
@@ -1073,51 +1084,28 @@ function webglOK(){
   try{var c=document.createElement('canvas');return !!(window.WebGLRenderingContext&&(c.getContext('webgl')||c.getContext('experimental-webgl')));}catch(e){return false;}
 }
 async function ensT3(){
-  if(T3&&ren)return;
-  if(!webglOK()){st3('Tu navegador no permite WebGL (3D)','');alert('Este navegador no permite WebGL, necesario para el visor 3D. Activa la aceleración por hardware o prueba en otra ventana.');throw new Error('no-webgl');}
+  if(T3&&ren) return Promise.resolve();
+  if(!webglOK()){st3('Tu navegador no permite WebGL (3D)','');
+    return Promise.reject(new Error('no-webgl'));}
   st3('Cargando motor 3D…','sp');
-  // Asegurar que el canvas es visible y el panel tiene tamaño antes de crear el contexto
-  var cv=el('cv'); if(cv){cv.style.display='block'; cv.style.visibility='hidden';}
-  await new Promise(function(res){ waitForSize(el('p3d'), function(){ res(); }); });
-  if(cv){cv.style.visibility='';}
-  if(!T3){
-    var mod=await import('https://unpkg.com/three@0.160.0/build/three.module.js');
-    T3=mod;
-  }
-  try{
-    initT3(T3);
-  }catch(err){
-    st3('No se pudo crear el contexto 3D','');
-    console.error('[WebGL] init failed',err);
-    alert('No se pudo inicializar el 3D. Cierra otras pestañas con contenido 3D, desactiva extensiones (wallets) y recarga la página.');
-    throw err;
-  }
-  try{
-    var oc=await import('https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js');
-    ctrl=new oc.OrbitControls(cam,ren.domElement);
-    ctrl.enableDamping=true;ctrl.dampingFactor=0.08;
-  }catch(e){fbCtrl();}
-  // ajustar tamaño una vez listo
-  rsz3();
-  st3('Motor 3D listo','ok');
-}
-
-function fbCtrl(){
-  ctrl={update:function(){},target:new T3.Vector3()};
-  var cv=el('cv'),dn=false,lx=0,ly=0,rX=0.4,rY=0.4,dist=30,tg=new T3.Vector3();
-  function upd(){cam.position.set(tg.x+Math.sin(rY)*Math.cos(rX)*dist,tg.y+Math.sin(rX)*dist,tg.z+Math.cos(rY)*Math.cos(rX)*dist);cam.lookAt(tg);}
-  ctrl.target=tg; ctrl._rX=function(v){if(v!==undefined){rX=v;}return rX;}; ctrl._rY=function(v){if(v!==undefined){rY=v;}return rY;}; ctrl._upd=upd;
-  cv.addEventListener('mousedown',function(e){dn=true;lx=e.clientX;ly=e.clientY;});
-  window.addEventListener('mouseup',function(){dn=false;});
-  cv.addEventListener('mousemove',function(e){if(!dn)return;rY+=(e.clientX-lx)*0.005;rX+=(e.clientY-ly)*0.005;rX=Math.max(-1.5,Math.min(1.5,rX));lx=e.clientX;ly=e.clientY;upd();});
-  cv.addEventListener('wheel',function(e){e.preventDefault();dist=Math.max(0.5,dist+e.deltaY*0.05);upd();},{passive:false});
-  // Touch
-  var tdn=false,tlx=0,tly=0,pd=0;
-  cv.addEventListener('touchstart',function(e){if(e.touches.length===1){tdn=true;tlx=e.touches[0].clientX;tly=e.touches[0].clientY;}else if(e.touches.length===2){pd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:true});
-  cv.addEventListener('touchmove',function(e){if(e.touches.length===1&&tdn){rY+=(e.touches[0].clientX-tlx)*0.005;rX+=(e.touches[0].clientY-tly)*0.005;rX=Math.max(-1.5,Math.min(1.5,rX));tlx=e.touches[0].clientX;tly=e.touches[0].clientY;upd();}else if(e.touches.length===2){var nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);dist=Math.max(0.5,dist+(pd-nd)*0.05);pd=nd;upd();}},{passive:true});
-  cv.addEventListener('touchend',function(){tdn=false;});
-  ctrl.setDist=function(d){dist=d;upd();};
-  ctrl.fit=function(c,d){tg.copy(c);dist=d;upd();};
+  return new Promise(function(resolve,reject){
+    var cv=el('cv');
+    if(cv){cv.style.display='block';cv.style.width='100%';cv.style.height='100%';}
+    var p3=el('p3d'),col3=el('col3');
+    if(p3&&col3){p3.style.display='block';}
+    var THREE_URL='https://unpkg.com/three@0.160.0/build/three.module.js';
+    var OC_URL='https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+    if(T3&&ren){resolve();return;}  if(T3){try{initT3(T3,window._oc||{});resolve();}catch(e){reject(e);}return;}
+    import(THREE_URL).then(function(THREE){
+      T3=THREE;window._T3=THREE;
+      return import(OC_URL);
+    }).then(function(oc){
+      window._oc=oc;
+      try{initT3(THREE,oc);resolve();}catch(e){reject(e);}
+    }).catch(function(e){
+      st3('Error cargando Three.js','');reject(e);
+    });
+  });
 }
 
 async function loadIFC(file){
@@ -1601,12 +1589,12 @@ var BIN_TYPES = ['IFCWALL','IFCWALLSTANDARDCASE','IFCSLAB','IFCCOLUMN','IFCBEAM'
   'IFCSTAIR','IFCFOOTING','IFCRAILING','IFCBUILDINGELEMENTPROXY'];
 
 function loadBin(binData){
-  // binData: Uint8Array or ArrayBuffer
   var THREE = T3;
   var buf = binData instanceof Uint8Array ? binData.buffer : binData;
   var dv = new DataView(buf);
   var off = 0;
-  // Header
+
+  // Parse header
   var magic = String.fromCharCode(dv.getUint8(0),dv.getUint8(1),dv.getUint8(2),dv.getUint8(3));
   if(magic !== 'BC3M'){console.error('[BIN] magic inválido:',magic);return false;}
   var ver = dv.getUint8(4);
@@ -1614,15 +1602,16 @@ function loadBin(binData){
   var rng = dv.getFloat32(9,true);
   var nEl = dv.getUint32(13,true);
   off = 17;
-  console.log('[BIN] ver='+ver+' mn='+mn.toFixed(1)+' rng='+rng.toFixed(1)+' elems='+nEl);
+  console.log('[BIN] ver='+ver+' elems='+nEl+' mn='+mn.toFixed(1));
 
-  // Limpiar escena anterior
+  // Limpiar escena
   meshes.forEach(function(m){scene.remove(m.mesh);if(m.mesh.geometry)m.mesh.geometry.dispose();});
-  meshes=[]; oMat.clear(); g2e={}; e2g={}; g2asm={}; asm2g={};
+  meshes=[];oMat.clear();g2e={};e2g={};g2asm={};asm2g={};
   var tCnt={};
 
+  // Pre-parse todos los elementos sin crear geometría
+  var parsed = [];
   for(var ei=0;ei<nEl;ei++){
-    // guid
     var guid='';
     for(var i=0;i<22;i++) guid+=String.fromCharCode(dv.getUint8(off+i));
     guid=guid.replace(/ /g,'');
@@ -1630,87 +1619,98 @@ function loadBin(binData){
     var asmLen=dv.getUint8(off+23);
     var asm='';
     for(var i=0;i<asmLen;i++) asm+=String.fromCharCode(dv.getUint8(off+24+i));
-    off += 24+asmLen;
+    off+=24+asmLen;
     var cr=dv.getUint8(off),cg=dv.getUint8(off+1),cb=dv.getUint8(off+2),ca=dv.getUint8(off+3);
-    var nPos=dv.getUint32(off+4,true), nIdx=dv.getUint32(off+8,true);
-    off += 12;
-    // positions (uint16 quantized)
-    var qpos = new Uint16Array(buf, off, nPos);
-    off += nPos*2;
-    // indices
-    var idxArr = new Uint32Array(buf, off, nIdx);
-    off += nIdx*4;
+    var nPos=dv.getUint32(off+4,true),nIdx=dv.getUint32(off+8,true);
+    off+=12;
+    var posOffset=off, idxOffset=off+nPos*2;
+    off+=nPos*2+nIdx*4;
+    if(nPos>=3&&nIdx>=3) parsed.push({guid,ti,asm,cr,cg,cb,ca,nPos,nIdx,posOffset,idxOffset});
+  }
+  console.log('[BIN] parsed '+parsed.length+' elements');
 
-    if(nPos<3||nIdx<3) continue;
+  // Construir meshes en lotes con rAF para no bloquear UI
+  var BATCH = 300; // meshes por frame
+  var idx2 = 0;
 
-    // Dequantize positions
-    var posF = new Float32Array(nPos);
-    for(var i=0;i<nPos;i++) posF[i]=qpos[i]/65535*rng+mn;
+  function processBatch(){
+    var end2 = Math.min(idx2+BATCH, parsed.length);
+    for(var i=idx2;i<end2;i++){
+      var p=parsed[i];
+      // Dequantize positions
+      var posF=new Float32Array(p.nPos);
+      var posView=new Uint16Array(buf,p.posOffset,p.nPos);
+      for(var j=0;j<p.nPos;j++) posF[j]=posView[j]/65535*rng+mn;
+      var idxView=new Uint32Array(buf,p.idxOffset,p.nIdx);
 
-    var geo=new THREE.BufferGeometry();
-    geo.setAttribute('position',new THREE.BufferAttribute(posF,3));
-    geo.setIndex(new THREE.BufferAttribute(new Uint32Array(idxArr),1));
-    geo.computeVertexNormals();
+      var geo=new THREE.BufferGeometry();
+      geo.setAttribute('position',new THREE.BufferAttribute(posF,3));
+      geo.setIndex(new THREE.BufferAttribute(new Uint32Array(idxView),1));
+      geo.computeVertexNormals();
 
-    var isT=ca<240;
-    var mat=new THREE.MeshLambertMaterial({
-      color:new THREE.Color(cr/255,cg/255,cb/255),
-      transparent:isT, opacity:isT?Math.max(ca/255,0.3):1,
-      side:THREE.DoubleSide, depthWrite:!isT
-    });
-    var mesh=new THREE.Mesh(geo,mat);
-    if(isT) mesh.renderOrder=1;
-    var typeName=BIN_TYPES[ti]||'IFCBUILDINGELEMENTPROXY';
-    mesh.userData.expressID=ei; // usamos índice como expressID
-    mesh.userData.guid=guid;
-    mesh.userData.ifcType=typeName;
-    scene.add(mesh);
-    meshes.push({mesh:mesh, expressID:ei});
-    oMat.set(mesh,mat);
-
-    // Build lookup maps
-    e2g[ei]=guid; if(!g2e[guid])g2e[guid]=[]; g2e[guid].push(ei);
-    if(asm){
-      g2asm[guid]=asm;
-      if(!asm2g[asm])asm2g[asm]=[]; asm2g[asm].push(guid);
+      var isT=p.ca<240;
+      var mat=new THREE.MeshLambertMaterial({
+        color:new THREE.Color(p.cr/255,p.cg/255,p.cb/255),
+        transparent:isT,opacity:isT?Math.max(p.ca/255,0.3):1,
+        side:THREE.DoubleSide,depthWrite:!isT
+      });
+      var mesh=new THREE.Mesh(geo,mat);
+      if(isT)mesh.renderOrder=1;
+      var typeName=BIN_TYPES[p.ti]||'IFCBUILDINGELEMENTPROXY';
+      scene.add(mesh);
+      meshes.push({mesh:mesh,expressID:i});
+      oMat.set(mesh,mat);
+      e2g[i]=p.guid;
+      if(!g2e[p.guid])g2e[p.guid]=[];
+      g2e[p.guid].push(i);
+      if(p.asm){
+        g2asm[p.guid]=p.asm;
+        if(!asm2g[p.asm])asm2g[p.asm]=[];
+        asm2g[p.asm].push(p.guid);
+      }
+      tCnt[typeName]=(tCnt[typeName]||0)+1;
     }
-    tCnt[typeName]=(tCnt[typeName]||0)+1;
+    idx2=end2;
+
+    // Actualizar progreso
+    var pct=Math.round(idx2/parsed.length*100);
+    pg3(pct);
+    if(el('sel'))el('sel').textContent=idx2.toLocaleString()+' / '+parsed.length.toLocaleString()+' elem.';
+
+    if(idx2 < parsed.length){
+      requestAnimationFrame(processBatch);
+    } else {
+      // Finalizado
+      console.log('[BIN] meshes cargados:',meshes.length);
+      if(typeof buildTP==='function') buildTP(tCnt);
+      fitCam();
+      el('dz').classList.add('h');
+      el('cv').style.display='block';
+      if(el('tbl'))el('tbl').style.display='flex';
+      if(el('tbr'))el('tbr').style.display='flex';
+      if(el('zw'))el('zw').style.display='flex';
+
+      var nG=Object.keys(g2e).length,nM=0;
+      if(curBC)Object.keys(curBC.g).forEach(function(p2){
+        (curBC.g[p2]||[]).forEach(function(e){
+          if(e.type==='ifc22'&&g2e[e.ifc22])nM++;
+          else if(e.type==='asm'&&asm2g[e.asmCode])nM++;
+        });
+      });
+      st3(nG+' elem · '+nM+' vinculados','ok');
+      pg3(100);
+      if(selP&&curBC)hlPart(selP,curBC);
+    }
   }
 
-  console.log('[BIN] meshes cargados:',meshes.length);
-  if(typeof buildTP==='function') buildTP(tCnt);
-  fitCam();
-  el('dz').classList.add('h');
+  // Mostrar canvas y empezar
   el('cv').style.display='block';
-  if(el('tbl'))el('tbl').style.display='flex';
-  if(el('tbr'))el('tbr').style.display='flex';
-  if(el('zw'))el('zw').style.display='flex';
-  if(el('tp'))el('tp').style.display='block';
-
-  var nG=Object.keys(e2g).length, nM=0;
-  if(curBC)Object.keys(curBC.g).forEach(function(p){
-    (curBC.g[p]||[]).forEach(function(e){
-      if(e.type==='ifc22'&&g2e[e.ifc22])nM++;
-      else if(e.type==='asm'&&asm2g[e.asmCode])nM++;
-    });
-  });
-  st3(nG+' elem · '+nM+' vinculados','ok');
-  if(el('sel'))el('sel').textContent=nG+' elem.';
-  if(selP&&curBC) hlPart(selP,curBC);
+  el('dz').classList.add('h');
+  st3('Cargando modelo…','sp');pg3(1);
+  requestAnimationFrame(processBatch);
   return true;
 }
 
-// ─── Guardar bin en IndexedDB ─────────────────────────────────────────────
-function saveBinToDB(vid, binData, ifcName, cb){
-  dbP('ifcbin',{vid:vid, bin:binData, name:ifcName, savedAt:Date.now()},function(){
-    dbG('versions',vid,function(v){
-      if(v){v.hasBin=true;v.ifcName=ifcName;v.binSavedAt=Date.now();dbP('versions',v);}
-      if(cb)cb();
-    });
-  });
-}
-
-// ─── Cargar bin de IndexedDB ──────────────────────────────────────────────
 function loadBinFromDB(vid, cb){
   dbG('ifcbin',vid,function(rec){
     if(rec&&rec.bin){cb(rec.bin,rec.name);}
@@ -1805,16 +1805,13 @@ async function importBc3m(file){
 // Cargar JSZip dinámicamente
 var _jszip = null;
 async function loadJSZip(){
-  if(_jszip) return _jszip;
-  var mod = await import('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
-  // JSZip se expone como global
-  if(typeof JSZip !== 'undefined'){_jszip=JSZip;return _jszip;}
-  // fallback: cargar como script
+  if(_jszip) return Promise.resolve(_jszip);
+  if(typeof JSZip!=='undefined'){_jszip=JSZip;return Promise.resolve(_jszip);}
   return new Promise(function(res,rej){
     var s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
     s.onload=function(){_jszip=window.JSZip;res(_jszip);};
-    s.onerror=rej;
+    s.onerror=function(){rej(new Error('JSZip no disponible'));};
     document.head.appendChild(s);
   });
 }
