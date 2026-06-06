@@ -1,13 +1,11 @@
-// BC3 Manager Service Worker v8
-const CACHE = 'bc3-v22';
+// BC3 Manager Service Worker v1
+const CACHE = 'bc3m-v1';
 
 self.addEventListener('install', e => {
-  // Activar inmediatamente sin esperar a que se cierren pestañas
   e.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', e => {
-  // Tomar control de todos los clientes al activar
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
@@ -17,20 +15,11 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // Solo cachear recursos del mismo origen (no CDNs externos)
   if (url.origin !== location.origin) return;
-  
-  // index.html y sw.js: siempre network-first para ver actualizaciones
-  if (url.pathname.endsWith('/') || 
-      url.pathname.endsWith('index.html') || 
-      url.pathname.endsWith('sw.js')) {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
+  if (url.pathname.endsWith('/') || url.pathname.endsWith('index.html') || url.pathname.endsWith('sw.js')) {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
-  
-  // Resto: cache-first
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
