@@ -357,7 +357,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v21</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v22</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button>
       <label for="fimport-home" class="btn" style="cursor:pointer;" title="Importar .bc3m desde OneDrive/archivo">⬆ Importar .bc3m</label>
       <input type="file" id="fimport-home" style="position:absolute;left:-9999px;" tabindex="-1" accept=".bc3m"></div>
@@ -371,7 +371,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v21</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v22</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -390,7 +390,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v21</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v22</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <label for="fbc3r" class="btn" style="cursor:pointer;" title="Vuelve a cargar el BC3 para actualizar datos">↺ BC3</label>
@@ -494,7 +494,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v21</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v22</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -567,6 +567,19 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function fmt(n,d){return Number(n||0).toLocaleString('es-ES',{minimumFractionDigits:d||2,maximumFractionDigits:d||2});}
 function el(id){return document.getElementById(id);}
 function on(id,ev,fn){var e=el(id);if(e)e.addEventListener(ev,fn);else console.warn('Missing:',id);}
+
+function showM(id){var e=el(id);if(e)e.classList.add('o');}
+function hideM(id){var e=el(id);if(e)e.classList.remove('o');}
+
+function selectPart(code){
+  selP=code;
+  // Highlight in tree
+  document.querySelectorAll('.tn').forEach(function(n){n.classList.remove('s');});
+  var node=document.querySelector('.tn[data-code="'+code+'"]');
+  if(node){node.classList.add('s');node.scrollIntoView({block:'nearest'});}
+  renderDet();
+  if(xv && xscene && curBC) hlPart(code, curBC);
+}
 
 // ═══ DB ══════════════════════════════════════════════════════════════════
 var _db=null;
