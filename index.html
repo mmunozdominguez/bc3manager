@@ -357,7 +357,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v14</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button>
       <label for="fimport-home" class="btn" style="cursor:pointer;" title="Importar .bc3m desde OneDrive/archivo">⬆ Importar .bc3m</label>
       <input type="file" id="fimport-home" style="position:absolute;left:-9999px;" tabindex="-1" accept=".bc3m"></div>
@@ -371,7 +371,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v14</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -390,7 +390,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v14</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <label for="fbc3r" class="btn" style="cursor:pointer;" title="Vuelve a cargar el BC3 para actualizar datos">↺ BC3</label>
@@ -494,7 +494,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v14</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -1403,8 +1403,6 @@ window.setView3d=function(v){
   cam.lookAt(c);
 }
 function setView3d(v){window.setView3d(v);}
-
-
 // ═══ CAMERA (alias compat) ════════════════════════════════════════════════
 function setView(v){ setView3d(v); }
 window.setView=setView;
@@ -1476,8 +1474,6 @@ function applyCMode(cm){
   }
   if(selP&&curBC)hlPart(selP,curBC);
 }
-
-
 // ═══ IFC→BIN CONVERTER ════════════════════════════════════════════════════
 // Convierte IFC a formato binario compacto para almacenamiento en IndexedDB
 // Formato .bc3m: ZIP con metadatos JSON + bin de geometría + bc3 parseado
@@ -1822,8 +1818,6 @@ async function loadJSZip(){
     document.head.appendChild(s);
   });
 }
-
-
 // ═══ EVENTS ═══════════════════════════════════════════════════════════════
 on('bn-np','click',function(){showM('m-proj');});
 on('bh1','click',loadHome);
@@ -1967,8 +1961,6 @@ window.addEventListener('beforeinstallprompt',function(e){
   var prompt=el('install-prompt');
   if(prompt)prompt.classList.add('show');
 });
-
-
 // ═══ COLUMNAS REDIMENSIONABLES ════════════════════════════════════════════
 (function(){
   // Divisores drag
@@ -2138,8 +2130,6 @@ var _tgTimer = setInterval(function(){
   var cv = el('cv');
   if(cv && T3 && ctrl){ installTouchGestures(cv); clearInterval(_tgTimer); }
 },500);
-
-
 // ═══ INIT ════
 // Detectar dispositivo y mostrar indicador
 (function(){
@@ -2155,7 +2145,6 @@ var _tgTimer = setInterval(function(){
     }
   }
 })();
-════════════════════════════════════════════════════════════
 loadHome();
 </script>
 </body>
