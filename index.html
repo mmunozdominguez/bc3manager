@@ -357,7 +357,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v12</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button>
       <label for="fimport-home" class="btn" style="cursor:pointer;" title="Importar .bc3m desde OneDrive/archivo">⬆ Importar .bc3m</label>
       <input type="file" id="fimport-home" style="position:absolute;left:-9999px;" tabindex="-1" accept=".bc3m"></div>
@@ -371,7 +371,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v12</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -390,7 +390,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v12</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <label for="fbc3r" class="btn" style="cursor:pointer;" title="Vuelve a cargar el BC3 para actualizar datos">↺ BC3</label>
@@ -494,7 +494,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v12</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -752,11 +752,14 @@ function loadProj(id){
         c.innerHTML='<div class="vi">📄</div><div style="flex:1;min-width:0;"><div class="vn">'+esc(v.name)+'</div><div class="vm"><span>'+new Date(v.createdAt).toLocaleDateString('es-ES')+'</span>'+(v.nPartidas?'<span>'+v.nPartidas+' partidas</span>':'')+(v.nBimLinked?'<span>'+v.nBimLinked+' BIM</span>':'')+(v.notes?'<span>'+esc(v.notes.slice(0,40))+'</span>':'')+'</div></div><div class="vb">'+bg+'</div><div class="va"></div>';
         var db=document.createElement('button');db.className='btn g';db.style.padding='3px 7px';db.textContent='🗑';db.title='Eliminar';
         (function(vid){
-              var eb=document.createElement('button');eb.className='btn sm';eb.textContent='⬇ Exportar';eb.title='Exportar versión como .bc3m para compartir';
-              eb.addEventListener('click',function(e){e.stopPropagation();exportVersion(vid);});
-              c.appendChild(eb);
-            })(v.id);
-            (function(vid){db.addEventListener('click',function(e){e.stopPropagation();if(confirm('¿Eliminar?')){dbD('versions',vid,function(){dbD('bc3data',vid,function(){loadProj(curPJ);});});}});})(v.id);
+          var eb=document.createElement('button');
+          eb.className='btn sm';eb.textContent='⬇ Exportar';
+          eb.title='Exportar para OneDrive / compartir';
+          eb.style.cssText='font-size:10px;padding:3px 8px;margin-left:4px;';
+          eb.addEventListener('click',function(e){e.stopPropagation();exportVersion(vid);});
+          c.querySelector('.va').appendChild(eb);
+        })(v.id);
+        (function(vid){db.addEventListener('click',function(e){e.stopPropagation();if(confirm('¿Eliminar?')){dbD('versions',vid,function(){dbD('bc3data',vid,function(){loadProj(curPJ);});});}});})(v.id);
         c.querySelector('.va').appendChild(db);
         (function(vid){c.addEventListener('click',function(){openVer(vid);});})(v.id);
         lst.appendChild(c);
