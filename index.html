@@ -357,7 +357,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-home" class="view active">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v17</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v18</span></div>
     <div class="tr"><button class="btn p" id="bn-np">+ Nueva obra</button>
       <label for="fimport-home" class="btn" style="cursor:pointer;" title="Importar .bc3m desde OneDrive/archivo">⬆ Importar .bc3m</label>
       <input type="file" id="fimport-home" style="position:absolute;left:-9999px;" tabindex="-1" accept=".bc3m"></div>
@@ -371,7 +371,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-proj" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v17</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v18</span></div>
     <div class="bc"><span class="crumb" id="bh1">Obras</span><span class="sep">/</span><span id="bp1">—</span></div>
     <div class="tr">
       <button class="btn" id="bn-cmp" style="display:none">⇄ Comparar</button>
@@ -390,7 +390,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-visor" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v17</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v18</span></div>
     <div class="bc"><span class="crumb" id="bh2">Obras</span><span class="sep">/</span><span class="crumb" id="bp2">—</span><span class="sep">/</span><span id="bv2">—</span></div>
     <div class="tr">
       <label for="fbc3r" class="btn" style="cursor:pointer;" title="Vuelve a cargar el BC3 para actualizar datos">↺ BC3</label>
@@ -494,7 +494,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 <div id="v-cmp" class="view">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v17</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v18</span></div>
     <div class="bc"><span class="crumb" id="bh3">Obras</span><span class="sep">/</span><span class="crumb" id="bp3">—</span><span class="sep">/</span><span>Comparar</span></div>
     <div class="tr"><button class="btn" id="bn-bc">← Volver</button></div>
   </div>
@@ -1752,6 +1752,15 @@ function loadBin(binData){
   return true;
 }
 
+// ─── Guardar bin en IndexedDB ─────────────────────────────────────────────
+function saveBinToDB(vid, binData, ifcName, cb){
+  dbP('ifcbin',{vid:vid,bin:binData,name:ifcName,savedAt:Date.now()},function(){
+    dbG('versions',vid,function(v){
+      if(v){v.hasBin=true;v.ifcName=ifcName;v.binSavedAt=Date.now();dbP('versions',v);}
+      if(cb)cb();
+    });
+  });
+}
 function loadBinFromDB(vid, cb){
   dbG('ifcbin',vid,function(rec){
     if(rec&&rec.bin){cb(rec.bin,rec.name);}
@@ -1808,39 +1817,76 @@ async function importBc3m(file){
     var JSZip = await loadJSZip();
     var buf = await file.arrayBuffer();
     var zip = await JSZip.loadAsync(buf);
+
     var manifest = JSON.parse(await zip.file('manifest.json').async('string'));
     var bc3 = zip.file('bc3.json') ? JSON.parse(await zip.file('bc3.json').async('string')) : null;
     var binFile = zip.file('model.bin');
     var binData = binFile ? await binFile.async('uint8array') : null;
 
-    var proj = manifest.project;
+    var proj  = manifest.project;
     var vmeta = manifest.versionMeta;
+    var newVid = 'v_'+Date.now();
+    var hasBin = !!(binData && binData.byteLength > 17);
 
-    // Crear o reusar proyecto
+    console.log('[import] hasBin='+hasBin+' binSize='+(binData?binData.byteLength:0));
+
+    // Paso 1: Guardar proyecto
     dbA('projects',function(projs){
       var existing = projs.filter(function(p){return p.name===proj.name;})[0];
       var projId = existing ? existing.id : 'p_'+Date.now();
-      if(!existing){
-        dbP('projects',{id:projId,name:proj.name,address:proj.address,client:proj.client,createdAt:Date.now()});
-      }
-      // Crear versión
-      var newVid = 'v_'+Date.now();
       var newVer = {
-        id:newVid, projectId:projId, name:vmeta.name, status:vmeta.status||'current',
-        notes:vmeta.notes, createdAt:vmeta.createdAt||Date.now(),
-        nPartidas:vmeta.nPartidas, nBimLinked:vmeta.nBimLinked,
-        ifcName:vmeta.ifcName, hasBin:!!(binData), importedAt:Date.now()
+        id:newVid, projectId:projId, name:vmeta.name||file.name,
+        status:vmeta.status||'current', notes:vmeta.notes||'',
+        createdAt:vmeta.createdAt||Date.now(),
+        nPartidas:vmeta.nPartidas||0, nBimLinked:vmeta.nBimLinked||0,
+        ifcName:vmeta.ifcName||'', hasBin:hasBin, importedAt:Date.now()
       };
-      dbP('versions',newVer);
-      if(bc3) dbP('bc3data',{vid:newVid, bc3:bc3});
-      if(binData) saveBinToDB(newVid, binData, vmeta.ifcName||'model.bin', function(){
-        st3('Importado correctamente','ok');
-        loadHome();
-      });
-      else{st3('Importado (sin modelo 3D)','ok');loadHome();}
+
+      // Guardar proyecto si es nuevo
+      var saveProjDone = function(){
+        // Paso 2: Guardar versión
+        dbP('versions', newVer, function(){
+          console.log('[import] version saved, hasBin='+newVer.hasBin);
+          // Paso 3: Guardar BC3
+          if(bc3){
+            dbP('bc3data',{vid:newVid,bc3:bc3},function(){
+              console.log('[import] bc3 saved');
+              // Paso 4: Guardar bin o terminar
+              if(hasBin){
+                saveBinToDB(newVid, binData, vmeta.ifcName||'model.bin', function(){
+                  console.log('[import] bin saved OK');
+                  st3('Importado correctamente','ok');
+                  loadHome();
+                });
+              } else {
+                st3('Importado (sin modelo 3D)','ok');
+                loadHome();
+              }
+            });
+          } else {
+            if(hasBin){
+              saveBinToDB(newVid, binData, vmeta.ifcName||'model.bin', function(){
+                st3('Importado correctamente','ok');loadHome();
+              });
+            } else {
+              st3('Importado (sin modelo 3D)','ok');loadHome();
+            }
+          }
+        });
+      };
+
+      if(!existing){
+        dbP('projects',{id:projId,name:proj.name,address:proj.address||'',
+          client:proj.client||'',createdAt:Date.now()},saveProjDone);
+      } else {
+        saveProjDone();
+      }
     });
-  }catch(e){st3('Error importando: '+e.message,'');console.error('[import]',e);
-    alert('Error al importar el archivo .bc3m: '+e.message);}
+  }catch(e){
+    st3('Error importando: '+e.message,'');
+    console.error('[import]',e);
+    alert('Error al importar .bc3m: '+e.message);
+  }
 }
 
 // Cargar JSZip dinámicamente
