@@ -335,6 +335,35 @@ button,input,select,textarea{-webkit-appearance:none;}
   .vbg{display:none;}
 }
 
+
+/* ── Tarjetas de obras ─────────────────────────────────────────── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:12px;}
+.proj-card{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:16px 18px;
+  cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:4px;}
+.proj-card:hover{border-color:var(--acc);box-shadow:0 2px 10px rgba(108,99,255,.1);transform:translateY(-1px);}
+.proj-name{font-size:14px;font-weight:600;color:var(--text);}
+.proj-meta{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.proj-date{font-size:10px;color:var(--muted);margin-top:4px;}
+
+/* ── Tarjetas de versiones ─────────────────────────────────────── */
+.ver-card{background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:14px 16px;
+  margin-bottom:8px;display:flex;flex-direction:column;gap:8px;transition:border-color .15s;}
+.ver-card:hover{border-color:var(--acc-bd);}
+.ver-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.ver-name{font-size:13px;font-weight:600;color:var(--text);}
+.ver-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.ver-meta span{font-size:11px;color:var(--muted);}
+.ver-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.btn.sm{font-size:10px;padding:3px 9px;min-height:26px;}
+
+/* ── Info proyecto ─────────────────────────────────────────────── */
+.pi{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd);font-size:12px;}
+.pi:last-child{border-bottom:none;}
+.pl{color:var(--muted);width:90px;flex-shrink:0;}
+.pv{color:var(--text);font-weight:500;}
+
+/* ── Sección título ────────────────────────────────────────────── */
+.ht{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;}
 </style>
 </head>
 <body>
@@ -444,10 +473,12 @@ button,input,select,textarea{-webkit-appearance:none;}
       <div class="col-header">
         <span>Modelo 3D</span>
         <div style="display:flex;gap:4px;align-items:center;flex:1;justify-content:flex-end;padding-right:8px;">
-          <button class="t3" id="bn-fit" title="Encuadrar">⊡</button>
+          <button class="t3" id="bn-fit" title="Encuadrar todo">⊡</button>
           <button class="t3" id="bn-ghost" title="Modo fantasma">◈</button>
           <button class="t3" id="bn-iso" title="Aislar selección">◎</button>
           <button class="t3" id="bn-clr" title="Limpiar selección">✕</button>
+          <button class="t3" id="bn-slice" title="Sección horizontal">⬛</button>
+          <button class="t3" id="bn-types" title="Filtrar por tipo">≡</button>
         </div>
         <button class="col-tog" id="tog-col3" title="Colapsar">‹</button>
       </div>
@@ -464,6 +495,15 @@ button,input,select,textarea{-webkit-appearance:none;}
           <div id="hcp" style="color:#6b7280;font-size:9px;margin-top:1px;"></div>
         </div>
         <div id="pg" style="position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0%;transition:width .3s;display:none;z-index:20;"></div>
+        <!-- Sección -->
+        <div id="slice-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.95);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;z-index:30;display:none;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+          <span style="font-size:11px;color:var(--muted);">Sección Z</span>
+          <input type="range" id="slice-slider" min="0" max="100" value="100" style="width:120px;accent-color:var(--acc);">
+          <span style="font-size:10px;font-family:monospace;color:var(--text);min-width:30px;" id="slice-val">100%</span>
+          <button class="btn sm" id="slice-off" style="padding:2px 6px;">✕</button>
+        </div>
+        <!-- Panel tipos -->
+        <div id="types-panel" style="display:none;position:absolute;top:44px;right:8px;background:rgba(255,255,255,.95);border:1px solid var(--bd);border-radius:8px;padding:10px;z-index:30;min-width:160px;box-shadow:0 2px 8px rgba(0,0,0,.1);"></div>
       </div>
     </div>
   </div>
@@ -909,8 +949,16 @@ async function initXeokit(){
     canvas.style.height=h+'px';
     canvas.width=w; canvas.height=h;
     console.log('[XK] canvas size:', w, h);
-    xv=new XK.Viewer({canvasId:'cv',transparent:false,antialias:true,
-      backgroundColor:[0.95,0.94,0.92]});
+    xv=new XK.Viewer({
+      canvasId:'cv',
+      transparent:false,
+      antialias:true,
+      backgroundColor:[0.94,0.93,0.91],
+      premultipliedAlpha:false
+    });
+    // Mejor calidad de renderizado
+    xv.scene.gammaOutput = true;
+    xv.scene.gammaFactor = 2.2;
     xscene=xv.scene;
     xv.cameraControl.navMode='orbit';
     xv.cameraControl.followPointer=true;
@@ -960,19 +1008,20 @@ async function loadXkt(xktBuffer, metaJson){
   try{
     if(metaJson&&xscene.metaScene)xscene.metaScene.createMetaModel('m',metaJson);
     var loader=new XK.XKTLoaderPlugin(xv,{
-      dtxEnabled: false  // required for XKT v12 compatibility
+      dtxEnabled: false
     });
-    // xktBuffer must be ArrayBuffer, not Uint8Array
     var buf = xktBuffer instanceof Uint8Array ? xktBuffer.buffer.slice(
       xktBuffer.byteOffset, xktBuffer.byteOffset + xktBuffer.byteLength) : xktBuffer;
-    console.log('[XK] loading xkt buffer, byteLength:', buf.byteLength);
+    console.log('[XK] loading xkt, size:', buf.byteLength);
     xModel=loader.load({
       id: 'm',
       xkt: buf,
-      edges: false,
+      edges: true,           // aristas visibles para mejor definición
+      edgeThreshold: 20,     // umbral de aristas
       saoEnabled: false,
       pbrEnabled: false,
-      dtxEnabled: false
+      dtxEnabled: false,
+      rotation: [-90,0,0]    // corregir eje Z→Y (IFC usa Z como vertical)
     });
     xModel.on('loaded',function(){
       pg3(100);
@@ -1193,6 +1242,106 @@ async function loadXktFile(file){
   });
 })();
 
+
+// ── SECCIÓN Y TIPOS ───────────────────────────────────────────────────────
+var xSection = null;
+var typeVisibility = {};
+
+function toggleSlice(){
+  var panel = el('slice-panel');
+  if(!xv||!xscene){return;}
+  if(!xSection){
+    // Create section plane
+    var XK = window._XK;
+    if(!XK||!XK.SectionPlanesPlugin){return;}
+    if(!xv._sectionPlanes){
+      xv._sectionPlanes = new XK.SectionPlanesPlugin(xv);
+    }
+    // Get model bounds for initial position
+    var aabb = xscene.aabb;
+    var midZ = aabb[1] + (aabb[4]-aabb[1]) * 0.5;
+    xSection = xv._sectionPlanes.createSectionPlane({
+      id:'sec1',
+      pos:[0, midZ, 0],
+      dir:[0,-1,0]
+    });
+    panel.style.display='flex';
+    el('bn-slice').classList.add('a');
+  } else {
+    xv._sectionPlanes.destroySectionPlane('sec1');
+    xSection=null;
+    panel.style.display='none';
+    el('bn-slice').classList.remove('a');
+  }
+}
+
+function updateSlice(pct){
+  if(!xSection||!xscene)return;
+  var aabb=xscene.aabb;
+  var minZ=aabb[1], maxZ=aabb[4];
+  var z = minZ + (maxZ-minZ)*(pct/100);
+  xSection.pos = [0, z, 0];
+  el('slice-val').textContent = pct+'%';
+}
+
+function buildTypesPanel(){
+  if(!xv||!xscene)return;
+  var panel=el('types-panel');
+  if(!panel)return;
+  var typeCount={};
+  if(xscene.metaScene){
+    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
+      if(mo.type&&mo.type!=='DEFAULT'){
+        typeCount[mo.type]=(typeCount[mo.type]||0)+1;
+      }
+    });
+  } else {
+    // Fallback: count by entity type if no metadata
+    typeCount['All']=Object.keys(xscene.objects).length;
+  }
+  if(!Object.keys(typeCount).length){
+    panel.innerHTML='<div style="font-size:11px;color:var(--muted);">Sin metadatos de tipo</div>';
+    return;
+  }
+  var html='<div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:6px;">Tipos IFC</div>';
+  var SHORT={'IFCWALL':'Muros','IFCWALLSTANDARDCASE':'Muros','IFCSLAB':'Forjados',
+    'IFCCOLUMN':'Pilares','IFCBEAM':'Vigas','IFCDOOR':'Puertas','IFCWINDOW':'Ventanas',
+    'IFCROOF':'Cubierta','IFCCOVERING':'Revestimiento','IFCSTAIR':'Escaleras',
+    'IFCBUILDINGELEMENTPROXY':'Otros'};
+  Object.keys(typeCount).sort().forEach(function(type){
+    var label=SHORT[type]||type.replace('IFC','');
+    var visible=typeVisibility[type]!==false;
+    html+='<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;padding:2px 0;">'
+      +'<input type="checkbox" data-type="'+type+'"'+(visible?' checked':'')+'>'
+      +'<span style="flex:1;">'+label+'</span>'
+      +'<span style="color:var(--muted);">'+typeCount[type]+'</span>'
+      +'</label>';
+  });
+  panel.innerHTML=html;
+  panel.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+    cb.addEventListener('change',function(){
+      var type=this.dataset.type;
+      typeVisibility[type]=this.checked;
+      if(xscene.metaScene){
+        Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
+          if(mo.type===type){
+            var obj=xscene.objects[mo.id];
+            if(obj)obj.visible=cb.checked;
+          }
+        });
+      }
+    });
+  });
+}
+
+// Slice slider
+var sliderEl=el('slice-slider');
+if(sliderEl)sliderEl.addEventListener('input',function(){updateSlice(parseInt(this.value));});
+on('slice-off','click',function(){
+  if(xSection&&xv._sectionPlanes){xv._sectionPlanes.destroySectionPlane('sec1');xSection=null;}
+  el('slice-panel').style.display='none';el('bn-slice').classList.remove('a');
+});
+
 // ── EVENTOS ───────────────────────────────────────────────────────────────
 // Navegación
 on('bh2','click',loadHome);
@@ -1309,6 +1458,13 @@ on('bn-iso','click',function(){
   }
 });
 on('bn-clr','click',function(){clrHL();showAll();el('bn-iso').classList.remove('a');});
+on('bn-slice','click',toggleSlice);
+on('bn-types','click',function(){
+  var p=el('types-panel');if(!p)return;
+  if(p.style.display==='none'||!p.style.display){
+    buildTypesPanel();p.style.display='block';this.classList.add('a');
+  } else {p.style.display='none';this.classList.remove('a');}
+});
 on('bn-export','click',function(){if(curVR)exportVersion(curVR);});
 
 // Import .bc3m
