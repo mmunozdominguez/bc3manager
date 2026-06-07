@@ -1566,10 +1566,16 @@ function applySectionFromPick(canvasPos){
     return;
   }
 
+  // Diagnóstico: ver qué devuelve pick()
+  console.log('[PICK] entity:', hit.entity.id);
+  console.log('[PICK] worldPos:', hit.worldPos);
+  console.log('[PICK] worldNormal:', hit.worldNormal);
+  console.log('[PICK] hit keys:', Object.keys(hit));
+
   // worldNormal: normal de la cara clicada
   var n = hit.worldNormal;
   if(!n || (n[0]===0 && n[1]===0 && n[2]===0)){
-    // Fallback: usar AABB si no hay normal
+    console.log('[PICK] no worldNormal — fallback AABB');
     applySectionFromAABB(hit.entity);
     return;
   }
