@@ -1066,7 +1066,11 @@ async function loadXkt(xktBuffer, metaJson){
   if(xModel){try{xModel.destroy();}catch(e){}xModel=null;g2asm={};asm2g={};}
   st3('Cargando modelo…','sp');pg3(20);
   try{
-    if(metaJson&&xscene.metaScene)xscene.metaScene.createMetaModel('m',metaJson);
+    // Note: XKT v12 from xeokit-convert has metadata embedded
+    // XKTLoaderPlugin reads it automatically - no need for separate metaJson
+    if(metaJson&&metaJson.objects&&metaJson.objects.length&&xscene.metaScene){
+      try{xscene.metaScene.createMetaModel('m',metaJson);}catch(e){console.warn('[XK] metaModel:',e);}
+    }
     var loader=new XK.XKTLoaderPlugin(xv,{
       dtxEnabled: true
     });
@@ -1097,6 +1101,13 @@ async function loadXkt(xktBuffer, metaJson){
     xModel.on('loaded',function(){
       pg3(100);
       console.log('[XK] model loaded, objects:', Object.keys(xscene.objects).length);
+      var metaObjs = xscene.metaScene ? Object.keys(xscene.metaScene.metaObjects||{}).length : 0;
+      console.log('[XK] metaObjects:', metaObjs);
+      if(metaObjs>0){
+        var types={};
+        Object.values(xscene.metaScene.metaObjects).forEach(function(mo){if(mo.type)types[mo.type]=(types[mo.type]||0)+1;});
+        console.log('[XK] types found:', types);
+      }
       if(metaJson&&metaJson.objects){
         metaJson.objects.forEach(function(o){
           if(o.assemblyCode){g2asm[o.id]=o.assemblyCode;
@@ -1109,6 +1120,10 @@ async function loadXkt(xktBuffer, metaJson){
       st3(n+' elem · '+nb+' vinculados','ok');
       el('dz').classList.add('h');
       el('cv').style.display='block';
+      // Rebuild types panel with actual model data
+      if(el('types-panel')&&el('types-panel').style.display!=='none'){
+        buildTypesPanel();
+      }
       // Resize canvas to fit parent
       var col3=el('col3'),hdr=col3?col3.querySelector('.col-header'):null;
       var w=col3?col3.clientWidth:800;
@@ -1400,8 +1415,28 @@ function buildTypesPanel(){
     typeCount['Todos']=Object.keys(xscene.objects).length;
   }
 
+  // If no metaScene data, try reading from scene objects via metaScene auto-populated by XKT
+  if(!Object.keys(typeCount).length&&xscene.metaScene){
+    // XKTLoaderPlugin populates metaScene automatically from embedded metadata
+    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
+      if(!mo.type||mo.type==='DEFAULT')return;
+      typeCount[mo.type]=(typeCount[mo.type]||0)+1;
+      if(!typeEntities[mo.type])typeEntities[mo.type]=[];
+      typeEntities[mo.type].push(mo.id);
+    });
+  }
   if(!Object.keys(typeCount).length){
-    list.innerHTML='<div style="padding:8px 12px;font-size:11px;color:#9ca3af;">Sin metadatos — carga un XKT con metadata</div>';
+    // Final fallback: use g2asm assembly codes to group by BC3 code
+    Object.keys(asm2g).forEach(function(code){
+      var guids=asm2g[code]||[];
+      if(guids.length>0){
+        typeCount[code]=guids.length;
+        typeEntities[code]=guids;
+      }
+    });
+  }
+  if(!Object.keys(typeCount).length){
+    list.innerHTML='<div style="padding:8px 12px;font-size:11px;color:#9ca3af;">Sin datos de categoría en este modelo</div>';
     return;
   }
 
@@ -1644,9 +1679,15 @@ on('bn-clr','click',function(){
 on('bn-slice','click',toggleSlice);
 on('bn-types','click',function(){
   var p=el('types-panel');if(!p)return;
-  if(p.style.display==='none'||!p.style.display){
-    buildTypesPanel();p.style.display='block';this.classList.add('a');
-  } else {p.style.display='none';this.classList.remove('a');}
+  var isOpen=(p.style.display==='flex'||p.style.display==='block');
+  if(!isOpen){
+    p.style.display='flex';
+    buildTypesPanel(); // always rebuild with latest data
+    this.classList.add('a');
+  } else {
+    p.style.display='none';
+    this.classList.remove('a');
+  }
 });
 on('bn-export','click',function(){if(curVR)exportVersion(curVR);});
 
