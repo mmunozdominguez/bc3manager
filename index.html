@@ -424,7 +424,9 @@ button,input,select,textarea{-webkit-appearance:none;}
     </div>
     <div class="tr" id="sm-wrap">
       <label for="fxkt" class="btn" style="cursor:pointer;" title="Cargar modelo XKT">⬆ XKT</label>
-      <input type="file" id="fxkt" style="position:absolute;left:-9999px;" accept=".xkt,.json" multiple>
+      <input type="file" id="fxkt" style="position:absolute;left:-9999px;" accept=".xkt">
+      <label for="fmeta" class="btn" style="cursor:pointer;" title="Cargar metadatos de categorías (.json)">⬆ Meta</label>
+      <input type="file" id="fmeta" style="position:absolute;left:-9999px;" accept=".json">
       <label for="fbc3r" class="btn" style="cursor:pointer;" title="Reimportar BC3">↺ BC3</label>
       <input type="file" id="fbc3r" style="position:absolute;left:-9999px;" accept=".bc3,.BC3">
       <button class="btn" id="bn-export" title="Exportar .bc3m">⬇ Exportar</button>
@@ -1066,10 +1068,13 @@ async function loadXkt(xktBuffer, metaJson){
   if(xModel){try{xModel.destroy();}catch(e){}xModel=null;g2asm={};asm2g={};}
   st3('Cargando modelo…','sp');pg3(20);
   try{
-    // Note: XKT v12 from xeokit-convert has metadata embedded
-    // XKTLoaderPlugin reads it automatically - no need for separate metaJson
+    // Create metaModel BEFORE loading XKT so loader can reference it
     if(metaJson&&metaJson.objects&&metaJson.objects.length&&xscene.metaScene){
-      try{xscene.metaScene.createMetaModel('m',metaJson);}catch(e){console.warn('[XK] metaModel:',e);}
+      try{
+        try{xscene.metaScene.destroyMetaModel('m');}catch(e2){}
+        xscene.metaScene.createMetaModel('m',metaJson);
+        console.log('[XK] metaModel created:',Object.keys(xscene.metaScene.metaObjects||{}).length,'objects');
+      }catch(e){console.warn('[XK] metaModel error:',e);}
     }
     var loader=new XK.XKTLoaderPlugin(xv,{
       dtxEnabled: true
@@ -1305,6 +1310,72 @@ async function loadXktFile(xktFile, metaFile){
   pg3(30);
   await initXeokit();
   loadXkt(xktUint,metaJson);
+}
+
+// ── Aplicar metadata a modelo ya cargado ─────────────────────────────────
+async function applyMetaFile(file){
+  try{
+    var text = await file.text();
+    var metaJson = JSON.parse(text);
+    if(!metaJson.objects||!metaJson.objects.length){
+      alert('El archivo JSON no contiene metadatos válidos.');return;
+    }
+    console.log('[META] applying',metaJson.objects.length,'objects to scene');
+
+    // Save to DB
+    if(curVR){
+      dbG('ifcbin',curVR,function(rec){
+        if(rec){rec.meta=metaJson;dbP('ifcbin',rec);}
+      });
+    }
+
+    // Apply to current scene
+    if(xscene&&xscene.metaScene){
+      try{
+        xscene.metaScene.createMetaModel('m',metaJson);
+      }catch(e){
+        // If model 'm' already exists, destroy and recreate
+        try{xscene.metaScene.destroyMetaModel('m');}catch(e2){}
+        xscene.metaScene.createMetaModel('m',metaJson);
+      }
+      var n = Object.keys(xscene.metaScene.metaObjects||{}).length;
+      console.log('[META] metaObjects after apply:',n);
+
+      // Build g2asm from assembly codes in metadata
+      metaJson.objects.forEach(function(o){
+        if(o.assemblyCode){
+          g2asm[o.id]=o.assemblyCode;
+          if(!asm2g[o.assemblyCode])asm2g[o.assemblyCode]=[];
+          if(asm2g[o.assemblyCode].indexOf(o.id)<0)asm2g[o.assemblyCode].push(o.id);
+        }
+      });
+
+      // Apply objectDefaults (spaces transparent etc)
+      var OBJ_DEFAULTS={
+        'IfcSpace':0.05,'IfcWindow':0.4,'IfcPlate':0.3,
+        'IfcRailing':0.7,'IfcOpeningElement':0
+      };
+      metaJson.objects.forEach(function(o){
+        var op=OBJ_DEFAULTS[o.type];
+        if(op!==undefined){
+          var obj=xscene.objects[o.id];
+          if(obj){
+            if(op===0)obj.visible=false;
+            else obj.opacity=op;
+          }
+        }
+      });
+
+      st3('Metadatos aplicados: '+n+' elementos','ok');
+      // Rebuild categories panel if open
+      if(el('types-panel')&&el('types-panel').style.display!=='none')buildTypesPanel();
+    } else {
+      st3('Carga el XKT primero','');
+    }
+  }catch(e){
+    st3('Error en metadatos: '+e.message,'');
+    console.error('[META]',e);
+  }
 }
 
 // ── COLUMNAS REDIMENSIONABLES ─────────────────────────────────────────────
@@ -1642,15 +1713,13 @@ on('bn-okv','click',function(){
 
 // Visor — XKT upload
 on('fxkt','change',function(){
-  if(!this.files.length||!curVR){this.value='';return;}
-  var xktFile=null, metaFile=null;
-  for(var i=0;i<this.files.length;i++){
-    var f=this.files[i];
-    if(f.name.endsWith('.xkt'))xktFile=f;
-    else if(f.name.endsWith('.json'))metaFile=f;
-  }
-  if(!xktFile&&this.files[0].name.endsWith('.xkt'))xktFile=this.files[0];
-  if(xktFile)loadXktFile(xktFile, metaFile);
+  if(!this.files[0]||!curVR){this.value='';return;}
+  loadXktFile(this.files[0], null);
+  this.value='';
+});
+on('fmeta','change',function(){
+  if(!this.files[0]||!curVR){this.value='';return;}
+  applyMetaFile(this.files[0]);
   this.value='';
 });
 
