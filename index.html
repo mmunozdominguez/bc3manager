@@ -1014,6 +1014,10 @@ async function initXeokit(){
     // ── Pick handler: mouse + touch ────────────────────────────────
     function handlePick(canvasPos){
       if(!xv||!xscene)return;
+      // Modo sección por cara: interceptar clic
+      if(typeof _sectionPickMode!=='undefined'&&_sectionPickMode){
+        applySectionFromPick(canvasPos);return;
+      }
       var hit=xv.scene.pick({canvasPos:canvasPos});
       if(!hit||!hit.entity)return;
       var entityId=hit.entity.id;
@@ -1524,108 +1528,106 @@ function toggleSlice(){
 }
 
 // Sección paralela al elemento seleccionado
-// Calcula la normal real del elemento usando PCA de sus vértices
+// Modo: el usuario clica en una cara del modelo y se crea el plano paralelo a esa cara
+var _sectionPickMode = false;
+
 function sectionByElement(){
-  if(!xv||!xscene){st3('Selecciona un elemento primero','');return;}
-  if(!vsHl||!vsHl.length){st3('Selecciona un elemento en el modelo','');return;}
+  if(!xv||!xscene) return;
   initSectionPlugin();
   if(!xSectionPlugin) return;
 
-  var entityId=vsHl[0];
-  var obj=xscene.objects[entityId];
-  if(!obj){st3('Elemento no encontrado','');return;}
-
-  // Recoger vértices del elemento usando getEachGeometry
-  var verts=[];
-  try{
-    xscene.getEachGeometry(function(geom){
-      if(geom.id&&geom.id.indexOf(entityId)<0) return;
-      var pos=geom.positionsCompressed||geom.positions;
-      if(pos) for(var i=0;i<pos.length;i+=3)
-        verts.push([pos[i],pos[i+1],pos[i+2]]);
-    });
-  }catch(e){}
-
-  // Fallback: usar los vértices del mesh directamente
-  if(!verts.length){
-    try{
-      xscene.eachObject(function(o){
-        if(o.id!==entityId) return;
-        if(o.geometry&&o.geometry.positions){
-          var p=o.geometry.positions;
-          for(var i=0;i<p.length;i+=3) verts.push([p[i],p[i+1],p[i+2]]);
-        }
-      });
-    }catch(e){}
+  if(_sectionPickMode){
+    // Cancelar modo pick
+    _sectionPickMode = false;
+    el('bn-slice-elem').classList.remove('a');
+    st3('','');
+    return;
   }
 
-  // Si no hay vértices disponibles, usar AABB con PCA manual
-  var aabb=obj.aabb||xscene.aabb;
-  var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
-  var sx=aabb[3]-aabb[0], sy=aabb[4]-aabb[1], sz=aabb[5]-aabb[2];
-
-  var dir, modeName;
-  if(verts.length>=6){
-    // PCA con los vértices reales — encontrar el eje de menor varianza = normal del plano
-    dir=computeNormalPCA(verts);
-    modeName='normal calculada';
-  } else {
-    // Fallback AABB: la dimensión MÁS PEQUEÑA es el espesor → su eje es la normal
-    // Para un muro: espesor < longitud y espesor < altura
-    // Snap al eje más cercano para evitar planos oblicuos
-    if(sy<=sx&&sy<=sz){
-      dir=[0,-1,0]; modeName='horizontal (forjado)';
-    } else if(sx<=sy&&sx<=sz){
-      dir=[-1,0,0]; modeName='perpendicular X';
-    } else {
-      dir=[0,0,-1]; modeName='perpendicular Z';
-    }
-  }
-
-  _sliceDir=dir;
-  var maabb=xscene.aabb;
-
-  // Rango del slider en la dirección de la normal
-  var dot=Math.abs(dir[0])>0.5 ? 0 : (Math.abs(dir[1])>0.5 ? 1 : 2);
-  _sliceMin=[maabb[0],maabb[1],maabb[2]][dot];
-  _sliceMax=[maabb[3],maabb[4],maabb[5]][dot];
-
-  // Pos actual del elemento proyectada sobre la normal
-  var curPos=[cx,cy,cz][dot];
-  var pct=Math.round((curPos-_sliceMin)/(_sliceMax-_sliceMin)*100);
-  pct=Math.max(0,Math.min(100,pct));
-
-  if(xSection) xSectionPlugin.destroySectionPlane('sec1');
-  xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[cx,cy,cz],dir:dir});
-
-  el('slice-slider').value=pct;
-  el('slice-val').textContent=pct+'%';
-  if(el('slice-title'))el('slice-title').textContent='Sección por elemento';
-  el('slice-panel').style.display='block';
+  // Activar modo pick — el siguiente clic del usuario define el plano
+  _sectionPickMode = true;
   el('bn-slice-elem').classList.add('a');
-  el('bn-slice').classList.remove('a');
-  st3('Plano '+modeName+' · slider para mover','');
+  st3('Haz clic en la cara del elemento para crear el plano de sección','sp');
 }
 
-// PCA simplificado: devuelve el eje de menor varianza (normal del plano principal)
-function computeNormalPCA(verts){
-  var n=verts.length;
-  // Centroid
-  var mx=0,my=0,mz=0;
-  for(var i=0;i<n;i++){mx+=verts[i][0];my+=verts[i][1];mz+=verts[i][2];}
-  mx/=n;my/=n;mz/=n;
-  // Varianza en cada eje
-  var vx=0,vy=0,vz=0;
-  for(var i=0;i<n;i++){
-    vx+=(verts[i][0]-mx)*(verts[i][0]-mx);
-    vy+=(verts[i][1]-my)*(verts[i][1]-my);
-    vz+=(verts[i][2]-mz)*(verts[i][2]-mz);
+// Llamado desde handlePick cuando _sectionPickMode está activo
+function applySectionFromPick(canvasPos){
+  _sectionPickMode = false;
+  el('bn-slice-elem').classList.remove('a');
+
+  // Pick con pickSurface:true para obtener la normal de la cara
+  var hit = xv.scene.pick({
+    canvasPos: canvasPos,
+    pickSurface: true
+  });
+
+  if(!hit || !hit.entity){
+    st3('No se detectó superficie — inténtalo de nuevo','');
+    return;
   }
-  // El eje con MENOR varianza es perpendicular al plano principal del elemento
-  // Snap al eje más cercano
-  if(vz<=vx&&vz<=vy) return [0,0,-1];  // muro orientado N-S (poco espesor en Z)
-  if(vx<=vy&&vx<=vz) return [-1,0,0];  // muro orientado E-O (poco espesor en X)
-  return [0,-1,0];                       // forjado horizontal (poco espesor en Y)
+
+  // worldNormal: normal de la cara clicada
+  var n = hit.worldNormal;
+  if(!n || (n[0]===0 && n[1]===0 && n[2]===0)){
+    // Fallback: usar AABB si no hay normal
+    applySectionFromAABB(hit.entity);
+    return;
+  }
+
+  // Snap de la normal al eje más cercano para planos limpios
+  var ax=Math.abs(n[0]), ay=Math.abs(n[1]), az=Math.abs(n[2]);
+  var dir;
+  if(ay >= ax && ay >= az){
+    dir = [0, n[1]>0?-1:1, 0];  // horizontal
+  } else if(ax >= ay && ax >= az){
+    dir = [n[0]>0?-1:1, 0, 0];  // vertical X
+  } else {
+    dir = [0, 0, n[2]>0?-1:1];  // vertical Z
+  }
+
+  _sliceDir = dir;
+  var pos = hit.worldPos || [hit.entity.aabb[0], hit.entity.aabb[1], hit.entity.aabb[2]];
+  var maabb = xscene.aabb;
+
+  // Rango del slider
+  var axis = Math.abs(dir[0])>0.5 ? 0 : (Math.abs(dir[1])>0.5 ? 1 : 2);
+  _sliceMin = [maabb[0],maabb[1],maabb[2]][axis];
+  _sliceMax = [maabb[3],maabb[4],maabb[5]][axis];
+  var curPos = pos[axis];
+  var pct = Math.round(Math.max(0,Math.min(100,(curPos-_sliceMin)/(_sliceMax-_sliceMin)*100)));
+
+  if(xSection) xSectionPlugin.destroySectionPlane('sec1');
+  xSection = xSectionPlugin.createSectionPlane({id:'sec1', pos:pos, dir:dir});
+
+  el('slice-slider').value = pct;
+  el('slice-val').textContent = pct+'%';
+  var axisNames=['X (E-O)','Y (horizontal)','Z (N-S)'];
+  if(el('slice-title')) el('slice-title').textContent = 'Sección '+axisNames[axis];
+  el('slice-panel').style.display = 'block';
+  el('bn-slice').classList.remove('a');
+  st3('Plano creado · slider para mover','ok');
+}
+
+function applySectionFromAABB(obj){
+  if(!obj||!obj.aabb) return;
+  var aabb=obj.aabb;
+  var sx=aabb[3]-aabb[0], sy=aabb[4]-aabb[1], sz=aabb[5]-aabb[2];
+  var dir;
+  if(sy<=sx&&sy<=sz) dir=[0,-1,0];
+  else if(sx<=sy&&sx<=sz) dir=[-1,0,0];
+  else dir=[0,0,-1];
+  _sliceDir=dir;
+  var cx=(aabb[0]+aabb[3])/2,cy=(aabb[1]+aabb[4])/2,cz=(aabb[2]+aabb[5])/2;
+  var maabb=xscene.aabb;
+  var axis=Math.abs(dir[0])>0.5?0:(Math.abs(dir[1])>0.5?1:2);
+  _sliceMin=[maabb[0],maabb[1],maabb[2]][axis];
+  _sliceMax=[maabb[3],maabb[4],maabb[5]][axis];
+  var pct=Math.round(Math.max(0,Math.min(100,([cx,cy,cz][axis]-_sliceMin)/(_sliceMax-_sliceMin)*100)));
+  if(xSection) xSectionPlugin.destroySectionPlane('sec1');
+  xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[cx,cy,cz],dir:dir});
+  el('slice-slider').value=pct;
+  el('slice-val').textContent=pct+'%';
+  el('slice-panel').style.display='block';
 }
 
 function _createSection(pct){
