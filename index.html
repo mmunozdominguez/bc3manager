@@ -1523,65 +1523,109 @@ function toggleSlice(){
   }
 }
 
-// Sección paralela al elemento seleccionado (muro, forjado...)
+// Sección paralela al elemento seleccionado
+// Calcula la normal real del elemento usando PCA de sus vértices
 function sectionByElement(){
   if(!xv||!xscene){st3('Selecciona un elemento primero','');return;}
-  if(!vsHl||!vsHl.length){st3('Selecciona un elemento en el modelo primero','');return;}
+  if(!vsHl||!vsHl.length){st3('Selecciona un elemento en el modelo','');return;}
   initSectionPlugin();
   if(!xSectionPlugin) return;
 
-  var entityId = vsHl[0];
-  var obj = xscene.objects[entityId];
-  if(!obj||!obj.aabb){st3('Elemento no válido','');return;}
+  var entityId=vsHl[0];
+  var obj=xscene.objects[entityId];
+  if(!obj){st3('Elemento no encontrado','');return;}
 
-  // Calcular dimensiones del bounding box del elemento
-  var aabb = obj.aabb;
-  var sx = aabb[3]-aabb[0]; // ancho X
-  var sy = aabb[4]-aabb[1]; // alto Y
-  var sz = aabb[5]-aabb[2]; // profundo Z
+  // Recoger vértices del elemento usando getEachGeometry
+  var verts=[];
+  try{
+    xscene.getEachGeometry(function(geom){
+      if(geom.id&&geom.id.indexOf(entityId)<0) return;
+      var pos=geom.positionsCompressed||geom.positions;
+      if(pos) for(var i=0;i<pos.length;i+=3)
+        verts.push([pos[i],pos[i+1],pos[i+2]]);
+    });
+  }catch(e){}
 
-  // Determinar la normal del plano según la dimensión más pequeña
-  // (el eje más corto es perpendicular a la cara principal del elemento)
-  var dir;
-  if(sz <= sx && sz <= sy){
-    dir = [0,0,-1]; // muro N-S: normal en Z
-  } else if(sx <= sy && sx <= sz){
-    dir = [-1,0,0]; // muro E-O: normal en X
-  } else {
-    dir = [0,-1,0]; // forjado: normal en Y (horizontal)
+  // Fallback: usar los vértices del mesh directamente
+  if(!verts.length){
+    try{
+      xscene.eachObject(function(o){
+        if(o.id!==entityId) return;
+        if(o.geometry&&o.geometry.positions){
+          var p=o.geometry.positions;
+          for(var i=0;i<p.length;i+=3) verts.push([p[i],p[i+1],p[i+2]]);
+        }
+      });
+    }catch(e){}
   }
-  _sliceDir = dir;
 
-  // Centro del elemento como punto inicial del plano
+  // Si no hay vértices disponibles, usar AABB con PCA manual
+  var aabb=obj.aabb||xscene.aabb;
   var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
+  var sx=aabb[3]-aabb[0], sy=aabb[4]-aabb[1], sz=aabb[5]-aabb[2];
 
-  // Calcular rango de movimiento del plano en el modelo completo
-  var maabb = xscene.aabb;
-  var name = '';
-  if(xscene.metaScene&&xscene.metaScene.metaObjects&&xscene.metaScene.metaObjects[entityId])
-    name = xscene.metaScene.metaObjects[entityId].name||'';
+  var dir, modeName;
+  if(verts.length>=6){
+    // PCA con los vértices reales — encontrar el eje de menor varianza = normal del plano
+    dir=computeNormalPCA(verts);
+    modeName='normal calculada';
+  } else {
+    // Fallback AABB: la dimensión MÁS PEQUEÑA es el espesor → su eje es la normal
+    // Para un muro: espesor < longitud y espesor < altura
+    // Snap al eje más cercano para evitar planos oblicuos
+    if(sy<=sx&&sy<=sz){
+      dir=[0,-1,0]; modeName='horizontal (forjado)';
+    } else if(sx<=sy&&sx<=sz){
+      dir=[-1,0,0]; modeName='perpendicular X';
+    } else {
+      dir=[0,0,-1]; modeName='perpendicular Z';
+    }
+  }
 
-  // Destruir sección anterior si existe
+  _sliceDir=dir;
+  var maabb=xscene.aabb;
+
+  // Rango del slider en la dirección de la normal
+  var dot=Math.abs(dir[0])>0.5 ? 0 : (Math.abs(dir[1])>0.5 ? 1 : 2);
+  _sliceMin=[maabb[0],maabb[1],maabb[2]][dot];
+  _sliceMax=[maabb[3],maabb[4],maabb[5]][dot];
+
+  // Pos actual del elemento proyectada sobre la normal
+  var curPos=[cx,cy,cz][dot];
+  var pct=Math.round((curPos-_sliceMin)/(_sliceMax-_sliceMin)*100);
+  pct=Math.max(0,Math.min(100,pct));
+
   if(xSection) xSectionPlugin.destroySectionPlane('sec1');
+  xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[cx,cy,cz],dir:dir});
 
-  xSection = xSectionPlugin.createSectionPlane({id:'sec1', pos:[cx,cy,cz], dir:dir});
-
-  // Calcular min/max del modelo en la dirección del plano para el slider
-  if(dir[0]!==0){ _sliceMin=maabb[0]; _sliceMax=maabb[3]; }
-  else if(dir[1]!==0){ _sliceMin=maabb[1]; _sliceMax=maabb[4]; }
-  else { _sliceMin=maabb[2]; _sliceMax=maabb[5]; }
-
-  // Posición actual en %
-  var curVal = dir[0]!==0 ? cx : (dir[1]!==0 ? cy : cz);
-  var pct = Math.round((curVal-_sliceMin)/(_sliceMax-_sliceMin)*100);
-  el('slice-slider').value = pct;
-  el('slice-val').textContent = pct+'%';
-  if(el('slice-title')) el('slice-title').textContent = 'Sección'+(name?' — '+name.slice(0,20):'');
-
-  el('slice-panel').style.display = 'block';
+  el('slice-slider').value=pct;
+  el('slice-val').textContent=pct+'%';
+  if(el('slice-title'))el('slice-title').textContent='Sección por elemento';
+  el('slice-panel').style.display='block';
   el('bn-slice-elem').classList.add('a');
   el('bn-slice').classList.remove('a');
-  st3('Usa el slider para mover el plano','');
+  st3('Plano '+modeName+' · slider para mover','');
+}
+
+// PCA simplificado: devuelve el eje de menor varianza (normal del plano principal)
+function computeNormalPCA(verts){
+  var n=verts.length;
+  // Centroid
+  var mx=0,my=0,mz=0;
+  for(var i=0;i<n;i++){mx+=verts[i][0];my+=verts[i][1];mz+=verts[i][2];}
+  mx/=n;my/=n;mz/=n;
+  // Varianza en cada eje
+  var vx=0,vy=0,vz=0;
+  for(var i=0;i<n;i++){
+    vx+=(verts[i][0]-mx)*(verts[i][0]-mx);
+    vy+=(verts[i][1]-my)*(verts[i][1]-my);
+    vz+=(verts[i][2]-mz)*(verts[i][2]-mz);
+  }
+  // El eje con MENOR varianza es perpendicular al plano principal del elemento
+  // Snap al eje más cercano
+  if(vz<=vx&&vz<=vy) return [0,0,-1];  // muro orientado N-S (poco espesor en Z)
+  if(vx<=vy&&vx<=vz) return [-1,0,0];  // muro orientado E-O (poco espesor en X)
+  return [0,-1,0];                       // forjado horizontal (poco espesor en Y)
 }
 
 function _createSection(pct){
