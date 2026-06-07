@@ -983,27 +983,66 @@ async function initXeokit(){
     xv.scene.input.on('mouseclicked',function(coords){
       var hit=xv.scene.pick({canvasPos:coords});
       if(!hit||!hit.entity)return;
-      var guid=hit.entity.id;
-      var asmCode=g2asm[guid];
-      var fp=null;
-      if(asmCode&&curBC){
-        Object.keys(curBC.g).some(function(p){
-          return (curBC.g[p]||[]).some(function(e){
-            if(e.type==='asm'&&(e.asmCode===asmCode||asmCode.indexOf(e.asmCode)===0)){fp=p;return true;}
-            if(e.type==='ifc22'&&e.ifc22===guid){fp=p;return true;}
-            return false;
-          });
-        });
+      var entityId=hit.entity.id;
+
+      // Seleccionar el elemento en el visor
+      xscene.setObjectsSelected(xscene.selectedObjectIds,false);
+      hit.entity.selected=true;
+      vsHl=[entityId];
+
+      // Obtener nombre del elemento
+      var name=entityId;
+      if(xscene.metaScene&&xscene.metaScene.metaObjects){
+        var mo=xscene.metaScene.metaObjects[entityId];
+        if(mo)name=mo.name||mo.type||entityId;
       }
-      var name=xscene.metaScene&&xscene.metaScene.metaObjects&&xscene.metaScene.metaObjects[guid]?
-        xscene.metaScene.metaObjects[guid].name:guid.slice(0,16);
+
+      // Buscar partida BC3 por código de montaje o ifc22
+      var fp=null;
+      if(curBC){
+        var asmCode=g2asm[entityId];
+        if(asmCode){
+          // Sistema assembly code
+          Object.keys(curBC.g).some(function(p){
+            return (curBC.g[p]||[]).some(function(e){
+              if(e.type==='asm'&&(e.asmCode===asmCode||asmCode.indexOf(e.asmCode)===0)){fp=p;return true;}
+              return false;
+            });
+          });
+        }
+        // Fallback: buscar por ifc22 directo
+        if(!fp){
+          Object.keys(curBC.g).some(function(p){
+            return (curBC.g[p]||[]).some(function(e){
+              if((e.type==='ifc22'||e.type==='guid')&&e.ifc22===entityId){fp=p;return true;}
+              return false;
+            });
+          });
+        }
+      }
+
+      // Iluminar en el árbol BC3
       if(fp){
         document.querySelectorAll('.tn').forEach(function(n){n.classList.remove('s');});
         var node=document.querySelector('.tn[data-code="'+fp+'"]');
-        if(node){node.classList.add('s');node.scrollIntoView({block:'nearest'});}
+        if(node){
+          node.classList.add('s');
+          node.scrollIntoView({block:'nearest',behavior:'smooth'});
+          // Abrir padres si están colapsados
+          var parent=node.parentElement;
+          while(parent){
+            if(parent.classList&&parent.classList.contains('tc')&&!parent.classList.contains('o')){
+              parent.classList.add('o');
+              var tog=parent.previousElementSibling&&parent.previousElementSibling.querySelector('.tg');
+              if(tog)tog.classList.add('o');
+            }
+            parent=parent.parentElement;
+          }
+        }
         selP=fp;renderDet();
       }
-      showHC(name,fp,guid);
+
+      showHC(name,fp,asmCode||entityId.slice(0,12));
     });
     if(window.innerWidth<900||'ontouchstart' in window)xscene.canvas.resolutionScale=0.75;
     window.addEventListener('resize',function(){if(xv)xv.scene.canvas.resolutionScale=window.devicePixelRatio>1?0.75:1.0;});
@@ -1088,7 +1127,13 @@ function hlPart(code,BC){
   var found=[];
   guids.forEach(function(g){var o=xscene.objects[g];if(o){o.selected=true;found.push(g);}});
   vsHl=found;
-  if(found.length>0)xv.cameraFlight.flyTo({objectIds:found,duration:0.5});
+  // Solo volar si hay pocos elementos (no zoom out masivo con partidas grandes)
+  if(found.length>0&&found.length<=50){
+    xv.cameraFlight.flyTo({objectIds:found,duration:0.5,fitFactor:0.5});
+  } else if(found.length>0){
+    // Para muchos elementos: solo mostrar sin volar
+    // el usuario puede usar el botón ⊡ para encuadrar
+  }
 }
 
 function hlGuids(guids){
