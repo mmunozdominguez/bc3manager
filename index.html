@@ -86,11 +86,11 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .col-header{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;min-height:34px;}
 .col-header>span:first-of-type{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted2);white-space:nowrap;}
 .col-meta{flex:1;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.col-tog{border:none;background:none;cursor:pointer;color:var(--muted2);font-size:14px;line-height:1;padding:2px 4px;border-radius:3px;flex-shrink:0;}
+.col-tog{border:none;background:none;cursor:pointer;color:var(--muted);font-size:16px;padding:6px 8px;min-width:32px;min-height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;}
 .col-tog:hover{background:var(--bd);color:var(--text);}
 .col-tog-r{margin-right:auto;}
 /* Divisores arrastrables */
-.col-div{flex:0 0 5px;background:var(--bd);cursor:col-resize;position:relative;z-index:10;transition:background .15s;}
+.col-div{flex:0 0 8px;background:var(--bd);cursor:col-resize;position:relative;z-index:10;touch-action:none;}
 .col-div:hover,.col-div.dragging{background:var(--acc);}
 .col-div::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:24px;border-radius:2px;background:var(--acc);opacity:0;transition:opacity .15s;}
 .col-div:hover::after,.col-div.dragging::after{opacity:1;}
@@ -1444,542 +1444,165 @@ async function applyMetaFile(file){
 
 
 
-// ── COLUMNAS REDIMENSIONABLES ─────────────────────────────────────────────
+// ── COLUMNAS REDIMENSIONABLES + TOUCH ────────────────────────────────────
 (function(){
+
+  var body = document.getElementById('vb-body');
+  if(!body) return;
+
+  // Estado de columnas: 'open' | 'collapsed'
+  var colState = {col1:'open', col2:'open', col3:'open'};
+  var colSizes = {col1:260, col2:220}; // col3 ocupa el resto
+
+  function applyLayout(){
+    var col1=document.getElementById('col1');
+    var col2=document.getElementById('col2');
+    var col3=document.getElementById('col3');
+    var d12=document.getElementById('div12');
+    var d23=document.getElementById('div23');
+    if(!col1||!col2||!col3) return;
+
+    var totalW = body.clientWidth;
+    var divW = 5;
+
+    var c1open = colState.col1==='open';
+    var c2open = colState.col2==='open';
+    var c3open = colState.col3==='open';
+
+    var used = (c1open?0:32) + (c2open?0:32) + (c3open?0:32);
+    var openCols = (c1open?1:0)+(c2open?1:0)+(c3open?1:0);
+    var divCount = 2;
+    var available = totalW - used - divCount*divW;
+
+    if(c1open&&c2open&&c3open){
+      // Tutti aperti - usa colSizes
+      var w1=Math.min(colSizes.col1, available*0.45);
+      var w2=Math.min(colSizes.col2, available*0.35);
+      var w3=Math.max(200, available-w1-w2);
+      col1.style.flex='0 0 '+w1+'px';
+      col2.style.flex='0 0 '+w2+'px';
+      col3.style.flex='1 1 auto';
+    } else if(c1open&&!c2open&&c3open){
+      col1.style.flex='0 0 '+Math.min(colSizes.col1,available*0.4)+'px';
+      col2.style.flex='0 0 32px';
+      col3.style.flex='1 1 auto';
+    } else if(!c1open&&c2open&&c3open){
+      col1.style.flex='0 0 32px';
+      col2.style.flex='0 0 '+Math.min(colSizes.col2,available*0.4)+'px';
+      col3.style.flex='1 1 auto';
+    } else if(c1open&&c2open&&!c3open){
+      col1.style.flex='0 0 '+Math.min(colSizes.col1,available*0.5)+'px';
+      col2.style.flex='1 1 auto';
+      col3.style.flex='0 0 32px';
+    } else if(c1open&&!c2open&&!c3open){
+      col1.style.flex='1 1 auto';
+      col2.style.flex='0 0 32px';
+      col3.style.flex='0 0 32px';
+    } else if(!c1open&&c2open&&!c3open){
+      col1.style.flex='0 0 32px';
+      col2.style.flex='1 1 auto';
+      col3.style.flex='0 0 32px';
+    } else if(!c1open&&!c2open&&c3open){
+      col1.style.flex='0 0 32px';
+      col2.style.flex='0 0 32px';
+      col3.style.flex='1 1 auto';
+    } else {
+      // Todos colapsados - expandir col3
+      col1.style.flex='0 0 32px';
+      col2.style.flex='0 0 32px';
+      col3.style.flex='1 1 auto';
+      colState.col3='open';
+    }
+
+    // Collapsed state
+    [col1,col2,col3].forEach(function(col){
+      var id=col.id;
+      var isOpen=colState[id]==='open';
+      col.classList.toggle('collapsed',!isOpen);
+      var btn=col.querySelector('.col-tog');
+      if(btn) btn.textContent=isOpen?'‹':'›';
+    });
+
+    // Notify xeokit of resize
+    if(window.xv && window.xv.scene) {
+      setTimeout(function(){
+        try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
+      },100);
+    }
+  }
+
+  // Toggle buttons
+  document.querySelectorAll('.col-tog').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var col=btn.closest('.vcol');
+      if(!col) return;
+      var id=col.id;
+      colState[id] = colState[id]==='open'?'collapsed':'open';
+      applyLayout();
+    });
+  });
+
+  // ── Resize dividers — mouse ──────────────────────────────────────────
   document.querySelectorAll('.col-div').forEach(function(div){
     var cols=(div.dataset.cols||'').split(',');
-    if(cols.length<2)return;
-    var dragging=false,startX=0,startY=0,sw=0,tw=0;
+    if(cols.length<2) return;
+    var dragging=false, startX=0, sw=0;
+
     div.addEventListener('mousedown',function(e){
-      dragging=true;startX=e.clientX;startY=e.clientY;
-      var c1=el(cols[0]),c2=el(cols[1]);
-      if(!c1||!c2)return;
-      var horiz=getComputedStyle(el('vb-body')).flexDirection!=='column';
-      sw=horiz?c1.offsetWidth:c1.offsetHeight;
-      tw=horiz?c2.offsetWidth:c2.offsetHeight;
-      document.body.style.cursor=horiz?'col-resize':'row-resize';
+      if(colState[cols[0]]==='collapsed'||colState[cols[1]]==='collapsed') return;
+      dragging=true; startX=e.clientX;
+      var c1=document.getElementById(cols[0]);
+      sw=c1?c1.offsetWidth:260;
+      document.body.style.cursor='col-resize';
       document.body.style.userSelect='none';
+      e.preventDefault();
     });
+
     document.addEventListener('mousemove',function(e){
-      if(!dragging)return;
-      var c1=el(cols[0]),c2=el(cols[1]);if(!c1||!c2)return;
-      var horiz=getComputedStyle(el('vb-body')).flexDirection!=='column';
-      var delta=horiz?e.clientX-startX:e.clientY-startY;
-      var nw1=Math.max(60,sw+delta),nw2=Math.max(60,tw-delta);
-      if(horiz){c1.style.flex='0 0 '+nw1+'px';c2.style.flex='0 0 '+nw2+'px';}
-      else{c1.style.flex='0 0 '+nw1+'px';c2.style.flex='0 0 '+nw2+'px';}
+      if(!dragging) return;
+      var delta=e.clientX-startX;
+      var nw=Math.max(160, sw+delta);
+      if(cols[0]==='col1') colSizes.col1=nw;
+      if(cols[0]==='col2') colSizes.col2=nw;
+      applyLayout();
     });
+
     document.addEventListener('mouseup',function(){
-      dragging=false;document.body.style.cursor='';document.body.style.userSelect='';
+      if(dragging){dragging=false;document.body.style.cursor='';document.body.style.userSelect='';}
     });
+
+    // ── Touch resize ──────────────────────────────────────────────────
+    var touchStartX=0, touchSW=0;
+    div.addEventListener('touchstart',function(e){
+      if(colState[cols[0]]==='collapsed'||colState[cols[1]]==='collapsed') return;
+      touchStartX=e.touches[0].clientX;
+      var c1=document.getElementById(cols[0]);
+      touchSW=c1?c1.offsetWidth:260;
+      e.preventDefault();
+    },{passive:false});
+
+    div.addEventListener('touchmove',function(e){
+      var delta=e.touches[0].clientX-touchStartX;
+      var nw=Math.max(160, touchSW+delta);
+      if(cols[0]==='col1') colSizes.col1=nw;
+      if(cols[0]==='col2') colSizes.col2=nw;
+      applyLayout();
+      e.preventDefault();
+    },{passive:false});
   });
-  // Toggle collapse
-  document.querySelectorAll('.col-tog').forEach(function(btn){
-    btn.addEventListener('click',function(){
-      var col=btn.closest('.vcol');if(!col)return;
-      col.classList.toggle('collapsed');
-      btn.textContent=col.classList.contains('collapsed')?'›':'‹';
-    });
+
+  // ── Orientation change / resize ────────────────────────────────────
+  window.addEventListener('resize', function(){applyLayout();});
+  window.addEventListener('orientationchange',function(){
+    setTimeout(applyLayout, 300);
   });
+
+  // Initial layout
+  applyLayout();
+
 })();
 
-
-// ── SECCIÓN, PLANTAS Y MEDICIÓN ──────────────────────────────────────────
-var xSection = null;
-var xSectionPlugin = null;
-var xMeasurePlugin = null;
-var xStoreyPlugin = null;
-var typeVisibility = {};
-var _sliceDir = 'y'; // eje de corte activo
-
-function initSectionPlugin(){
-  if(xSectionPlugin) return;
-  var XK = window._XK;
-  if(!XK||!XK.SectionPlanesPlugin) return;
-  xSectionPlugin = new XK.SectionPlanesPlugin(xv, {
-    overviewCanvasId: null,
-    overviewVisible: false
-  });
-}
-
-// _sliceDir: vector dirección activo [dx,dy,dz]
-var _sliceDir = [0,-1,0]; // horizontal por defecto
-var _sliceMin = 0, _sliceMax = 1; // rango en la dirección del plano
-
-function toggleSlice(){
-  if(!xv||!xscene) return;
-  initSectionPlugin();
-  if(!xSectionPlugin) return;
-  var panel = el('slice-panel');
-  if(xSection){
-    xSectionPlugin.destroySectionPlane('sec1');
-    xSection = null;
-    panel.style.display = 'none';
-    el('bn-slice').classList.remove('a');
-    el('bn-slice-elem').classList.remove('a');
-  } else {
-    // Sección horizontal por defecto
-    _sliceDir = [0,-1,0];
-    _createSection(0.7);
-    if(el('slice-title')) el('slice-title').textContent = 'Sección horizontal';
-    el('bn-slice').classList.add('a');
-    el('bn-slice-elem').classList.remove('a');
-  }
-}
-
-// Sección paralela al elemento seleccionado
-// Modo: el usuario clica en una cara del modelo y se crea el plano paralelo a esa cara
-var _sectionPickMode = false;
-
-function sectionByElement(){
-  if(!xv||!xscene) return;
-  initSectionPlugin();
-  if(!xSectionPlugin) return;
-
-  if(_sectionPickMode){
-    // Cancelar modo pick
-    _sectionPickMode = false;
-    el('bn-slice-elem').classList.remove('a');
-    st3('','');
-    return;
-  }
-
-  // Activar modo pick — el siguiente clic del usuario define el plano
-  _sectionPickMode = true;
-  el('bn-slice-elem').classList.add('a');
-  st3('Haz clic en la cara del elemento para crear el plano de sección','sp');
-}
-
-// Llamado desde handlePick cuando _sectionPickMode está activo
-function applySectionFromPick(canvasPos){
-  _sectionPickMode = false;
-  el('bn-slice-elem').classList.remove('a');
-
-  // Pick con pickSurface:true para obtener la normal de la cara
-  var hit = xv.scene.pick({
-    canvasPos: canvasPos,
-    pickSurface: true
-  });
-
-  if(!hit || !hit.entity){
-    st3('No se detectó superficie — inténtalo de nuevo','');
-    return;
-  }
-
-  var n = hit.worldNormal;
-  if(!n || (n[0]===0 && n[1]===0 && n[2]===0)){
-    applySectionFromAABB(hit.entity);
-    return;
-  }
-
-  // Usar la normal REAL sin snap — respeta muros inclinados
-  // Normalizar el vector
-  var len = Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
-  if(len<0.0001){applySectionFromAABB(hit.entity);return;}
-  var dir = [n[0]/len, n[1]/len, n[2]/len];
-
-  _sliceDir = dir;
-  var pos = hit.worldPos || [(hit.entity.aabb[0]+hit.entity.aabb[3])/2,
-                              (hit.entity.aabb[1]+hit.entity.aabb[4])/2,
-                              (hit.entity.aabb[2]+hit.entity.aabb[5])/2];
-  var maabb = xscene.aabb;
-
-  // Para el slider: proyectar el rango del modelo sobre la normal
-  // min/max = proyección de las esquinas del AABB sobre dir
-  var corners = [
-    [maabb[0],maabb[1],maabb[2]],[maabb[3],maabb[1],maabb[2]],
-    [maabb[0],maabb[4],maabb[2]],[maabb[3],maabb[4],maabb[2]],
-    [maabb[0],maabb[1],maabb[5]],[maabb[3],maabb[1],maabb[5]],
-    [maabb[0],maabb[4],maabb[5]],[maabb[3],maabb[4],maabb[5]]
-  ];
-  var projs = corners.map(function(v){return v[0]*dir[0]+v[1]*dir[1]+v[2]*dir[2];});
-  _sliceMin = Math.min.apply(null,projs);
-  _sliceMax = Math.max.apply(null,projs);
-  var curProj = pos[0]*dir[0]+pos[1]*dir[1]+pos[2]*dir[2];
-  var pct = Math.round(Math.max(0,Math.min(100,(curProj-_sliceMin)/(_sliceMax-_sliceMin)*100)));
-
-  if(xSection) xSectionPlugin.destroySectionPlane('sec1');
-  xSection = xSectionPlugin.createSectionPlane({id:'sec1', pos:pos, dir:dir});
-
-  el('slice-slider').value = pct;
-  el('slice-val').textContent = pct+'%';
-  var dirName = Math.abs(dir[1])>0.7 ? 'horizontal' : 'vertical';
-  if(el('slice-title')) el('slice-title').textContent = 'Sección '+dirName;
-  el('slice-panel').style.display = 'block';
-  el('bn-slice').classList.remove('a');
-  st3('Plano paralelo a la cara · slider para mover','ok');
-}
-
-function applySectionFromAABB(obj){
-  if(!obj||!obj.aabb) return;
-  var aabb=obj.aabb;
-  var sx=aabb[3]-aabb[0], sy=aabb[4]-aabb[1], sz=aabb[5]-aabb[2];
-  var dir;
-  if(sy<=sx&&sy<=sz) dir=[0,-1,0];
-  else if(sx<=sy&&sx<=sz) dir=[-1,0,0];
-  else dir=[0,0,-1];
-  _sliceDir=dir;
-  var cx=(aabb[0]+aabb[3])/2,cy=(aabb[1]+aabb[4])/2,cz=(aabb[2]+aabb[5])/2;
-  var maabb=xscene.aabb;
-  var axis=Math.abs(dir[0])>0.5?0:(Math.abs(dir[1])>0.5?1:2);
-  _sliceMin=[maabb[0],maabb[1],maabb[2]][axis];
-  _sliceMax=[maabb[3],maabb[4],maabb[5]][axis];
-  var pct=Math.round(Math.max(0,Math.min(100,([cx,cy,cz][axis]-_sliceMin)/(_sliceMax-_sliceMin)*100)));
-  if(xSection) xSectionPlugin.destroySectionPlane('sec1');
-  xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[cx,cy,cz],dir:dir});
-  el('slice-slider').value=pct;
-  el('slice-val').textContent=pct+'%';
-  el('slice-panel').style.display='block';
-}
-
-function _createSection(pct){
-  var aabb = xscene.aabb;
-  var t = pct;
-  var dir = _sliceDir;
-  var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
-  var pos;
-  if(dir[1]!==0){
-    // Horizontal
-    _sliceMin=aabb[1]; _sliceMax=aabb[4];
-    pos=[cx, aabb[1]+(aabb[4]-aabb[1])*t, cz];
-  } else if(dir[0]!==0){
-    _sliceMin=aabb[0]; _sliceMax=aabb[3];
-    pos=[aabb[0]+(aabb[3]-aabb[0])*t, cy, cz];
-  } else {
-    _sliceMin=aabb[2]; _sliceMax=aabb[5];
-    pos=[cx, cy, aabb[2]+(aabb[5]-aabb[2])*t];
-  }
-  if(xSection) xSectionPlugin.destroySectionPlane('sec1');
-  xSection = xSectionPlugin.createSectionPlane({id:'sec1', pos:pos, dir:dir});
-  el('slice-slider').value = Math.round(t*100);
-  el('slice-val').textContent = Math.round(t*100)+'%';
-  el('slice-panel').style.display = 'block';
-}
-
-function updateSlice(pct){
-  if(!xSection||!xscene) return;
-  var t = pct/100;
-  var dir = _sliceDir;
-  var aabb = xscene.aabb;
-  var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
-  // Mover el plano a lo largo de su normal
-  var d = _sliceMin + (_sliceMax-_sliceMin)*t;
-  // Centro del modelo + desplazamiento en la dirección de la normal
-  xSection.pos = [cx + dir[0]*(d - (cx*dir[0]+cy*dir[1]+cz*dir[2])),
-                  cy + dir[1]*(d - (cx*dir[0]+cy*dir[1]+cz*dir[2])),
-                  cz + dir[2]*(d - (cx*dir[0]+cy*dir[1]+cz*dir[2]))];
-  el('slice-val').textContent = pct+'%';
-}
-
-// ── Plantas ───────────────────────────────────────────────────────────────
-function buildStoreysPanel(){
-  if(!xv||!xscene) return;
-  var list = el('storeys-list');
-  if(!list) return;
-
-  // Obtener plantas del metaScene o del _metaJson
-  var storeys = [];
-  var src = _metaJson ? (_metaJson.objects||_metaJson.metaObjects||[]) : [];
-
-  // Primero intentar desde metaScene
-  if(xscene.metaScene){
-    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
-      if(mo.type==='IfcBuildingStorey') storeys.push({id:mo.id, name:mo.name||'Planta'});
-    });
-  }
-  // Fallback: del JSON
-  if(!storeys.length){
-    src.forEach(function(o){
-      if(o.type==='IfcBuildingStorey') storeys.push({id:o.id, name:o.name||'Planta'});
-    });
-  }
-  // Fallback: cortes manuales por altura
-  if(!storeys.length){
-    var aabb = xscene.aabb;
-    var h = aabb[4]-aabb[1];
-    var nFloors = Math.max(1, Math.round(h/3.0)); // asumir ~3m por planta
-    for(var i=0;i<nFloors;i++){
-      var pct = Math.round((i+0.5)/nFloors*100);
-      storeys.push({id:'floor_'+i, name:'Planta '+(i===0?'Baja':i), pct:pct});
-    }
-  }
-
-  if(!storeys.length){
-    list.innerHTML='<div style="padding:8px 12px;font-size:11px;color:#9ca3af;">Sin datos de plantas</div>';
-    return;
-  }
-
-  list.innerHTML='';
-  // Opción "Todas"
-  var allRow = document.createElement('div');
-  allRow.style.cssText='padding:8px 12px;cursor:pointer;font-size:11px;color:#374151;font-weight:600;border-bottom:1px solid #f3f4f6;';
-  allRow.textContent='Todas las plantas';
-  allRow.onmouseenter=function(){this.style.background='#f3f4f6';};
-  allRow.onmouseleave=function(){this.style.background='';};
-  allRow.addEventListener('click',function(){
-    showAll();
-    // Quitar sección si existe
-    if(xSection&&xSectionPlugin){xSectionPlugin.destroySectionPlane('sec1');xSection=null;el('bn-slice').classList.remove('a');el('slice-panel').style.display='none';}
-    xv.cameraFlight.flyTo(xModel,{duration:0.5});
-  });
-  list.appendChild(allRow);
-
-  storeys.forEach(function(s){
-    var row = document.createElement('div');
-    row.style.cssText='padding:7px 12px;cursor:pointer;font-size:11px;color:#374151;display:flex;align-items:center;gap:8px;';
-    row.onmouseenter=function(){this.style.background='#f3f4f6';};
-    row.onmouseleave=function(){this.style.background='';};
-    var icon = document.createElement('span');
-    icon.textContent='▣';icon.style.color='#9ca3af';
-    var lbl = document.createElement('span');lbl.textContent=s.name;lbl.style.flex='1';
-    var eye = document.createElement('button');
-    eye.textContent='👁';eye.title='Aislar planta';
-    eye.style.cssText='border:none;background:none;cursor:pointer;font-size:11px;';
-    row.appendChild(icon);row.appendChild(lbl);row.appendChild(eye);
-
-    (function(storey){
-      row.addEventListener('click',function(e){
-        if(e.target===eye)return;
-        // Sección en esa planta
-        initSectionPlugin();
-        if(xSection) xSectionPlugin.destroySectionPlane('sec1');
-        var aabb=xscene.aabb;
-        var pct = storey.pct!==undefined ? storey.pct/100 : 0.5;
-        var y = aabb[1]+(aabb[4]-aabb[1])*(pct+0.08); // techo de la planta
-        xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[(aabb[0]+aabb[3])/2,y,(aabb[2]+aabb[5])/2],dir:[0,-1,0]});
-        _sliceDir='y';
-        el('bn-slice').classList.add('a');
-        el('slice-panel').style.display='block';
-        el('slice-slider').value=Math.round((pct+0.08)*100);
-        el('slice-val').textContent='Planta: '+storey.name;
-        xv.cameraFlight.flyTo({aabb:aabb,duration:0.5});
-      });
-      eye.addEventListener('click',function(e){
-        e.stopPropagation();
-        // Aislar objetos de esta planta por ObjectId si tenemos metaScene
-        st3('Aislando '+storey.name+'…','sp');
-        // Simple: usar sección + ver desde arriba
-        row.click();
-        setTimeout(function(){
-          var cam=xv.camera;
-          cam.orbitYaw(0);
-          xv.cameraFlight.flyTo({eye:[cam.eye[0],cam.eye[1]+100,cam.eye[2]],look:cam.look,duration:0.8});
-        },300);
-      });
-    })(s);
-
-    list.appendChild(row);
-  });
-}
-
-// ── Medición de distancias ────────────────────────────────────────────────
-var _measureActive = false;
-function toggleMeasure(){
-  if(!xv) return;
-  var XK = window._XK;
-  if(!XK||!XK.DistanceMeasurementsPlugin){
-    st3('Medición no disponible',''); return;
-  }
-  _measureActive = !_measureActive;
-  if(_measureActive){
-    if(!xMeasurePlugin){
-      xMeasurePlugin = new XK.DistanceMeasurementsPlugin(xv, {
-        defaultAxisVisible: true,
-        defaultXAxisVisible: true,
-        defaultYAxisVisible: true,
-        defaultZAxisVisible: true
-      });
-      // Mouse control
-      if(XK.DistanceMeasurementsMouseControl){
-        xMeasurePlugin._mouseCtrl = new XK.DistanceMeasurementsMouseControl(xMeasurePlugin,{
-          pointerLens: null
-        });
-        xMeasurePlugin._mouseCtrl.activate();
-      }
-      // Touch control for iPad
-      if(XK.DistanceMeasurementsTouchControl){
-        xMeasurePlugin._touchCtrl = new XK.DistanceMeasurementsTouchControl(xMeasurePlugin,{
-          pointerLens: null
-        });
-        xMeasurePlugin._touchCtrl.activate();
-      }
-    } else {
-      if(xMeasurePlugin._mouseCtrl) xMeasurePlugin._mouseCtrl.activate();
-      if(xMeasurePlugin._touchCtrl) xMeasurePlugin._touchCtrl.activate();
-    }
-    el('bn-measure').classList.add('a');
-    st3('Medir: clic en 2 puntos para medir distancia','');
-  } else {
-    if(xMeasurePlugin){
-      if(xMeasurePlugin._mouseCtrl) xMeasurePlugin._mouseCtrl.deactivate();
-      if(xMeasurePlugin._touchCtrl) xMeasurePlugin._touchCtrl.deactivate();
-      xMeasurePlugin.clear();
-    }
-    el('bn-measure').classList.remove('a');
-    st3('','');
-  }
-}
-
-
-// Mapas de categoría IFC → nombre legible en español
-var IFC_LABELS = {
-  'IfcSpace':'Espacios/Habitaciones','IfcWall':'Muros','IfcWallStandardCase':'Muros',
-  'IfcSlab':'Forjados','IfcColumn':'Pilares','IfcBeam':'Vigas',
-  'IfcDoor':'Puertas','IfcWindow':'Ventanas','IfcRoof':'Cubiertas',
-  'IfcCovering':'Revestimientos','IfcStair':'Escaleras','IfcRailing':'Barandillas',
-  'IfcFurniture':'Mobiliario','IfcPlate':'Placas','IfcMember':'Estructura',
-  'IfcFooting':'Cimentación','IfcBuildingElementProxy':'Varios',
-  'IfcOpeningElement':'Huecos','IfcFlowTerminal':'Instalaciones',
-  'IfcFlowSegment':'Tuberías/Conductos','IfcDistributionFlowElement':'Inst. distribución',
-  'IfcSite':'Parcela','IfcBuilding':'Edificio','IfcBuildingStorey':'Planta'
-};
-// Orden preferido para mostrar
-var IFC_ORDER = ['IfcSpace','IfcWall','IfcWallStandardCase','IfcSlab','IfcColumn',
-  'IfcBeam','IfcRoof','IfcStair','IfcRailing','IfcDoor','IfcWindow','IfcCovering',
-  'IfcPlate','IfcMember','IfcFooting','IfcFurniture','IfcBuildingElementProxy',
-  'IfcOpeningElement','IfcFlowTerminal','IfcFlowSegment','IfcDistributionFlowElement'];
-
-function buildTypesPanel(){
-  if(!xv||!xscene)return;
-  var list=el('types-list');
-  if(!list)return;
-
-  // Usar _metaJson directamente — no depende de xeokit metaScene
-  var src = _metaJson ? (_metaJson.objects||_metaJson.metaObjects||[]) : [];
-
-  // Contar por tipo y agrupar entidades
-  var typeCount={}, typeEntities={};
-  src.forEach(function(o){
-    if(!o.type||o.type==='IfcProject'||o.type==='IfcSite'||
-       o.type==='IfcBuilding'||o.type==='IfcBuildingStorey'||o.id==='root')return;
-    typeCount[o.type]=(typeCount[o.type]||0)+1;
-    if(!typeEntities[o.type])typeEntities[o.type]=[];
-    typeEntities[o.type].push(o.id);
-  });
-
-  // Si no hay metadata, intentar con metaScene como fallback
-  if(!Object.keys(typeCount).length&&xscene.metaScene){
-    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
-      if(!mo.type||mo.type==='DEFAULT'||mo.type==='IfcProject'||
-         mo.type==='IfcSite'||mo.type==='IfcBuilding'||
-         mo.type==='IfcBuildingStorey'||mo.id==='root')return;
-      typeCount[mo.type]=(typeCount[mo.type]||0)+1;
-      if(!typeEntities[mo.type])typeEntities[mo.type]=[];
-      typeEntities[mo.type].push(mo.id);
-    });
-  }
-
-  if(!Object.keys(typeCount).length){
-    list.innerHTML='<div style="padding:8px 12px;font-size:11px;color:#9ca3af;">Carga primero los metadatos con ⬆ Meta</div>';
-    return;
-  }
-
-  // Ordenar tipos
-  var types=Object.keys(typeCount);
-  types.sort(function(a,b){
-    var ia=IFC_ORDER.indexOf(a),ib=IFC_ORDER.indexOf(b);
-    if(ia<0)ia=999;if(ib<0)ib=999;
-    return ia!==ib?ia-ib:a.localeCompare(b);
-  });
-
-  list.innerHTML='';
-  types.forEach(function(type){
-    var label=IFC_LABELS[type]||(type.startsWith('Ifc')?type.slice(3):type);
-    var count=typeCount[type];
-    var visible=typeVisibility[type]!==false;
-    var ents=typeEntities[type]||[];
-
-    var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;padding:4px 12px;cursor:pointer;transition:background .1s;gap:0;';
-    row.onmouseenter=function(){this.style.background='#f3f4f6';};
-    row.onmouseleave=function(){this.style.background='';};
-
-    var cb=document.createElement('input');
-    cb.type='checkbox';cb.checked=visible;cb.dataset.type=type;
-    cb.style.cssText='margin-right:8px;cursor:pointer;accent-color:#6c63ff;width:14px;height:14px;flex-shrink:0;';
-
-    var lbl=document.createElement('span');
-    lbl.textContent=label;
-    lbl.style.cssText='flex:1;font-size:11px;color:#374151;';
-
-    var cnt=document.createElement('span');
-    cnt.textContent=count;
-    cnt.style.cssText='font-size:10px;color:#9ca3af;font-family:monospace;min-width:28px;text-align:right;';
-
-    var iso=document.createElement('button');
-    iso.title='Aislar';iso.textContent='◎';
-    iso.style.cssText='margin-left:6px;border:none;background:none;cursor:pointer;font-size:11px;color:#9ca3af;padding:0 2px;';
-    iso.onmouseenter=function(){this.style.color='#6c63ff';};
-    iso.onmouseleave=function(){this.style.color='#9ca3af';};
-
-    (function(t,e){
-      iso.addEventListener('click',function(ev){ev.stopPropagation();isolateCategory(t,e);});
-      row.addEventListener('click',function(ev){
-        if(ev.target===iso||ev.target===cb)return;
-        cb.checked=!cb.checked;
-        setCategoryVisible(t,cb.checked,e);
-      });
-      cb.addEventListener('change',function(ev){
-        ev.stopPropagation();
-        setCategoryVisible(t,this.checked,e);
-      });
-    })(type,ents);
-
-    row.appendChild(cb);row.appendChild(lbl);row.appendChild(cnt);row.appendChild(iso);
-    list.appendChild(row);
-  });
-}
-
-function setCategoryVisible(type, visible, entities){
-  typeVisibility[type]=visible;
-  if(!entities&&xscene&&xscene.metaScene){
-    entities=[];
-    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
-      if(mo.type===type)entities.push(mo.id);
-    });
-  }
-  (entities||[]).forEach(function(id){
-    var obj=xscene.objects[id];if(obj)obj.visible=visible;
-  });
-}
-
-function setCatsVisible(visible){
-  if(!xscene)return;
-  xscene.setObjectsVisible(xscene.objectIds,visible);
-  Object.keys(typeVisibility).forEach(function(k){typeVisibility[k]=visible;});
-  // Rebuild panel to update checkboxes
-  buildTypesPanel();
-}
-
-function isolateCategory(type, entities){
-  if(!xscene)return;
-  // Ocultar todo
-  xscene.setObjectsVisible(xscene.objectIds,false);
-  // Mostrar solo esta categoría
-  (entities||[]).forEach(function(id){
-    var obj=xscene.objects[id];if(obj)obj.visible=true;
-  });
-  typeVisibility={};typeVisibility[type]=true;
-  // Volar a esos elementos
-  if(entities&&entities.length>0){
-    xv.cameraFlight.flyTo({objectIds:entities.slice(0,100),fitFactor:0.6,duration:0.5});
-  }
-  // Rebuild checkboxes
-  buildTypesPanel();
-  // Mark iso button active
-  el('bn-iso').classList.add('a');
-}
-
-// Slice slider
-// Slice slider
-var sliderEl=el('slice-slider');
-if(sliderEl)sliderEl.addEventListener('input',function(){updateSlice(parseInt(this.value));});
-
-// Slice close
-on('slice-off','click',function(){
-  if(xSection&&xSectionPlugin){xSectionPlugin.destroySectionPlane('sec1');xSection=null;}
-  el('slice-panel').style.display='none';el('bn-slice').classList.remove('a');
-});
 
 // ── EVENTOS ───────────────────────────────────────────────────────────────
 // Navegación
