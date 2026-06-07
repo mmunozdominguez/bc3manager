@@ -991,29 +991,26 @@ async function initXeokit(){
     new XK.DirLight(xscene,{dir:[0.8,-0.6,-0.4],color:[1,1,1],intensity:0.7,space:'world'});
     new XK.DirLight(xscene,{dir:[-0.4,-0.3,0.8],color:[0.8,0.9,1],intensity:0.3,space:'world'});
     // Clic en elemento
-    xv.scene.input.on('mouseclicked',function(coords){
-      var hit=xv.scene.pick({canvasPos:coords});
+    // ── Pick handler: mouse + touch ────────────────────────────────
+    function handlePick(canvasPos){
+      if(!xv||!xscene)return;
+      var hit=xv.scene.pick({canvasPos:canvasPos});
       if(!hit||!hit.entity)return;
       var entityId=hit.entity.id;
 
-      // Seleccionar el elemento en el visor
       xscene.setObjectsSelected(xscene.selectedObjectIds,false);
       hit.entity.selected=true;
       vsHl=[entityId];
 
-      // Obtener nombre del elemento
       var name=entityId;
       if(xscene.metaScene&&xscene.metaScene.metaObjects){
         var mo=xscene.metaScene.metaObjects[entityId];
         if(mo)name=mo.name||mo.type||entityId;
       }
 
-      // Buscar partida BC3 por código de montaje o ifc22
-      var fp=null;
+      var fp=null, asmCode=g2asm[entityId];
       if(curBC){
-        var asmCode=g2asm[entityId];
         if(asmCode){
-          // Sistema assembly code
           Object.keys(curBC.g).some(function(p){
             return (curBC.g[p]||[]).some(function(e){
               if(e.type==='asm'&&(e.asmCode===asmCode||asmCode.indexOf(e.asmCode)===0)){fp=p;return true;}
@@ -1021,7 +1018,6 @@ async function initXeokit(){
             });
           });
         }
-        // Fallback: buscar por ifc22 directo
         if(!fp){
           Object.keys(curBC.g).some(function(p){
             return (curBC.g[p]||[]).some(function(e){
@@ -1032,29 +1028,45 @@ async function initXeokit(){
         }
       }
 
-      // Iluminar en el árbol BC3
       if(fp){
         document.querySelectorAll('.tn').forEach(function(n){n.classList.remove('s');});
         var node=document.querySelector('.tn[data-code="'+fp+'"]');
         if(node){
           node.classList.add('s');
           node.scrollIntoView({block:'nearest',behavior:'smooth'});
-          // Abrir padres si están colapsados
-          var parent=node.parentElement;
-          while(parent){
-            if(parent.classList&&parent.classList.contains('tc')&&!parent.classList.contains('o')){
-              parent.classList.add('o');
-              var tog=parent.previousElementSibling&&parent.previousElementSibling.querySelector('.tg');
+          var par=node.parentElement;
+          while(par){
+            if(par.classList&&par.classList.contains('tc')&&!par.classList.contains('o')){
+              par.classList.add('o');
+              var tog=par.previousElementSibling&&par.previousElementSibling.querySelector('.tg');
               if(tog)tog.classList.add('o');
             }
-            parent=parent.parentElement;
+            par=par.parentElement;
           }
         }
         selP=fp;renderDet();
       }
-
       showHC(name,fp,asmCode||entityId.slice(0,12));
-    });
+    }
+
+    xv.scene.input.on('mouseclicked',function(coords){handlePick(coords);});
+
+    // Touch: tap para seleccionar (distinguir de orbit/pan)
+    var _tx=0,_ty=0;
+    var cvEl=el('cv');
+    if(cvEl){
+      cvEl.addEventListener('touchstart',function(e){
+        if(e.touches.length===1){_tx=e.touches[0].clientX;_ty=e.touches[0].clientY;}
+      },{passive:true});
+      cvEl.addEventListener('touchend',function(e){
+        if(e.changedTouches.length!==1)return;
+        var t=e.changedTouches[0];
+        if(Math.abs(t.clientX-_tx)<8&&Math.abs(t.clientY-_ty)<8){
+          var rect=cvEl.getBoundingClientRect();
+          handlePick([t.clientX-rect.left, t.clientY-rect.top]);
+        }
+      },{passive:true});
+    }
     if(window.innerWidth<900||'ontouchstart' in window)xscene.canvas.resolutionScale=0.75;
     window.addEventListener('resize',function(){if(xv)xv.scene.canvas.resolutionScale=window.devicePixelRatio>1?0.75:1.0;});
     st3('Visor listo','ok');
