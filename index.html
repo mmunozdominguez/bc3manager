@@ -1444,6 +1444,203 @@ async function applyMetaFile(file){
 
 
 
+// ── SECCIÓN, PLANTAS Y MEDICIÓN ─────────────────────────────────────────
+var xSection=null, xSectionPlugin=null, xMeasurePlugin=null;
+var _sliceDir=[0,-1,0], _sliceMin=0, _sliceMax=1;
+var _sectionPickMode=false;
+
+function initSectionPlugin(){
+  if(xSectionPlugin) return;
+  var XK=window._XK;
+  if(!XK||!XK.SectionPlanesPlugin) return;
+  xSectionPlugin=new XK.SectionPlanesPlugin(xv,{overviewCanvasId:null,overviewVisible:false});
+}
+
+function toggleSlice(){
+  if(!xv||!xscene) return;
+  initSectionPlugin();
+  if(!xSectionPlugin) return;
+  var panel=el('slice-panel');
+  if(xSection){
+    xSectionPlugin.destroySectionPlane('sec1');
+    xSection=null;
+    panel.style.display='none';
+    el('bn-slice').classList.remove('a');
+    el('bn-slice-elem').classList.remove('a');
+  } else {
+    _sliceDir=[0,-1,0];
+    var aabb=xscene.aabb;
+    var cx=(aabb[0]+aabb[3])/2, cz=(aabb[2]+aabb[5])/2;
+    var y=aabb[1]+(aabb[4]-aabb[1])*0.7;
+    _sliceMin=aabb[1]; _sliceMax=aabb[4];
+    xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[cx,y,cz],dir:[0,-1,0]});
+    el('slice-slider').value=70;
+    el('slice-val').textContent='70%';
+    if(el('slice-title'))el('slice-title').textContent='Sección horizontal';
+    panel.style.display='block';
+    el('bn-slice').classList.add('a');
+    el('bn-slice-elem').classList.remove('a');
+  }
+}
+
+function sectionByElement(){
+  if(!xv||!xscene) return;
+  initSectionPlugin();
+  if(!xSectionPlugin) return;
+  if(_sectionPickMode){
+    _sectionPickMode=false;
+    el('bn-slice-elem').classList.remove('a');
+    st3('',''); return;
+  }
+  _sectionPickMode=true;
+  el('bn-slice-elem').classList.add('a');
+  st3('Haz clic en la cara del elemento para crear la sección','sp');
+}
+
+function applySectionFromPick(canvasPos){
+  _sectionPickMode=false;
+  el('bn-slice-elem').classList.remove('a');
+  var hit=xv.scene.pick({canvasPos:canvasPos,pickSurface:true});
+  if(!hit||!hit.entity){st3('No se detectó superficie','');return;}
+  var n=hit.worldNormal;
+  if(!n||(n[0]===0&&n[1]===0&&n[2]===0)){applySectionFromAABB(hit.entity);return;}
+  var len=Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+  if(len<0.0001){applySectionFromAABB(hit.entity);return;}
+  var dir=[n[0]/len,n[1]/len,n[2]/len];
+  _sliceDir=dir;
+  var pos=hit.worldPos||[(hit.entity.aabb[0]+hit.entity.aabb[3])/2,
+    (hit.entity.aabb[1]+hit.entity.aabb[4])/2,(hit.entity.aabb[2]+hit.entity.aabb[5])/2];
+  var maabb=xscene.aabb;
+  var corners=[[maabb[0],maabb[1],maabb[2]],[maabb[3],maabb[1],maabb[2]],
+    [maabb[0],maabb[4],maabb[2]],[maabb[3],maabb[4],maabb[2]],
+    [maabb[0],maabb[1],maabb[5]],[maabb[3],maabb[1],maabb[5]],
+    [maabb[0],maabb[4],maabb[5]],[maabb[3],maabb[4],maabb[5]]];
+  var projs=corners.map(function(v){return v[0]*dir[0]+v[1]*dir[1]+v[2]*dir[2];});
+  _sliceMin=Math.min.apply(null,projs);
+  _sliceMax=Math.max.apply(null,projs);
+  var curProj=pos[0]*dir[0]+pos[1]*dir[1]+pos[2]*dir[2];
+  var pct=Math.round(Math.max(0,Math.min(100,(curProj-_sliceMin)/(_sliceMax-_sliceMin)*100)));
+  if(xSection)xSectionPlugin.destroySectionPlane('sec1');
+  xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:pos,dir:dir});
+  el('slice-slider').value=pct;
+  el('slice-val').textContent=pct+'%';
+  var dirName=Math.abs(dir[1])>0.7?'horizontal':'vertical';
+  if(el('slice-title'))el('slice-title').textContent='Sección '+dirName;
+  el('slice-panel').style.display='block';
+  el('bn-slice').classList.remove('a');
+  st3('Plano paralelo a la cara · slider para mover','ok');
+}
+
+function applySectionFromAABB(obj){
+  if(!obj||!obj.aabb) return;
+  var aabb=obj.aabb;
+  var sx=aabb[3]-aabb[0],sy=aabb[4]-aabb[1],sz=aabb[5]-aabb[2];
+  var dir;
+  if(sy<=sx&&sy<=sz)dir=[0,-1,0];
+  else if(sx<=sy&&sx<=sz)dir=[-1,0,0];
+  else dir=[0,0,-1];
+  _sliceDir=dir;
+  var cx=(aabb[0]+aabb[3])/2,cy=(aabb[1]+aabb[4])/2,cz=(aabb[2]+aabb[5])/2;
+  var maabb=xscene.aabb;
+  var axis=Math.abs(dir[0])>0.5?0:(Math.abs(dir[1])>0.5?1:2);
+  _sliceMin=[maabb[0],maabb[1],maabb[2]][axis];
+  _sliceMax=[maabb[3],maabb[4],maabb[5]][axis];
+  var pct=Math.round(Math.max(0,Math.min(100,([cx,cy,cz][axis]-_sliceMin)/(_sliceMax-_sliceMin)*100)));
+  if(xSection)xSectionPlugin.destroySectionPlane('sec1');
+  xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[cx,cy,cz],dir:dir});
+  el('slice-slider').value=pct;
+  el('slice-val').textContent=pct+'%';
+  el('slice-panel').style.display='block';
+}
+
+function updateSlice(pct){
+  if(!xSection||!xscene) return;
+  var t=pct/100,dir=_sliceDir;
+  var aabb=xscene.aabb;
+  var cx=(aabb[0]+aabb[3])/2,cy=(aabb[1]+aabb[4])/2,cz=(aabb[2]+aabb[5])/2;
+  var d=_sliceMin+(_sliceMax-_sliceMin)*t;
+  var dot=cx*dir[0]+cy*dir[1]+cz*dir[2];
+  xSection.pos=[cx+dir[0]*(d-dot),cy+dir[1]*(d-dot),cz+dir[2]*(d-dot)];
+  el('slice-val').textContent=pct+'%';
+}
+
+function buildStoreysPanel(){
+  if(!xv||!xscene) return;
+  var list=el('storeys-list');if(!list)return;
+  var storeys=[];
+  var src=_metaJson?(_metaJson.objects||_metaJson.metaObjects||[]):[];
+  if(xscene.metaScene)
+    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
+      if(mo.type==='IfcBuildingStorey')storeys.push({id:mo.id,name:mo.name||'Planta'});
+    });
+  if(!storeys.length)
+    src.forEach(function(o){if(o.type==='IfcBuildingStorey')storeys.push({id:o.id,name:o.name||'Planta'});});
+  if(!storeys.length){
+    var aabb=xscene.aabb,h=aabb[4]-aabb[1],nF=Math.max(1,Math.round(h/3));
+    for(var i=0;i<nF;i++)storeys.push({id:'floor_'+i,name:'Planta '+(i===0?'Baja':i),pct:Math.round((i+0.5)/nF*100)});
+  }
+  list.innerHTML='';
+  var allRow=document.createElement('div');
+  allRow.style.cssText='padding:8px 12px;cursor:pointer;font-size:11px;font-weight:600;color:#374151;border-bottom:1px solid #f3f4f6;';
+  allRow.textContent='Todas las plantas';
+  allRow.addEventListener('click',function(){
+    showAll();
+    if(xSection&&xSectionPlugin){xSectionPlugin.destroySectionPlane('sec1');xSection=null;el('bn-slice').classList.remove('a');el('slice-panel').style.display='none';}
+    if(xModel)xv.cameraFlight.flyTo(xModel,{duration:0.5});
+  });
+  list.appendChild(allRow);
+  storeys.forEach(function(s){
+    var row=document.createElement('div');
+    row.style.cssText='padding:7px 12px;cursor:pointer;font-size:11px;color:#374151;display:flex;align-items:center;';
+    row.innerHTML='<span style="flex:1">'+s.name+'</span>';
+    row.addEventListener('click',function(){
+      initSectionPlugin();
+      if(xSection)xSectionPlugin.destroySectionPlane('sec1');
+      var aabb=xscene.aabb,pct=(s.pct||50)/100;
+      var y=aabb[1]+(aabb[4]-aabb[1])*(pct+0.08);
+      _sliceDir=[0,-1,0];_sliceMin=aabb[1];_sliceMax=aabb[4];
+      xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[(aabb[0]+aabb[3])/2,y,(aabb[2]+aabb[5])/2],dir:[0,-1,0]});
+      var sp=Math.round((pct+0.08)*100);
+      el('slice-slider').value=sp;el('slice-val').textContent=sp+'%';
+      if(el('slice-title'))el('slice-title').textContent='Planta: '+s.name;
+      el('slice-panel').style.display='block';el('bn-slice').classList.add('a');
+    });
+    list.appendChild(row);
+  });
+}
+
+function toggleMeasure(){
+  if(!xv) return;
+  var XK=window._XK;
+  if(!XK||!XK.DistanceMeasurementsPlugin){st3('Medición no disponible','');return;}
+  var active=el('bn-measure').classList.contains('a');
+  if(active){
+    if(xMeasurePlugin){
+      if(xMeasurePlugin._mouseCtrl)xMeasurePlugin._mouseCtrl.deactivate();
+      if(xMeasurePlugin._touchCtrl)xMeasurePlugin._touchCtrl.deactivate();
+      xMeasurePlugin.clear();
+    }
+    el('bn-measure').classList.remove('a');st3('','');
+  } else {
+    if(!xMeasurePlugin){
+      xMeasurePlugin=new XK.DistanceMeasurementsPlugin(xv);
+      if(XK.DistanceMeasurementsMouseControl){
+        xMeasurePlugin._mouseCtrl=new XK.DistanceMeasurementsMouseControl(xMeasurePlugin,{pointerLens:null});
+        xMeasurePlugin._mouseCtrl.activate();
+      }
+      if(XK.DistanceMeasurementsTouchControl){
+        xMeasurePlugin._touchCtrl=new XK.DistanceMeasurementsTouchControl(xMeasurePlugin,{pointerLens:null});
+        xMeasurePlugin._touchCtrl.activate();
+      }
+    } else {
+      if(xMeasurePlugin._mouseCtrl)xMeasurePlugin._mouseCtrl.activate();
+      if(xMeasurePlugin._touchCtrl)xMeasurePlugin._touchCtrl.activate();
+    }
+    el('bn-measure').classList.add('a');
+    st3('Clic en 2 puntos para medir distancia','');
+  }
+}
+
 // ── COLUMNAS REDIMENSIONABLES + TOUCH ────────────────────────────────────
 (function(){
 
@@ -1774,6 +1971,99 @@ document.querySelectorAll('.tab').forEach(function(t){
 
 // Búsqueda árbol
 on('si','input',function(){filterTree(this.value);});
+
+
+// ── FILTROS POR CATEGORÍA ─────────────────────────────────────────────────
+var IFC_LABELS={'IfcSpace':'Espacios/Habitaciones','IfcWall':'Muros','IfcWallStandardCase':'Muros',
+  'IfcSlab':'Forjados','IfcColumn':'Pilares','IfcBeam':'Vigas','IfcDoor':'Puertas',
+  'IfcWindow':'Ventanas','IfcRoof':'Cubiertas','IfcCovering':'Revestimientos',
+  'IfcStair':'Escaleras','IfcRailing':'Barandillas','IfcFurniture':'Mobiliario',
+  'IfcPlate':'Placas','IfcMember':'Estructura','IfcFooting':'Cimentación',
+  'IfcBuildingElementProxy':'Varios','IfcOpeningElement':'Huecos'};
+var IFC_ORDER=['IfcSpace','IfcWall','IfcWallStandardCase','IfcSlab','IfcColumn','IfcBeam',
+  'IfcRoof','IfcStair','IfcRailing','IfcDoor','IfcWindow','IfcCovering','IfcPlate',
+  'IfcMember','IfcFooting','IfcFurniture','IfcBuildingElementProxy','IfcOpeningElement'];
+var typeVisibility={};
+
+function buildTypesPanel(){
+  if(!xv||!xscene)return;
+  var list=el('types-list');if(!list)return;
+  var src=_metaJson?(_metaJson.objects||_metaJson.metaObjects||[]):[];
+  var typeCount={},typeEntities={};
+  src.forEach(function(o){
+    if(!o.type||o.type==='IfcProject'||o.type==='IfcSite'||o.type==='IfcBuilding'||
+       o.type==='IfcBuildingStorey'||o.id==='root')return;
+    typeCount[o.type]=(typeCount[o.type]||0)+1;
+    if(!typeEntities[o.type])typeEntities[o.type]=[];
+    typeEntities[o.type].push(o.id);
+  });
+  if(!Object.keys(typeCount).length&&xscene.metaScene){
+    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
+      if(!mo.type||mo.type==='DEFAULT'||mo.type==='IfcProject'||mo.type==='IfcSite'||
+         mo.type==='IfcBuilding'||mo.type==='IfcBuildingStorey'||mo.id==='root')return;
+      typeCount[mo.type]=(typeCount[mo.type]||0)+1;
+      if(!typeEntities[mo.type])typeEntities[mo.type]=[];
+      typeEntities[mo.type].push(mo.id);
+    });
+  }
+  if(!Object.keys(typeCount).length){
+    list.innerHTML='<div style="padding:8px 12px;font-size:11px;color:#9ca3af;">Carga los metadatos con ⬆ Meta</div>';
+    return;
+  }
+  var types=Object.keys(typeCount).sort(function(a,b){
+    var ia=IFC_ORDER.indexOf(a),ib=IFC_ORDER.indexOf(b);
+    if(ia<0)ia=999;if(ib<0)ib=999;
+    return ia!==ib?ia-ib:a.localeCompare(b);
+  });
+  list.innerHTML='';
+  types.forEach(function(type){
+    var label=IFC_LABELS[type]||(type.startsWith('Ifc')?type.slice(3):type);
+    var count=typeCount[type],visible=typeVisibility[type]!==false,ents=typeEntities[type]||[];
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;padding:5px 12px;cursor:pointer;';
+    row.onmouseenter=function(){this.style.background='#f3f4f6';};
+    row.onmouseleave=function(){this.style.background='';};
+    var cb=document.createElement('input');cb.type='checkbox';cb.checked=visible;
+    cb.style.cssText='margin-right:8px;accent-color:#6c63ff;width:14px;height:14px;flex-shrink:0;cursor:pointer;';
+    var lbl=document.createElement('span');lbl.textContent=label;
+    lbl.style.cssText='flex:1;font-size:11px;color:#374151;';
+    var cnt=document.createElement('span');cnt.textContent=count;
+    cnt.style.cssText='font-size:10px;color:#9ca3af;font-family:monospace;min-width:28px;text-align:right;';
+    var iso=document.createElement('button');iso.textContent='◎';
+    iso.style.cssText='margin-left:6px;border:none;background:none;cursor:pointer;font-size:11px;color:#9ca3af;padding:0 2px;';
+    iso.onmouseenter=function(){this.style.color='#6c63ff';};
+    iso.onmouseleave=function(){this.style.color='#9ca3af';};
+    (function(t,e){
+      iso.addEventListener('click',function(ev){ev.stopPropagation();isolateCategory(t,e);});
+      row.addEventListener('click',function(ev){
+        if(ev.target===iso||ev.target===cb)return;
+        cb.checked=!cb.checked;setCategoryVisible(t,cb.checked,e);
+      });
+      cb.addEventListener('change',function(ev){ev.stopPropagation();setCategoryVisible(t,this.checked,e);});
+    })(type,ents);
+    row.appendChild(cb);row.appendChild(lbl);row.appendChild(cnt);row.appendChild(iso);
+    list.appendChild(row);
+  });
+}
+function setCategoryVisible(type,visible,entities){
+  typeVisibility[type]=visible;
+  (entities||[]).forEach(function(id){var obj=xscene.objects[id];if(obj)obj.visible=visible;});
+}
+function setCatsVisible(visible){
+  if(!xscene)return;
+  xscene.setObjectsVisible(xscene.objectIds,visible);
+  Object.keys(typeVisibility).forEach(function(k){typeVisibility[k]=visible;});
+  buildTypesPanel();
+}
+function isolateCategory(type,entities){
+  if(!xscene)return;
+  xscene.setObjectsVisible(xscene.objectIds,false);
+  (entities||[]).forEach(function(id){var obj=xscene.objects[id];if(obj)obj.visible=true;});
+  typeVisibility={};typeVisibility[type]=true;
+  if(entities&&entities.length>0)
+    xv.cameraFlight.flyTo({objectIds:entities.slice(0,200),fitFactor:0.6,duration:0.5});
+  buildTypesPanel();el('bn-iso').classList.add('a');
+}
 
 // ── ARRANQUE ──────────────────────────────────────────────────────────────
 (function(){
