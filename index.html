@@ -1574,38 +1574,42 @@ function applySectionFromPick(canvasPos){
     return;
   }
 
-  // Snap de la normal al eje más cercano para planos limpios
-  var ax=Math.abs(n[0]), ay=Math.abs(n[1]), az=Math.abs(n[2]);
-  var dir;
-  if(ay >= ax && ay >= az){
-    dir = [0, n[1]>0?-1:1, 0];  // horizontal
-  } else if(ax >= ay && ax >= az){
-    dir = [n[0]>0?-1:1, 0, 0];  // vertical X
-  } else {
-    dir = [0, 0, n[2]>0?-1:1];  // vertical Z
-  }
+  // Usar la normal REAL sin snap — respeta muros inclinados
+  // Normalizar el vector
+  var len = Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+  if(len<0.0001){applySectionFromAABB(hit.entity);return;}
+  var dir = [n[0]/len, n[1]/len, n[2]/len];
 
   _sliceDir = dir;
-  var pos = hit.worldPos || [hit.entity.aabb[0], hit.entity.aabb[1], hit.entity.aabb[2]];
+  var pos = hit.worldPos || [(hit.entity.aabb[0]+hit.entity.aabb[3])/2,
+                              (hit.entity.aabb[1]+hit.entity.aabb[4])/2,
+                              (hit.entity.aabb[2]+hit.entity.aabb[5])/2];
   var maabb = xscene.aabb;
 
-  // Rango del slider
-  var axis = Math.abs(dir[0])>0.5 ? 0 : (Math.abs(dir[1])>0.5 ? 1 : 2);
-  _sliceMin = [maabb[0],maabb[1],maabb[2]][axis];
-  _sliceMax = [maabb[3],maabb[4],maabb[5]][axis];
-  var curPos = pos[axis];
-  var pct = Math.round(Math.max(0,Math.min(100,(curPos-_sliceMin)/(_sliceMax-_sliceMin)*100)));
+  // Para el slider: proyectar el rango del modelo sobre la normal
+  // min/max = proyección de las esquinas del AABB sobre dir
+  var corners = [
+    [maabb[0],maabb[1],maabb[2]],[maabb[3],maabb[1],maabb[2]],
+    [maabb[0],maabb[4],maabb[2]],[maabb[3],maabb[4],maabb[2]],
+    [maabb[0],maabb[1],maabb[5]],[maabb[3],maabb[1],maabb[5]],
+    [maabb[0],maabb[4],maabb[5]],[maabb[3],maabb[4],maabb[5]]
+  ];
+  var projs = corners.map(function(v){return v[0]*dir[0]+v[1]*dir[1]+v[2]*dir[2];});
+  _sliceMin = Math.min.apply(null,projs);
+  _sliceMax = Math.max.apply(null,projs);
+  var curProj = pos[0]*dir[0]+pos[1]*dir[1]+pos[2]*dir[2];
+  var pct = Math.round(Math.max(0,Math.min(100,(curProj-_sliceMin)/(_sliceMax-_sliceMin)*100)));
 
   if(xSection) xSectionPlugin.destroySectionPlane('sec1');
   xSection = xSectionPlugin.createSectionPlane({id:'sec1', pos:pos, dir:dir});
 
   el('slice-slider').value = pct;
   el('slice-val').textContent = pct+'%';
-  var axisNames=['X (E-O)','Y (horizontal)','Z (N-S)'];
-  if(el('slice-title')) el('slice-title').textContent = 'Sección '+axisNames[axis];
+  var dirName = Math.abs(dir[1])>0.7 ? 'horizontal' : 'vertical';
+  if(el('slice-title')) el('slice-title').textContent = 'Sección '+dirName;
   el('slice-panel').style.display = 'block';
   el('bn-slice').classList.remove('a');
-  st3('Plano creado · slider para mover','ok');
+  st3('Plano paralelo a la cara · slider para mover','ok');
 }
 
 function applySectionFromAABB(obj){
@@ -1660,13 +1664,12 @@ function updateSlice(pct){
   var dir = _sliceDir;
   var aabb = xscene.aabb;
   var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
-  if(dir[1]!==0){
-    xSection.pos = [cx, _sliceMin+(_sliceMax-_sliceMin)*t, cz];
-  } else if(dir[0]!==0){
-    xSection.pos = [_sliceMin+(_sliceMax-_sliceMin)*t, cy, cz];
-  } else {
-    xSection.pos = [cx, cy, _sliceMin+(_sliceMax-_sliceMin)*t];
-  }
+  // Mover el plano a lo largo de su normal
+  var d = _sliceMin + (_sliceMax-_sliceMin)*t;
+  // Centro del modelo + desplazamiento en la dirección de la normal
+  xSection.pos = [cx + dir[0]*(d - (cx*dir[0]+cy*dir[1]+cz*dir[2])),
+                  cy + dir[1]*(d - (cx*dir[0]+cy*dir[1]+cz*dir[2])),
+                  cz + dir[2]*(d - (cx*dir[0]+cy*dir[1]+cz*dir[2]))];
   el('slice-val').textContent = pct+'%';
 }
 
