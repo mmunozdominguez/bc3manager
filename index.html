@@ -478,7 +478,7 @@ button,input,select,textarea{-webkit-appearance:none;}
           <button class="t3" id="bn-iso" title="Aislar selección">◎</button>
           <button class="t3" id="bn-clr" title="Limpiar selección">✕</button>
           <button class="t3" id="bn-slice" title="Sección horizontal">⬛</button>
-          <button class="t3" id="bn-types" title="Filtrar por tipo">≡</button>
+          <button class="t3 a" id="bn-types" title="Categorías Revit — ocultar/mostrar">▤</button>
         </div>
         <button class="col-tog" id="tog-col3" title="Colapsar">‹</button>
       </div>
@@ -502,8 +502,17 @@ button,input,select,textarea{-webkit-appearance:none;}
           <span style="font-size:10px;font-family:monospace;color:var(--text);min-width:30px;" id="slice-val">100%</span>
           <button class="btn sm" id="slice-off" style="padding:2px 6px;">✕</button>
         </div>
-        <!-- Panel tipos -->
-        <div id="types-panel" style="display:none;position:absolute;top:44px;right:8px;background:rgba(255,255,255,.95);border:1px solid var(--bd);border-radius:8px;padding:10px;z-index:30;min-width:160px;box-shadow:0 2px 8px rgba(0,0,0,.1);"></div>
+        <!-- Panel categorías -->
+        <div id="types-panel" style="display:none;position:absolute;top:44px;right:8px;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:0;z-index:30;min-width:210px;max-height:420px;box-shadow:0 4px 16px rgba(0,0,0,.15);overflow:hidden;flex-direction:column;">
+          <div style="padding:10px 12px 6px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;font-weight:700;color:#374151;">Categorías</span>
+            <div style="display:flex;gap:4px;">
+              <button onclick="setCatsVisible(true)" style="font-size:9px;padding:2px 6px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;color:#374151;">Todo</button>
+              <button onclick="setCatsVisible(false)" style="font-size:9px;padding:2px 6px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;color:#374151;">Nada</button>
+            </div>
+          </div>
+          <div id="types-list" style="overflow-y:auto;max-height:360px;padding:6px 0;"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1352,54 +1361,148 @@ function updateSlice(pct){
   el('slice-val').textContent = pct+'%';
 }
 
+// Mapas de categoría IFC → nombre legible en español
+var IFC_LABELS = {
+  'IfcSpace':'Espacios/Habitaciones','IfcWall':'Muros','IfcWallStandardCase':'Muros',
+  'IfcSlab':'Forjados','IfcColumn':'Pilares','IfcBeam':'Vigas',
+  'IfcDoor':'Puertas','IfcWindow':'Ventanas','IfcRoof':'Cubiertas',
+  'IfcCovering':'Revestimientos','IfcStair':'Escaleras','IfcRailing':'Barandillas',
+  'IfcFurniture':'Mobiliario','IfcPlate':'Placas','IfcMember':'Estructura',
+  'IfcFooting':'Cimentación','IfcBuildingElementProxy':'Varios',
+  'IfcOpeningElement':'Huecos','IfcFlowTerminal':'Instalaciones',
+  'IfcFlowSegment':'Tuberías/Conductos','IfcDistributionFlowElement':'Inst. distribución',
+  'IfcSite':'Parcela','IfcBuilding':'Edificio','IfcBuildingStorey':'Planta'
+};
+// Orden preferido para mostrar
+var IFC_ORDER = ['IfcSpace','IfcWall','IfcWallStandardCase','IfcSlab','IfcColumn',
+  'IfcBeam','IfcRoof','IfcStair','IfcRailing','IfcDoor','IfcWindow','IfcCovering',
+  'IfcPlate','IfcMember','IfcFooting','IfcFurniture','IfcBuildingElementProxy',
+  'IfcOpeningElement','IfcFlowTerminal','IfcFlowSegment','IfcDistributionFlowElement'];
+
 function buildTypesPanel(){
   if(!xv||!xscene)return;
-  var panel=el('types-panel');
-  if(!panel)return;
+  var list=el('types-list');
+  if(!list)return;
+
+  // Contar elementos por tipo
   var typeCount={};
-  if(xscene.metaScene){
-    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
-      if(mo.type&&mo.type!=='DEFAULT'){
-        typeCount[mo.type]=(typeCount[mo.type]||0)+1;
-      }
+  var typeEntities={}; // type -> [entityId]
+  if(xscene.metaScene&&xscene.metaScene.metaObjects){
+    Object.values(xscene.metaScene.metaObjects).forEach(function(mo){
+      if(!mo.type||mo.type==='DEFAULT'||mo.type==='IfcProject'||mo.type==='IfcSite'
+         ||mo.type==='IfcBuilding'||mo.type==='IfcBuildingStorey')return;
+      typeCount[mo.type]=(typeCount[mo.type]||0)+1;
+      if(!typeEntities[mo.type])typeEntities[mo.type]=[];
+      typeEntities[mo.type].push(mo.id);
     });
   } else {
-    // Fallback: count by entity type if no metadata
-    typeCount['All']=Object.keys(xscene.objects).length;
+    // Sin metadatos: solo un toggle global
+    typeCount['Todos']=Object.keys(xscene.objects).length;
   }
+
   if(!Object.keys(typeCount).length){
-    panel.innerHTML='<div style="font-size:11px;color:var(--muted);">Sin metadatos de tipo</div>';
+    list.innerHTML='<div style="padding:8px 12px;font-size:11px;color:#9ca3af;">Sin metadatos — carga un XKT con metadata</div>';
     return;
   }
-  var html='<div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:6px;">Tipos IFC</div>';
-  var SHORT={'IFCWALL':'Muros','IFCWALLSTANDARDCASE':'Muros','IFCSLAB':'Forjados',
-    'IFCCOLUMN':'Pilares','IFCBEAM':'Vigas','IFCDOOR':'Puertas','IFCWINDOW':'Ventanas',
-    'IFCROOF':'Cubierta','IFCCOVERING':'Revestimiento','IFCSTAIR':'Escaleras',
-    'IFCBUILDINGELEMENTPROXY':'Otros'};
-  Object.keys(typeCount).sort().forEach(function(type){
-    var label=SHORT[type]||type.replace('IFC','');
+
+  // Ordenar tipos
+  var types=Object.keys(typeCount);
+  types.sort(function(a,b){
+    var ia=IFC_ORDER.indexOf(a), ib=IFC_ORDER.indexOf(b);
+    if(ia<0)ia=999;if(ib<0)ib=999;
+    if(ia!==ib)return ia-ib;
+    return a.localeCompare(b);
+  });
+
+  list.innerHTML='';
+  types.forEach(function(type){
+    var label=IFC_LABELS[type]||(type.startsWith('Ifc')?type.slice(3):type);
+    var count=typeCount[type];
     var visible=typeVisibility[type]!==false;
-    html+='<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;padding:2px 0;">'
-      +'<input type="checkbox" data-type="'+type+'"'+(visible?' checked':'')+'>'
-      +'<span style="flex:1;">'+label+'</span>'
-      +'<span style="color:var(--muted);">'+typeCount[type]+'</span>'
-      +'</label>';
+
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:0;padding:4px 12px;cursor:pointer;transition:background .1s;';
+    row.onmouseenter=function(){this.style.background='#f3f4f6';};
+    row.onmouseleave=function(){this.style.background='';};
+
+    var cb=document.createElement('input');
+    cb.type='checkbox';cb.checked=visible;cb.dataset.type=type;
+    cb.style.cssText='margin-right:8px;cursor:pointer;accent-color:#6c63ff;width:14px;height:14px;flex-shrink:0;';
+
+    var lbl=document.createElement('span');
+    lbl.textContent=label;
+    lbl.style.cssText='flex:1;font-size:11px;color:#374151;';
+
+    var cnt=document.createElement('span');
+    cnt.textContent=count;
+    cnt.style.cssText='font-size:10px;color:#9ca3af;font-family:monospace;min-width:28px;text-align:right;';
+
+    // Botón aislar
+    var iso=document.createElement('button');
+    iso.title='Aislar esta categoría';
+    iso.textContent='◎';
+    iso.style.cssText='margin-left:6px;border:none;background:none;cursor:pointer;font-size:11px;color:#9ca3af;padding:0 2px;';
+    iso.onmouseenter=function(){this.style.color='#6c63ff';};
+    iso.onmouseleave=function(){this.style.color='#9ca3af';};
+    (function(t,ents){
+      iso.addEventListener('click',function(e){
+        e.stopPropagation();
+        isolateCategory(t,ents);
+      });
+      row.addEventListener('click',function(e){
+        if(e.target===iso)return;
+        cb.checked=!cb.checked;
+        setCategoryVisible(t, cb.checked, ents);
+      });
+      cb.addEventListener('change',function(e){
+        e.stopPropagation();
+        setCategoryVisible(t, this.checked, ents);
+      });
+    })(type, typeEntities[type]||[]);
+
+    row.appendChild(cb);row.appendChild(lbl);row.appendChild(cnt);row.appendChild(iso);
+    list.appendChild(row);
   });
-  panel.innerHTML=html;
-  panel.querySelectorAll('input[type=checkbox]').forEach(function(cb){
-    cb.addEventListener('change',function(){
-      var type=this.dataset.type;
-      typeVisibility[type]=this.checked;
-      if(xscene.metaScene){
-        Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
-          if(mo.type===type){
-            var obj=xscene.objects[mo.id];
-            if(obj)obj.visible=cb.checked;
-          }
-        });
-      }
+}
+
+function setCategoryVisible(type, visible, entities){
+  typeVisibility[type]=visible;
+  if(!entities&&xscene&&xscene.metaScene){
+    entities=[];
+    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
+      if(mo.type===type)entities.push(mo.id);
     });
+  }
+  (entities||[]).forEach(function(id){
+    var obj=xscene.objects[id];if(obj)obj.visible=visible;
   });
+}
+
+function setCatsVisible(visible){
+  if(!xscene)return;
+  xscene.setObjectsVisible(xscene.objectIds,visible);
+  Object.keys(typeVisibility).forEach(function(k){typeVisibility[k]=visible;});
+  // Rebuild panel to update checkboxes
+  buildTypesPanel();
+}
+
+function isolateCategory(type, entities){
+  if(!xscene)return;
+  // Ocultar todo
+  xscene.setObjectsVisible(xscene.objectIds,false);
+  // Mostrar solo esta categoría
+  (entities||[]).forEach(function(id){
+    var obj=xscene.objects[id];if(obj)obj.visible=true;
+  });
+  typeVisibility={};typeVisibility[type]=true;
+  // Volar a esos elementos
+  if(entities&&entities.length>0){
+    xv.cameraFlight.flyTo({objectIds:entities.slice(0,100),fitFactor:0.6,duration:0.5});
+  }
+  // Rebuild checkboxes
+  buildTypesPanel();
+  // Mark iso button active
+  el('bn-iso').classList.add('a');
 }
 
 // Slice slider
@@ -1519,13 +1622,25 @@ on('bn-fit','click',fitModel);
 on('bn-ghost','click',toggleGhost);
 on('bn-iso','click',function(){
   if(!xv||!xscene)return;
-  if(vsHl.length>0){
+  if(this.classList.contains('a')){
+    // Desaislar: mostrar todo
+    xscene.setObjectsVisible(xscene.objectIds,true);
+    typeVisibility={};
+    this.classList.remove('a');
+    buildTypesPanel();
+  } else if(vsHl.length>0){
+    // Aislar selección actual
     xscene.setObjectsVisible(xscene.objectIds,false);
     vsHl.forEach(function(g){var o=xscene.objects[g];if(o)o.visible=true;});
     this.classList.add('a');
   }
 });
-on('bn-clr','click',function(){clrHL();showAll();el('bn-iso').classList.remove('a');});
+on('bn-clr','click',function(){
+  clrHL();showAll();
+  el('bn-iso').classList.remove('a');
+  typeVisibility={};
+  if(el('types-panel')&&el('types-panel').style.display!=='none')buildTypesPanel();
+});
 on('bn-slice','click',toggleSlice);
 on('bn-types','click',function(){
   var p=el('types-panel');if(!p)return;
