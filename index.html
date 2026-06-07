@@ -1316,30 +1316,20 @@ async function loadXktFile(xktFile, metaFile){
 // ── Aplicar metadata a modelo ya cargado ─────────────────────────────────
 // Convierte cualquier formato de metadata al formato xeokit con jerarquía
 function normalizeMetaModel(raw){
-  // Si ya tiene metaObjects con jerarquía, devolverlo tal cual
-  if(raw.metaObjects && raw.metaObjects.length > 0){
-    // Check if has a root
-    var hasRoot = raw.metaObjects.some(function(o){return !o.parent;});
-    if(hasRoot) return raw;
-  }
-  
-  // Convertir formato "objects" (nuestro generador) → "metaObjects" xeokit
   var src = raw.metaObjects || raw.objects || [];
-  var metaObjects = [{id:'root',name:'Project',type:'IfcProject',parent:null}];
+  if(!src.length) return raw;
+  var metaObjects = [{id:'root',name:'Project',type:'IfcProject',parentId:null}];
   src.forEach(function(o){
+    if(o.id==='root') return;
     metaObjects.push({
       id: o.id,
-      name: o.name || '',
-      type: o.type || 'IfcBuildingElementProxy',
-      parent: o.parent || 'root',
-      assemblyCode: o.assemblyCode || null
+      name: o.name||'',
+      type: o.type||'IfcBuildingElementProxy',
+      parentId: o.parentId||o.parent||'root',
+      assemblyCode: o.assemblyCode||null
     });
   });
-  return {
-    schema:'MetaModel', id:'bc3m',
-    projectId:'bc3m', revisionId:'bc3m',
-    metaObjects: metaObjects
-  };
+  return {schema:'MetaModel',id:'bc3m',projectId:'bc3m',revisionId:'bc3m',metaObjects:metaObjects};
 }
 
 async function applyMetaFile(file){
