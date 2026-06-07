@@ -476,11 +476,13 @@ button,input,select,textarea{-webkit-appearance:none;}
         <span>Modelo 3D</span>
         <div style="display:flex;gap:4px;align-items:center;flex:1;justify-content:flex-end;padding-right:8px;">
           <button class="t3" id="bn-fit" title="Encuadrar todo">⊡</button>
-          <button class="t3" id="bn-ghost" title="Modo fantasma">◈</button>
+          <button class="t3" id="bn-ghost" title="Modo fantasma / XRay">◈</button>
           <button class="t3" id="bn-iso" title="Aislar selección">◎</button>
-          <button class="t3" id="bn-clr" title="Limpiar selección">✕</button>
-          <button class="t3" id="bn-slice" title="Sección horizontal">⬛</button>
-          <button class="t3 a" id="bn-types" title="Categorías Revit — ocultar/mostrar">▤</button>
+          <button class="t3" id="bn-clr" title="Limpiar selección y mostrar todo">✕</button>
+          <button class="t3" id="bn-slice" title="Plano de sección horizontal">⬛</button>
+          <button class="t3" id="bn-firstperson" title="Vista primera persona">👁</button>
+          <button class="t3" id="bn-explode" title="Vista explosionada">💥</button>
+          <button class="t3 a" id="bn-types" title="Categorías — ocultar/mostrar por tipo">▤</button>
         </div>
         <button class="col-tog" id="tog-col3" title="Colapsar">‹</button>
       </div>
@@ -940,6 +942,7 @@ function rTXT(){
 
 // ── VISOR XEOKIT ──────────────────────────────────────────────────────────
 var xscene=null;
+var _metaJson=null; // metadata JSON guardado para filtros
 
 async function initXeokit(){
   if(xv&&xscene)return;
@@ -1081,13 +1084,16 @@ async function loadXkt(xktBuffer, metaJson){
   st3('Cargando modelo…','sp');pg3(20);
   try{
     // Create metaModel BEFORE loading XKT so loader can reference it
-    if(metaJson&&xscene.metaScene){
-      try{
-        var normMeta = normalizeMetaModel(metaJson);
-        try{xscene.metaScene.destroyMetaModel('m');}catch(e2){}
-        xscene.metaScene.createMetaModel('m', normMeta);
-        console.log('[XK] metaModel created:',Object.keys(xscene.metaScene.metaObjects||{}).length,'objects');
-      }catch(e){console.warn('[XK] metaModel error:',e);}
+    if(metaJson){
+      _metaJson = metaJson; // guardar para filtros
+      if(xscene&&xscene.metaScene){
+        try{
+          var normMeta = normalizeMetaModel(metaJson);
+          try{xscene.metaScene.destroyMetaModel('m');}catch(e2){}
+          xscene.metaScene.createMetaModel('m', normMeta);
+          console.log('[XK] metaModel created:',Object.keys(xscene.metaScene.metaObjects||{}).length,'objects');
+        }catch(e){console.warn('[XK] metaModel error:',e);}
+      }
     }
     var loader=new XK.XKTLoaderPlugin(xv,{
       dtxEnabled: true
@@ -1349,6 +1355,9 @@ async function applyMetaFile(file){
     var text = await file.text();
     var raw = JSON.parse(text);
 
+    // Guardar referencia global para filtros
+    _metaJson = raw;
+
     // Normalizar al formato xeokit: metaObjects con jerarquía
     var metaJson = normalizeMetaModel(raw);
     if(!metaJson.metaObjects||metaJson.metaObjects.length<=1){
@@ -1409,6 +1418,46 @@ async function applyMetaFile(file){
   }catch(e){
     st3('Error en metadatos: '+e.message,'');
     console.error('[META]',e);
+  }
+}
+
+
+// ── Vista primera persona ────────────────────────────────────────────────
+var _fpMode = false;
+function toggleFirstPerson(){
+  if(!xv)return;
+  _fpMode = !_fpMode;
+  xv.cameraControl.navMode = _fpMode ? 'firstPerson' : 'orbit';
+  xv.cameraControl.followPointer = !_fpMode;
+  el('bn-firstperson').classList.toggle('a', _fpMode);
+  st3(_fpMode ? 'Primera persona — WASD para moverse' : 'Modo órbita', '');
+}
+
+// ── Vista explosionada ───────────────────────────────────────────────────
+var _explodeScale = 0;
+var _explodeActive = false;
+function toggleExplode(){
+  if(!xv||!xscene||!xModel)return;
+  _explodeActive = !_explodeActive;
+  if(_explodeActive){
+    // Calcular centro del modelo
+    var aabb = xscene.aabb;
+    var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
+    var scale = (aabb[3]-aabb[0]+aabb[4]-aabb[1]+aabb[5]-aabb[2])/3*0.15;
+    Object.values(xscene.objects).forEach(function(obj){
+      if(!obj.aabb)return;
+      var ox=(obj.aabb[0]+obj.aabb[3])/2-cx;
+      var oy=(obj.aabb[1]+obj.aabb[4])/2-cy;
+      var oz=(obj.aabb[2]+obj.aabb[5])/2-cz;
+      var len=Math.sqrt(ox*ox+oy*oy+oz*oz)||1;
+      obj.offset=[ox/len*scale, oy/len*scale, oz/len*scale];
+    });
+    el('bn-explode').classList.add('a');
+    st3('Vista explosionada activa','');
+  } else {
+    Object.values(xscene.objects).forEach(function(obj){obj.offset=[0,0,0];});
+    el('bn-explode').classList.remove('a');
+    st3('','');
   }
 }
 
@@ -1516,54 +1565,42 @@ function buildTypesPanel(){
   var list=el('types-list');
   if(!list)return;
 
-  // Contar elementos por tipo
-  var typeCount={};
-  var typeEntities={}; // type -> [entityId]
-  if(xscene.metaScene&&xscene.metaScene.metaObjects){
-    Object.values(xscene.metaScene.metaObjects).forEach(function(mo){
-      if(!mo.type||mo.type==='DEFAULT'||mo.type==='IfcProject'||mo.type==='IfcSite'
-         ||mo.type==='IfcBuilding'||mo.type==='IfcBuildingStorey'||mo.id==='root')return;
+  // Usar _metaJson directamente — no depende de xeokit metaScene
+  var src = _metaJson ? (_metaJson.objects||_metaJson.metaObjects||[]) : [];
+
+  // Contar por tipo y agrupar entidades
+  var typeCount={}, typeEntities={};
+  src.forEach(function(o){
+    if(!o.type||o.type==='IfcProject'||o.type==='IfcSite'||
+       o.type==='IfcBuilding'||o.type==='IfcBuildingStorey'||o.id==='root')return;
+    typeCount[o.type]=(typeCount[o.type]||0)+1;
+    if(!typeEntities[o.type])typeEntities[o.type]=[];
+    typeEntities[o.type].push(o.id);
+  });
+
+  // Si no hay metadata, intentar con metaScene como fallback
+  if(!Object.keys(typeCount).length&&xscene.metaScene){
+    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
+      if(!mo.type||mo.type==='DEFAULT'||mo.type==='IfcProject'||
+         mo.type==='IfcSite'||mo.type==='IfcBuilding'||
+         mo.type==='IfcBuildingStorey'||mo.id==='root')return;
       typeCount[mo.type]=(typeCount[mo.type]||0)+1;
       if(!typeEntities[mo.type])typeEntities[mo.type]=[];
       typeEntities[mo.type].push(mo.id);
     });
-  } else {
-    // Sin metadatos: solo un toggle global
-    typeCount['Todos']=Object.keys(xscene.objects).length;
   }
 
-  // If no metaScene data, try reading from scene objects via metaScene auto-populated by XKT
-  if(!Object.keys(typeCount).length&&xscene.metaScene){
-    // XKTLoaderPlugin populates metaScene automatically from embedded metadata
-    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
-      if(!mo.type||mo.type==='DEFAULT')return;
-      typeCount[mo.type]=(typeCount[mo.type]||0)+1;
-      if(!typeEntities[mo.type])typeEntities[mo.type]=[];
-      typeEntities[mo.type].push(mo.id);
-    });
-  }
   if(!Object.keys(typeCount).length){
-    // Final fallback: use g2asm assembly codes to group by BC3 code
-    Object.keys(asm2g).forEach(function(code){
-      var guids=asm2g[code]||[];
-      if(guids.length>0){
-        typeCount[code]=guids.length;
-        typeEntities[code]=guids;
-      }
-    });
-  }
-  if(!Object.keys(typeCount).length){
-    list.innerHTML='<div style="padding:8px 12px;font-size:11px;color:#9ca3af;">Sin datos de categoría en este modelo</div>';
+    list.innerHTML='<div style="padding:8px 12px;font-size:11px;color:#9ca3af;">Carga primero los metadatos con ⬆ Meta</div>';
     return;
   }
 
   // Ordenar tipos
   var types=Object.keys(typeCount);
   types.sort(function(a,b){
-    var ia=IFC_ORDER.indexOf(a), ib=IFC_ORDER.indexOf(b);
+    var ia=IFC_ORDER.indexOf(a),ib=IFC_ORDER.indexOf(b);
     if(ia<0)ia=999;if(ib<0)ib=999;
-    if(ia!==ib)return ia-ib;
-    return a.localeCompare(b);
+    return ia!==ib?ia-ib:a.localeCompare(b);
   });
 
   list.innerHTML='';
@@ -1571,9 +1608,10 @@ function buildTypesPanel(){
     var label=IFC_LABELS[type]||(type.startsWith('Ifc')?type.slice(3):type);
     var count=typeCount[type];
     var visible=typeVisibility[type]!==false;
+    var ents=typeEntities[type]||[];
 
     var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:0;padding:4px 12px;cursor:pointer;transition:background .1s;';
+    row.style.cssText='display:flex;align-items:center;padding:4px 12px;cursor:pointer;transition:background .1s;gap:0;';
     row.onmouseenter=function(){this.style.background='#f3f4f6';};
     row.onmouseleave=function(){this.style.background='';};
 
@@ -1589,28 +1627,24 @@ function buildTypesPanel(){
     cnt.textContent=count;
     cnt.style.cssText='font-size:10px;color:#9ca3af;font-family:monospace;min-width:28px;text-align:right;';
 
-    // Botón aislar
     var iso=document.createElement('button');
-    iso.title='Aislar esta categoría';
-    iso.textContent='◎';
+    iso.title='Aislar';iso.textContent='◎';
     iso.style.cssText='margin-left:6px;border:none;background:none;cursor:pointer;font-size:11px;color:#9ca3af;padding:0 2px;';
     iso.onmouseenter=function(){this.style.color='#6c63ff';};
     iso.onmouseleave=function(){this.style.color='#9ca3af';};
-    (function(t,ents){
-      iso.addEventListener('click',function(e){
-        e.stopPropagation();
-        isolateCategory(t,ents);
-      });
-      row.addEventListener('click',function(e){
-        if(e.target===iso)return;
+
+    (function(t,e){
+      iso.addEventListener('click',function(ev){ev.stopPropagation();isolateCategory(t,e);});
+      row.addEventListener('click',function(ev){
+        if(ev.target===iso||ev.target===cb)return;
         cb.checked=!cb.checked;
-        setCategoryVisible(t, cb.checked, ents);
+        setCategoryVisible(t,cb.checked,e);
       });
-      cb.addEventListener('change',function(e){
-        e.stopPropagation();
-        setCategoryVisible(t, this.checked, ents);
+      cb.addEventListener('change',function(ev){
+        ev.stopPropagation();
+        setCategoryVisible(t,this.checked,e);
       });
-    })(type, typeEntities[type]||[]);
+    })(type,ents);
 
     row.appendChild(cb);row.appendChild(lbl);row.appendChild(cnt);row.appendChild(iso);
     list.appendChild(row);
@@ -1800,6 +1834,8 @@ on('bn-clr','click',function(){
   if(el('types-panel')&&el('types-panel').style.display!=='none')buildTypesPanel();
 });
 on('bn-slice','click',toggleSlice);
+on('bn-firstperson','click',toggleFirstPerson);
+on('bn-explode','click',toggleExplode);
 on('bn-types','click',function(){
   var p=el('types-panel');if(!p)return;
   var isOpen=(p.style.display==='flex'||p.style.display==='block');
