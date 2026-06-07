@@ -424,7 +424,7 @@ button,input,select,textarea{-webkit-appearance:none;}
     </div>
     <div class="tr" id="sm-wrap">
       <label for="fxkt" class="btn" style="cursor:pointer;" title="Cargar modelo XKT">⬆ XKT</label>
-      <input type="file" id="fxkt" style="position:absolute;left:-9999px;" accept=".xkt">
+      <input type="file" id="fxkt" style="position:absolute;left:-9999px;" accept=".xkt,.json" multiple>
       <label for="fbc3r" class="btn" style="cursor:pointer;" title="Reimportar BC3">↺ BC3</label>
       <input type="file" id="fbc3r" style="position:absolute;left:-9999px;" accept=".bc3,.BC3">
       <button class="btn" id="bn-export" title="Exportar .bc3m">⬇ Exportar</button>
@@ -1282,17 +1282,29 @@ async function exportVersion(vid){
 }
 
 // ── XKT UPLOAD en visor ───────────────────────────────────────────────────
-async function loadXktFile(file){
+async function loadXktFile(xktFile, metaFile){
   st3('Cargando XKT…','sp');pg3(10);
-  var buf=await file.arrayBuffer();
-  var xktUint=new Uint8Array(buf);
+  var xktBuf=await xktFile.arrayBuffer();
+  var xktUint=new Uint8Array(xktBuf);
+  var metaJson=null;
+
+  // Leer metadata si se proporcionó
+  if(metaFile){
+    try{
+      var metaText=await metaFile.text();
+      metaJson=JSON.parse(metaText);
+      console.log('[XKT] metadata loaded:',metaJson.objects&&metaJson.objects.length,'objects');
+    }catch(e){console.warn('[XKT] metadata parse error:',e);}
+  }
+
   // Guardar en DB
   dbG('versions',curVR,function(v){
-    if(v){v.hasXkt=true;v.ifcName=file.name;dbP('versions',v);}
+    if(v){v.hasXkt=true;v.ifcName=xktFile.name;dbP('versions',v);}
   });
-  dbP('ifcbin',{vid:curVR,xkt:xktUint,meta:null,name:file.name,savedAt:Date.now()});
+  dbP('ifcbin',{vid:curVR,xkt:xktUint,meta:metaJson,name:xktFile.name,savedAt:Date.now()});
+  pg3(30);
   await initXeokit();
-  loadXkt(xktUint,null);
+  loadXkt(xktUint,metaJson);
 }
 
 // ── COLUMNAS REDIMENSIONABLES ─────────────────────────────────────────────
@@ -1630,7 +1642,15 @@ on('bn-okv','click',function(){
 
 // Visor — XKT upload
 on('fxkt','change',function(){
-  if(this.files[0]&&curVR)loadXktFile(this.files[0]);
+  if(!this.files.length||!curVR){this.value='';return;}
+  var xktFile=null, metaFile=null;
+  for(var i=0;i<this.files.length;i++){
+    var f=this.files[i];
+    if(f.name.endsWith('.xkt'))xktFile=f;
+    else if(f.name.endsWith('.json'))metaFile=f;
+  }
+  if(!xktFile&&this.files[0].name.endsWith('.xkt'))xktFile=this.files[0];
+  if(xktFile)loadXktFile(xktFile, metaFile);
   this.value='';
 });
 
