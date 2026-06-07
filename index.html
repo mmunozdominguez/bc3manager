@@ -480,11 +480,10 @@ button,input,select,textarea{-webkit-appearance:none;}
           <button class="t3" id="bn-ghost" title="Modo fantasma / XRay">◈</button>
           <button class="t3" id="bn-iso" title="Aislar selección">◎</button>
           <button class="t3" id="bn-clr" title="Limpiar todo">✕</button>
-          <button class="t3" id="bn-slice" title="Plano de sección">⬛</button>
+          <button class="t3" id="bn-slice" title="Sección horizontal (Z)">⬛</button>
+          <button class="t3" id="bn-slice-elem" title="Sección paralela al elemento seleccionado">⧉</button>
           <button class="t3" id="bn-storeys" title="Plantas del edificio">🏢</button>
           <button class="t3" id="bn-measure" title="Medir distancias">📐</button>
-          <button class="t3" id="bn-firstperson" title="Vista primera persona">👁</button>
-          <button class="t3" id="bn-explode" title="Vista explosionada">💥</button>
           <button class="t3 a" id="bn-types" title="Categorías">▤</button>
         </div>
         <button class="col-tog" id="tog-col3" title="Colapsar">‹</button>
@@ -503,23 +502,18 @@ button,input,select,textarea{-webkit-appearance:none;}
         </div>
         <div id="pg" style="position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0%;transition:width .3s;display:none;z-index:20;"></div>
         <!-- Sección -->
-        <div id="slice-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:280px;">
+        <div id="slice-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:260px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span style="font-size:11px;font-weight:700;color:#374151;">Plano de sección</span>
+            <span style="font-size:11px;font-weight:700;color:#374151;" id="slice-title">Sección horizontal</span>
             <button id="slice-off" style="border:none;background:none;cursor:pointer;font-size:13px;color:#9ca3af;padding:0;">✕</button>
           </div>
-          <div style="display:flex;gap:6px;margin-bottom:10px;">
-            <button class="slice-dir-btn a" data-dir="y" style="flex:1;padding:4px;font-size:10px;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;background:#6c63ff;color:#fff;">Horizontal Z</button>
-            <button class="slice-dir-btn" data-dir="x" style="flex:1;padding:4px;font-size:10px;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;background:#f9fafb;color:#374151;">Norte-Sur</button>
-            <button class="slice-dir-btn" data-dir="z" style="flex:1;padding:4px;font-size:10px;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;background:#f9fafb;color:#374151;">Este-Oeste</button>
-          </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:10px;color:#9ca3af;min-width:20px;">0%</span>
-            <input type="range" id="slice-slider" min="0" max="100" value="100" style="flex:1;accent-color:#6c63ff;">
-            <span style="font-size:10px;color:#9ca3af;min-width:28px;">100%</span>
+            <span style="font-size:10px;color:#9ca3af;">▼</span>
+            <input type="range" id="slice-slider" min="0" max="100" value="70" style="flex:1;accent-color:#6c63ff;">
+            <span style="font-size:10px;color:#9ca3af;">▲</span>
           </div>
-          <div style="display:flex;justify-content:center;margin-top:8px;">
-            <span style="font-size:10px;color:#6b7280;" id="slice-val">Posición: 100%</span>
+          <div style="text-align:center;margin-top:6px;">
+            <span style="font-size:10px;color:#6b7280;" id="slice-val">70%</span>
           </div>
         </div>
         <!-- Plantas -->
@@ -1445,44 +1439,6 @@ async function applyMetaFile(file){
 }
 
 
-// ── Vista primera persona ────────────────────────────────────────────────
-var _fpMode = false;
-function toggleFirstPerson(){
-  if(!xv)return;
-  _fpMode = !_fpMode;
-  xv.cameraControl.navMode = _fpMode ? 'firstPerson' : 'orbit';
-  xv.cameraControl.followPointer = !_fpMode;
-  el('bn-firstperson').classList.toggle('a', _fpMode);
-  st3(_fpMode ? 'Primera persona — WASD para moverse' : 'Modo órbita', '');
-}
-
-// ── Vista explosionada ───────────────────────────────────────────────────
-var _explodeScale = 0;
-var _explodeActive = false;
-function toggleExplode(){
-  if(!xv||!xscene||!xModel)return;
-  _explodeActive = !_explodeActive;
-  if(_explodeActive){
-    // Calcular centro del modelo
-    var aabb = xscene.aabb;
-    var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
-    var scale = (aabb[3]-aabb[0]+aabb[4]-aabb[1]+aabb[5]-aabb[2])/3*0.15;
-    Object.values(xscene.objects).forEach(function(obj){
-      if(!obj.aabb)return;
-      var ox=(obj.aabb[0]+obj.aabb[3])/2-cx;
-      var oy=(obj.aabb[1]+obj.aabb[4])/2-cy;
-      var oz=(obj.aabb[2]+obj.aabb[5])/2-cz;
-      var len=Math.sqrt(ox*ox+oy*oy+oz*oz)||1;
-      obj.offset=[ox/len*scale, oy/len*scale, oz/len*scale];
-    });
-    el('bn-explode').classList.add('a');
-    st3('Vista explosionada activa','');
-  } else {
-    Object.values(xscene.objects).forEach(function(obj){obj.offset=[0,0,0];});
-    el('bn-explode').classList.remove('a');
-    st3('','');
-  }
-}
 
 // ── COLUMNAS REDIMENSIONABLES ─────────────────────────────────────────────
 (function(){
@@ -1542,71 +1498,130 @@ function initSectionPlugin(){
   });
 }
 
+// _sliceDir: vector dirección activo [dx,dy,dz]
+var _sliceDir = [0,-1,0]; // horizontal por defecto
+var _sliceMin = 0, _sliceMax = 1; // rango en la dirección del plano
+
 function toggleSlice(){
   if(!xv||!xscene) return;
   initSectionPlugin();
   if(!xSectionPlugin) return;
   var panel = el('slice-panel');
   if(xSection){
-    // Desactivar sección
     xSectionPlugin.destroySectionPlane('sec1');
     xSection = null;
     panel.style.display = 'none';
     el('bn-slice').classList.remove('a');
+    el('bn-slice-elem').classList.remove('a');
   } else {
-    // Activar sección
-    var aabb = xscene.aabb;
-    var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
-    var dir, pos;
-    if(_sliceDir==='y'){
-      // Horizontal — corta por la mitad de la altura
-      var mid = aabb[1]+(aabb[4]-aabb[1])*0.7;
-      pos=[cx, mid, cz]; dir=[0,-1,0];
-    } else if(_sliceDir==='x'){
-      pos=[cx, cy, cz]; dir=[-1,0,0];
-    } else {
-      pos=[cx, cy, cz]; dir=[0,0,-1];
-    }
-    xSection = xSectionPlugin.createSectionPlane({id:'sec1', pos:pos, dir:dir});
-    panel.style.display = 'block';
+    // Sección horizontal por defecto
+    _sliceDir = [0,-1,0];
+    _createSection(0.7);
+    if(el('slice-title')) el('slice-title').textContent = 'Sección horizontal';
     el('bn-slice').classList.add('a');
-    el('slice-slider').value = 70;
-    el('slice-val').textContent = 'Posición: 70%';
+    el('bn-slice-elem').classList.remove('a');
   }
 }
 
-function setSliceDir(dir){
-  _sliceDir = dir;
-  document.querySelectorAll('.slice-dir-btn').forEach(function(b){
-    var isActive = b.dataset.dir===dir;
-    b.style.background = isActive?'#6c63ff':'#f9fafb';
-    b.style.color = isActive?'#fff':'#374151';
-  });
-  // Recrear sección con nueva dirección
-  if(xSection && xSectionPlugin){
-    xSectionPlugin.destroySectionPlane('sec1');
-    xSection = null;
-    var val = parseInt(el('slice-slider').value)||70;
-    toggleSlice();
-    updateSlice(val);
+// Sección paralela al elemento seleccionado (muro, forjado...)
+function sectionByElement(){
+  if(!xv||!xscene){st3('Selecciona un elemento primero','');return;}
+  if(!vsHl||!vsHl.length){st3('Selecciona un elemento en el modelo primero','');return;}
+  initSectionPlugin();
+  if(!xSectionPlugin) return;
+
+  var entityId = vsHl[0];
+  var obj = xscene.objects[entityId];
+  if(!obj||!obj.aabb){st3('Elemento no válido','');return;}
+
+  // Calcular dimensiones del bounding box del elemento
+  var aabb = obj.aabb;
+  var sx = aabb[3]-aabb[0]; // ancho X
+  var sy = aabb[4]-aabb[1]; // alto Y
+  var sz = aabb[5]-aabb[2]; // profundo Z
+
+  // Determinar la normal del plano según la dimensión más pequeña
+  // (el eje más corto es perpendicular a la cara principal del elemento)
+  var dir;
+  if(sz <= sx && sz <= sy){
+    dir = [0,0,-1]; // muro N-S: normal en Z
+  } else if(sx <= sy && sx <= sz){
+    dir = [-1,0,0]; // muro E-O: normal en X
+  } else {
+    dir = [0,-1,0]; // forjado: normal en Y (horizontal)
   }
+  _sliceDir = dir;
+
+  // Centro del elemento como punto inicial del plano
+  var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
+
+  // Calcular rango de movimiento del plano en el modelo completo
+  var maabb = xscene.aabb;
+  var name = '';
+  if(xscene.metaScene&&xscene.metaScene.metaObjects&&xscene.metaScene.metaObjects[entityId])
+    name = xscene.metaScene.metaObjects[entityId].name||'';
+
+  // Destruir sección anterior si existe
+  if(xSection) xSectionPlugin.destroySectionPlane('sec1');
+
+  xSection = xSectionPlugin.createSectionPlane({id:'sec1', pos:[cx,cy,cz], dir:dir});
+
+  // Calcular min/max del modelo en la dirección del plano para el slider
+  if(dir[0]!==0){ _sliceMin=maabb[0]; _sliceMax=maabb[3]; }
+  else if(dir[1]!==0){ _sliceMin=maabb[1]; _sliceMax=maabb[4]; }
+  else { _sliceMin=maabb[2]; _sliceMax=maabb[5]; }
+
+  // Posición actual en %
+  var curVal = dir[0]!==0 ? cx : (dir[1]!==0 ? cy : cz);
+  var pct = Math.round((curVal-_sliceMin)/(_sliceMax-_sliceMin)*100);
+  el('slice-slider').value = pct;
+  el('slice-val').textContent = pct+'%';
+  if(el('slice-title')) el('slice-title').textContent = 'Sección'+(name?' — '+name.slice(0,20):'');
+
+  el('slice-panel').style.display = 'block';
+  el('bn-slice-elem').classList.add('a');
+  el('bn-slice').classList.remove('a');
+  st3('Usa el slider para mover el plano','');
+}
+
+function _createSection(pct){
+  var aabb = xscene.aabb;
+  var t = pct;
+  var dir = _sliceDir;
+  var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
+  var pos;
+  if(dir[1]!==0){
+    // Horizontal
+    _sliceMin=aabb[1]; _sliceMax=aabb[4];
+    pos=[cx, aabb[1]+(aabb[4]-aabb[1])*t, cz];
+  } else if(dir[0]!==0){
+    _sliceMin=aabb[0]; _sliceMax=aabb[3];
+    pos=[aabb[0]+(aabb[3]-aabb[0])*t, cy, cz];
+  } else {
+    _sliceMin=aabb[2]; _sliceMax=aabb[5];
+    pos=[cx, cy, aabb[2]+(aabb[5]-aabb[2])*t];
+  }
+  if(xSection) xSectionPlugin.destroySectionPlane('sec1');
+  xSection = xSectionPlugin.createSectionPlane({id:'sec1', pos:pos, dir:dir});
+  el('slice-slider').value = Math.round(t*100);
+  el('slice-val').textContent = Math.round(t*100)+'%';
+  el('slice-panel').style.display = 'block';
 }
 
 function updateSlice(pct){
   if(!xSection||!xscene) return;
-  var aabb = xscene.aabb;
   var t = pct/100;
-  if(_sliceDir==='y'){
-    var z = aabb[1]+(aabb[4]-aabb[1])*t;
-    xSection.pos = [(aabb[0]+aabb[3])/2, z, (aabb[2]+aabb[5])/2];
-  } else if(_sliceDir==='x'){
-    var x = aabb[0]+(aabb[3]-aabb[0])*t;
-    xSection.pos = [x, (aabb[1]+aabb[4])/2, (aabb[2]+aabb[5])/2];
+  var dir = _sliceDir;
+  var aabb = xscene.aabb;
+  var cx=(aabb[0]+aabb[3])/2, cy=(aabb[1]+aabb[4])/2, cz=(aabb[2]+aabb[5])/2;
+  if(dir[1]!==0){
+    xSection.pos = [cx, _sliceMin+(_sliceMax-_sliceMin)*t, cz];
+  } else if(dir[0]!==0){
+    xSection.pos = [_sliceMin+(_sliceMax-_sliceMin)*t, cy, cz];
   } else {
-    var z2 = aabb[2]+(aabb[5]-aabb[2])*t;
-    xSection.pos = [(aabb[0]+aabb[3])/2, (aabb[1]+aabb[4])/2, z2];
+    xSection.pos = [cx, cy, _sliceMin+(_sliceMax-_sliceMin)*t];
   }
-  el('slice-val').textContent = 'Posición: '+pct+'%';
+  el('slice-val').textContent = pct+'%';
 }
 
 // ── Plantas ───────────────────────────────────────────────────────────────
@@ -1913,11 +1928,6 @@ function isolateCategory(type, entities){
 var sliderEl=el('slice-slider');
 if(sliderEl)sliderEl.addEventListener('input',function(){updateSlice(parseInt(this.value));});
 
-// Slice direction buttons
-document.querySelectorAll('.slice-dir-btn').forEach(function(b){
-  b.addEventListener('click',function(){setSliceDir(this.dataset.dir);});
-});
-
 // Slice close
 on('slice-off','click',function(){
   if(xSection&&xSectionPlugin){xSectionPlugin.destroySectionPlane('sec1');xSection=null;}
@@ -2059,8 +2069,7 @@ on('bn-clr','click',function(){
   if(el('types-panel')&&el('types-panel').style.display!=='none')buildTypesPanel();
 });
 on('bn-slice','click',toggleSlice);
-on('bn-firstperson','click',toggleFirstPerson);
-on('bn-explode','click',toggleExplode);
+on('bn-slice-elem','click',sectionByElement);
 on('bn-storeys','click',function(){
   var p=el('storeys-panel');if(!p)return;
   var open=(p.style.display==='block');
