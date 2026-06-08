@@ -431,6 +431,61 @@ html.dark .ver-card .chip.xkt{background:#1e1030;color:#c4b5fd;border-color:#4c1
 html.dark input[type=range]{accent-color:var(--acc);}
 html.dark .col-header{background:var(--panel);}
 html.dark scrollbar-color: var(--bd) var(--panel);
+
+/* ── BUSCADOR MODAL ───────────────────────────────────────────────────── */
+#srch-overlay{
+  display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  align-items:flex-start;justify-content:center;padding-top:56px;
+}
+#srch-overlay.o{display:flex;animation:srch-in .14s ease;}
+@keyframes srch-in{from{opacity:0;}to{opacity:1;}}
+#srch-box{
+  width:min(660px,94vw);
+  background:var(--panel);border:1px solid var(--bd2);border-radius:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;
+  animation:srch-drop .16s cubic-bezier(.34,1.3,.64,1);
+}
+@keyframes srch-drop{from{transform:translateY(-10px) scale(.98);opacity:0;}to{transform:none;opacity:1;}}
+#srch-input-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--bd);}
+#srch-input-row svg{color:var(--acc);flex-shrink:0;}
+#srch-q{flex:1;background:transparent;border:none;outline:none;font-size:15px;color:var(--text);caret-color:var(--acc);}
+#srch-q::placeholder{color:var(--muted2);}
+.srch-kbd{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);background:var(--panel2);border:1px solid var(--bd);border-radius:4px;padding:2px 7px;flex-shrink:0;}
+#srch-filters{display:flex;gap:5px;padding:7px 14px;border-bottom:1px solid var(--bd);overflow-x:auto;scrollbar-width:none;}
+#srch-filters::-webkit-scrollbar{display:none;}
+.sf{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid var(--bd);color:var(--muted);cursor:pointer;white-space:nowrap;background:transparent;transition:all .1s;}
+.sf:hover{border-color:var(--bd2);color:var(--text);}
+.sf.on{border-color:var(--acc);color:var(--acc);background:var(--acc-bg);}
+#srch-stats{padding:5px 14px;font-size:11px;color:var(--muted2);font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--bd);}
+#srch-stats b{color:var(--acc);}
+#srch-results{max-height:370px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bd) transparent;}
+#srch-results::-webkit-scrollbar{width:4px;}
+#srch-results::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px;}
+.srch-glabel{padding:7px 14px 3px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);}
+.sri{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;cursor:pointer;border-left:2px solid transparent;transition:all .1s;}
+.sri:hover,.sri.f{background:var(--panel2);border-left-color:var(--acc);}
+.sri.f{background:var(--acc-bg);}
+.sri-code{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--acc);min-width:84px;padding-top:1px;flex-shrink:0;}
+.sri-body{flex:1;min-width:0;}
+.sri-desc{font-size:12px;color:var(--text);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sri-desc mark{background:rgba(37,99,235,.18);color:var(--acc);border-radius:2px;padding:0 1px;font-style:normal;}
+html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
+.sri-meta{display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;}
+.sri-path{font-size:10px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;}
+.sri-path .sx{color:var(--bd2);margin:0 2px;}
+.stag{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;}
+.stag-ud{background:var(--ok-bg);color:var(--ok);}
+.stag-3d{background:var(--acc-bg);color:var(--acc);}
+.stag-pl{background:var(--warn-bg);color:var(--warn);}
+.sri-price{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;min-width:68px;text-align:right;padding-top:1px;flex-shrink:0;}
+.sri-arr{color:var(--muted2);opacity:0;transition:opacity .1s;padding-top:2px;flex-shrink:0;}
+.sri:hover .sri-arr,.sri.f .sri-arr{opacity:1;color:var(--acc);}
+#srch-empty{padding:36px 14px;text-align:center;color:var(--muted);font-size:13px;}
+#srch-footer{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-top:1px solid var(--bd);font-size:10px;color:var(--muted2);font-family:'JetBrains Mono',monospace;}
+#srch-footer .sh{display:flex;gap:12px;}
+#srch-footer .sh span{display:flex;align-items:center;gap:4px;}
+#srch-footer kbd{background:var(--panel2);border:1px solid var(--bd);border-radius:3px;padding:1px 5px;font-size:10px;}
 </style>
 </head>
 <body>
@@ -527,6 +582,7 @@ html.dark scrollbar-color: var(--bd) var(--panel);
       <button class="btn" id="bn-export" title="Exportar .bc3m" style="display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar</button>
       <span class="sd" id="sd"></span>
       <span id="sm" style="font-size:11px;color:var(--muted);">—</span>
+      <button class="btn" id="bn-search" title="Buscar partida (Ctrl+K)" style="display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar</button>
       <button class="btn" id="bn-dark-v" title="Cambiar tema" style="padding:5px 7px;margin-left:2px;">
         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
@@ -630,6 +686,34 @@ html.dark scrollbar-color: var(--bd) var(--panel);
           <div id="types-list" style="overflow-y:auto;max-height:360px;padding:6px 0;"></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BUSCADOR ══════════════════════════════════════════════════════════ -->
+<div id="srch-overlay">
+  <div id="srch-box">
+    <div id="srch-input-row">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="srch-q" placeholder="Buscar partidas, códigos, materiales…" autocomplete="off" spellcheck="false">
+      <span class="srch-kbd">ESC</span>
+    </div>
+    <div id="srch-filters">
+      <button class="sf on" data-f="all">Todo</button>
+      <button class="sf" data-f="cap">Capítulos</button>
+      <button class="sf" data-f="par">Partidas</button>
+      <button class="sf" data-f="3d">Con modelo 3D</button>
+      <button class="sf" data-f="pl">Con pliego</button>
+    </div>
+    <div id="srch-stats"></div>
+    <div id="srch-results"></div>
+    <div id="srch-footer">
+      <div class="sh">
+        <span><kbd>↑↓</kbd> navegar</span>
+        <span><kbd>↵</kbd> abrir</span>
+        <span><kbd>ESC</kbd> cerrar</span>
+      </div>
+      <span>Ctrl+K</span>
     </div>
   </div>
 </div>
@@ -2498,6 +2582,225 @@ on('f-restore','change',function(){
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js').catch(function(e){console.warn('SW:',e);});
   }
+})();
+
+// ── BUSCADOR ─────────────────────────────────────────────────────────────
+(function(){
+  var _idx=[];       // índice plano
+  var _q='';
+  var _filter='all';
+  var _focus=0;
+  var _results=[];
+
+  // Normaliza texto para búsqueda insensible a tildes/mayúsculas
+  function norm(s){
+    return String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+  }
+
+  // Construye el índice desde curBC
+  function buildIdx(){
+    _idx=[];
+    if(!curBC)return;
+    var BC=curBC;
+    // Mapa de padres para construir rutas
+    var parentOf={};
+    Object.keys(BC.h).forEach(function(par){
+      (BC.h[par]||[]).forEach(function(ch){parentOf[ch]=par;});
+    });
+    function getPath(code){
+      var parts=[];var c=code;
+      while(parentOf[c]){c=parentOf[c];var d=BC.c[c];parts.unshift(d?d.desc||c:c);}
+      return parts;
+    }
+    Object.keys(BC.c).forEach(function(code){
+      var c=BC.c[code];
+      var kids=(BC.h[code]||[]).length>0;
+      var has3d=(BC.g[code]||[]).length>0;
+      var hasPliego=!!(BC.t[code]);
+      var type=kids?'cap':'par';
+      _idx.push({
+        code:code,
+        desc:c.desc||'',
+        ud:c.ud||'',
+        pr:c.pr||0,
+        type:type,
+        has3d:has3d,
+        hasPliego:hasPliego,
+        path:getPath(code),
+        _n:norm(code)+' '+norm(c.desc)+' '+norm(c.ud)
+      });
+    });
+  }
+
+  function highlight(text,q){
+    if(!q)return esc(text);
+    var nText=norm(text),nQ=norm(q);
+    var result='',i=0;
+    while(i<text.length){
+      var pos=nText.indexOf(nQ,i);
+      if(pos<0){result+=esc(text.slice(i));break;}
+      result+=esc(text.slice(i,pos))+'<mark>'+esc(text.slice(pos,pos+q.length))+'</mark>';
+      i=pos+q.length;
+    }
+    return result;
+  }
+
+  function runSearch(){
+    var q=(_q||'').trim();
+    var nq=norm(q);
+    var res=_idx.filter(function(item){
+      if(_filter==='cap'&&item.type!=='cap')return false;
+      if(_filter==='par'&&item.type!=='par')return false;
+      if(_filter==='3d'&&!item.has3d)return false;
+      if(_filter==='pl'&&!item.hasPliego)return false;
+      if(!nq)return true;
+      return item._n.includes(nq);
+    });
+    // Ordenar: primero coincidencias en código, luego en descripción
+    if(nq){
+      res.sort(function(a,b){
+        var ac=norm(a.code).includes(nq)?0:1;
+        var bc=norm(b.code).includes(nq)?0:1;
+        return ac-bc;
+      });
+    }
+    _results=res.slice(0,40);
+    _focus=0;
+    renderResults(q);
+  }
+
+  function renderResults(q){
+    var rDiv=el('srch-results');
+    var stats=el('srch-stats');
+    if(!_results.length){
+      rDiv.innerHTML='<div id="srch-empty">'+(q?'Sin resultados para <strong>'+esc(q)+'</strong>':'Escribe para buscar partidas, códigos o materiales…')+'</div>';
+      stats.innerHTML='';
+      return;
+    }
+    stats.innerHTML='<b>'+_results.length+(_results.length===40?'+':'')+' resultado'+(+_results.length!==1?'s':'')+'</b>';
+    // Agrupar caps vs partidas
+    var caps=_results.filter(function(r){return r.type==='cap';});
+    var pars=_results.filter(function(r){return r.type==='par';});
+    var html='';
+    var allItems=[];
+    if(caps.length){
+      html+='<div class="srch-glabel">Capítulos / subcapítulos</div>';
+      caps.forEach(function(r){html+=renderItem(r,q);allItems.push(r);});
+    }
+    if(pars.length){
+      html+='<div class="srch-glabel">Partidas</div>';
+      pars.forEach(function(r){html+=renderItem(r,q);allItems.push(r);});
+    }
+    rDiv.innerHTML=html;
+    // Bind clicks
+    rDiv.querySelectorAll('.sri').forEach(function(row,i){
+      row.addEventListener('click',function(){selectResult(allItems[i]);});
+      row.addEventListener('mouseenter',function(){setFocus(i);});
+    });
+    setFocus(_focus);
+  }
+
+  function renderItem(r,q){
+    var pathHtml=r.path.length?r.path.map(function(p){return '<span>'+esc(p)+'</span>';}).join('<span class="sx">›</span>'):'';
+    var tags='';
+    if(r.ud)tags+='<span class="stag stag-ud">'+esc(r.ud)+'</span>';
+    if(r.has3d)tags+='<span class="stag stag-3d">3D</span>';
+    if(r.hasPliego)tags+='<span class="stag stag-pl">Pliego</span>';
+    var priceHtml=(!r.type||r.type==='par')&&r.pr?fmt(r.pr)+' €':'';
+    return '<div class="sri" data-code="'+esc(r.code)+'">'
+      +'<div class="sri-code">'+highlight(r.code,q)+'</div>'
+      +'<div class="sri-body">'
+        +'<div class="sri-desc">'+highlight(r.desc||r.code,q)+'</div>'
+        +'<div class="sri-meta">'
+          +(pathHtml?'<span class="sri-path">'+pathHtml+'</span>':'')
+          +tags
+        +'</div>'
+      +'</div>'
+      +(priceHtml?'<div class="sri-price">'+priceHtml+'</div>':'')
+      +'<svg class="sri-arr" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'
+      +'</div>';
+  }
+
+  function setFocus(i){
+    _focus=Math.max(0,Math.min(_results.length-1,i));
+    el('srch-results').querySelectorAll('.sri').forEach(function(row,j){
+      row.classList.toggle('f',j===_focus);
+      if(j===_focus)row.scrollIntoView({block:'nearest'});
+    });
+  }
+
+  function selectResult(item){
+    if(!item)return;
+    closeSearch();
+    // Navegar al nodo en el árbol
+    selP=item.code;
+    // Expandir árbol hasta ese nodo
+    var node=document.querySelector('.tn[data-code="'+item.code+'"]');
+    if(node){
+      // Expandir todos los ancestros
+      var p=node.parentElement;
+      while(p){
+        if(p.classList&&p.classList.contains('tc')){p.classList.add('o');var tog=p.previousElementSibling;if(tog)tog.querySelector&&tog.querySelector('.tg')&&tog.querySelector('.tg').classList.add('o');}
+        p=p.parentElement;
+      }
+      document.querySelectorAll('.tn').forEach(function(n){n.classList.remove('s');});
+      node.classList.add('s');
+      node.scrollIntoView({block:'center',behavior:'smooth'});
+    }
+    renderDet();
+    if(xv&&curBC)hlPart(item.code,curBC);
+  }
+
+  function openSearch(){
+    if(!curBC){alert('Abre una versión con BC3 primero.');return;}
+    buildIdx();
+    el('srch-overlay').classList.add('o');
+    el('srch-q').value='';_q='';_filter='all';
+    el('srch-filters').querySelectorAll('.sf').forEach(function(b){b.classList.toggle('on',b.dataset.f==='all');});
+    runSearch();
+    setTimeout(function(){el('srch-q').focus();},50);
+  }
+
+  function closeSearch(){
+    el('srch-overlay').classList.remove('o');
+  }
+
+  // Botón en topbar
+  on('bn-search','click',openSearch);
+
+  // Ctrl+K / Cmd+K
+  document.addEventListener('keydown',function(e){
+    if((e.ctrlKey||e.metaKey)&&e.key==='k'){
+      e.preventDefault();
+      if(el('srch-overlay').classList.contains('o'))closeSearch();
+      else openSearch();
+    }
+    if(!el('srch-overlay').classList.contains('o'))return;
+    if(e.key==='Escape'){closeSearch();}
+    else if(e.key==='ArrowDown'){e.preventDefault();setFocus(_focus+1);}
+    else if(e.key==='ArrowUp'){e.preventDefault();setFocus(_focus-1);}
+    else if(e.key==='Enter'){e.preventDefault();selectResult(_results[_focus]);}
+  });
+
+  // Cerrar al click fuera del box
+  el('srch-overlay').addEventListener('click',function(e){if(e.target===this)closeSearch();});
+
+  // Input
+  on('srch-q','input',function(){_q=this.value;runSearch();});
+
+  // Filtros
+  el('srch-filters').querySelectorAll('.sf').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      _filter=this.dataset.f;
+      el('srch-filters').querySelectorAll('.sf').forEach(function(b){b.classList.remove('on');});
+      this.classList.add('on');
+      runSearch();
+    });
+  });
+
+  // Reconstruir índice al cargar nuevo BC3
+  var _origRender=renderTree;
+  renderTree=function(){_origRender();if(el('srch-overlay').classList.contains('o')){buildIdx();runSearch();}else{_idx=[];}};
 })();
 
 </script>
