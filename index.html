@@ -2248,108 +2248,147 @@ function isolateCategory(type,entities){
 // ── BACKUP COMPLETO ───────────────────────────────────────────────────────
 async function exportBackup(){
   try{
-    // Read all data from IndexedDB
-    var projects = await new Promise(function(res,rej){
-      dbG_all('projects',res);
-    });
-    var versions = await new Promise(function(res,rej){
-      dbG_all('versions',res);
-    });
-    var bc3data = await new Promise(function(res,rej){
-      dbG_all('bc3data',res);
-    });
-    var ifcbin = await new Promise(function(res,rej){
-      dbG_all('ifcbin',res);
+    var projects = await new Promise(function(res){dbG_all('projects',res);});
+    var versions = await new Promise(function(res){dbG_all('versions',res);});
+    var bc3data  = await new Promise(function(res){dbG_all('bc3data',res);});
+    var ifcbin   = await new Promise(function(res){dbG_all('ifcbin',res);});
+
+    // Separar XKT binarios del resto (evita base64 que falla con archivos grandes)
+    var ifcMeta = ifcbin.map(function(r){
+      return {vid:r.vid, name:r.name, savedAt:r.savedAt, meta:r.meta, hasXkt:!!r.xkt};
     });
 
-    // XKT is binary — convert to base64 for JSON serialization
-    var ifcbinSer = ifcbin.map(function(rec){
-      var r = Object.assign({},rec);
-      if(r.xkt){
-        var arr = r.xkt instanceof Uint8Array ? r.xkt : new Uint8Array(r.xkt);
-        // Convert to base64
-        var binary = '';
-        arr.forEach(function(b){binary+=String.fromCharCode(b);});
-        r.xkt = btoa(binary);
-        r._xktBase64 = true;
-      }
-      return r;
-    });
-
-    var backup = {
-      version: 1,
-      created: new Date().toISOString(),
-      app: 'BC3 Manager',
-      counts: {
-        projects: projects.length,
-        versions: versions.length,
-        bc3data: bc3data.length,
-        ifcbin: ifcbin.length
-      },
-      data: {projects:projects, versions:versions, bc3data:bc3data, ifcbin:ifcbinSer}
+    // Cabecera JSON
+    var header = {
+      version:2, created:new Date().toISOString(), app:'BC3 Manager',
+      counts:{projects:projects.length,versions:versions.length,
+              bc3data:bc3data.length,ifcbin:ifcbin.length},
+      data:{projects:projects, versions:versions, bc3data:bc3data, ifcMeta:ifcMeta}
     };
+    var headerJson = JSON.stringify(header);
+    var headerBytes = new TextEncoder().encode(headerJson);
 
-    var json = JSON.stringify(backup);
-    var blob = new Blob([json],{type:'application/json'});
+    // Recoger buffers XKT
+    var xktChunks = [];
+    ifcbin.forEach(function(r){
+      if(r.xkt){
+        var arr = r.xkt instanceof Uint8Array ? r.xkt :
+                  (r.xkt.buffer ? new Uint8Array(r.xkt.buffer) : new Uint8Array(0));
+        xktChunks.push({vid:r.vid, data:arr});
+      }
+    });
+
+    // Formato binario: MAGIC(4) + headerLen(4) + header + N×[vidLen(2)+vid+dataLen(4)+data]
+    var MAGIC = new Uint8Array([0x42,0x43,0x33,0x4D]); // "BC3M"
+    var headerLen = new Uint32Array([headerBytes.length]);
+    var nChunks = new Uint32Array([xktChunks.length]);
+
+    // Calcular tamaño total
+    var totalSize = 4 + 4 + headerBytes.length + 4;
+    xktChunks.forEach(function(ch){
+      totalSize += 2 + new TextEncoder().encode(ch.vid).length + 4 + ch.data.length;
+    });
+
+    var buf = new ArrayBuffer(totalSize);
+    var view = new DataView(buf);
+    var uint8 = new Uint8Array(buf);
+    var offset = 0;
+
+    // Magic
+    uint8.set(MAGIC, offset); offset+=4;
+    // Header length
+    view.setUint32(offset, headerBytes.length, true); offset+=4;
+    // Header JSON
+    uint8.set(headerBytes, offset); offset+=headerBytes.length;
+    // Chunk count
+    view.setUint32(offset, xktChunks.length, true); offset+=4;
+
+    // XKT chunks
+    xktChunks.forEach(function(ch){
+      var vidBytes = new TextEncoder().encode(ch.vid);
+      view.setUint16(offset, vidBytes.length, true); offset+=2;
+      uint8.set(vidBytes, offset); offset+=vidBytes.length;
+      view.setUint32(offset, ch.data.length, true); offset+=4;
+      uint8.set(ch.data, offset); offset+=ch.data.length;
+    });
+
+    var blob = new Blob([buf], {type:'application/octet-stream'});
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     var d = new Date().toISOString().slice(0,10);
     a.download = 'BC3Manager_backup_'+d+'.bc3mbackup';
     a.click();
     URL.revokeObjectURL(a.href);
-    alert('Backup exportado:\n'+projects.length+' obras, '+versions.length+' versiones, '+bc3data.length+' BC3, '+ifcbin.length+' modelos 3D');
+    alert('Backup exportado:\n'+projects.length+' obras · '+versions.length+
+          ' versiones · '+bc3data.length+' BC3 · '+ifcbin.length+' modelos 3D');
   }catch(e){
     alert('Error en backup: '+e.message);
     console.error(e);
   }
 }
 
+
 async function restoreBackup(file){
-  if(!confirm('¿Restaurar copia de seguridad?\nSe añadirán los datos al contenido actual (no se borran los existentes).'))return;
+  if(!confirm('¿Restaurar copia de seguridad?\nSe añadirán los datos al contenido actual.'))return;
   try{
-    var txt = await file.text();
-    var backup = JSON.parse(txt);
-    if(!backup.data||!backup.version){alert('Archivo de backup no válido');return;}
+    var arrayBuf = await file.arrayBuffer();
+    var uint8 = new Uint8Array(arrayBuf);
 
-    var d = backup.data;
-    var count = {p:0,v:0,b:0,i:0};
+    // Detect format: v2 binary starts with "BC3M", v1 starts with "{"
+    var isV2 = uint8[0]===0x42&&uint8[1]===0x43&&uint8[2]===0x33&&uint8[3]===0x4D;
 
-    // Restore projects
-    for(var p of (d.projects||[])){
-      await new Promise(function(res){dbP('projects',p,res);});
-      count.p++;
-    }
-    // Restore versions
-    for(var v of (d.versions||[])){
-      await new Promise(function(res){dbP('versions',v,res);});
-      count.v++;
-    }
-    // Restore bc3data
-    for(var b of (d.bc3data||[])){
-      await new Promise(function(res){dbP('bc3data',b,res);});
-      count.b++;
-    }
-    // Restore ifcbin — decode base64 XKT back to Uint8Array
-    for(var rec of (d.ifcbin||[])){
-      var r = Object.assign({},rec);
-      if(r._xktBase64&&r.xkt){
-        var binary = atob(r.xkt);
-        var arr = new Uint8Array(binary.length);
-        for(var i=0;i<binary.length;i++) arr[i]=binary.charCodeAt(i);
-        r.xkt = arr;
-        delete r._xktBase64;
+    var header, xktMap = {};
+
+    if(isV2){
+      // Binary format v2
+      var view = new DataView(arrayBuf);
+      var offset = 4;
+      var headerLen = view.getUint32(offset, true); offset+=4;
+      var headerJson = new TextDecoder().decode(uint8.slice(offset, offset+headerLen));
+      header = JSON.parse(headerJson); offset+=headerLen;
+      var nChunks = view.getUint32(offset, true); offset+=4;
+      for(var i=0;i<nChunks;i++){
+        var vidLen = view.getUint16(offset, true); offset+=2;
+        var vid = new TextDecoder().decode(uint8.slice(offset,offset+vidLen)); offset+=vidLen;
+        var dataLen = view.getUint32(offset, true); offset+=4;
+        xktMap[vid] = new Uint8Array(arrayBuf, offset, dataLen); offset+=dataLen;
       }
-      await new Promise(function(res){dbP('ifcbin',r,res);});
-      count.i++;
+    } else {
+      // JSON format v1 (legacy)
+      header = JSON.parse(new TextDecoder().decode(uint8));
     }
 
-    alert('Backup restaurado:\n'+count.p+' obras, '+count.v+' versiones, '+count.b+' BC3, '+count.i+' modelos 3D');
+    if(!header.data||!header.version){alert('Archivo de backup no válido');return;}
+    var d = header.data;
+    var count={p:0,v:0,b:0,i:0};
+
+    for(var p of (d.projects||[])){await new Promise(function(res){dbP('projects',p,res);});count.p++;}
+    for(var v of (d.versions||[])){await new Promise(function(res){dbP('versions',v,res);});count.v++;}
+    for(var b of (d.bc3data||[])){await new Promise(function(res){dbP('bc3data',b,res);});count.b++;}
+
+    // Restaurar ifcbin: combinar meta + XKT binario
+    var ifcSrc = d.ifcbin||d.ifcMeta||[];
+    for(var rec of ifcSrc){
+      var r = Object.assign({},rec);
+      // v1: decode base64 XKT
+      if(r._xktBase64&&r.xkt){
+        var bin=atob(r.xkt),arr2=new Uint8Array(bin.length);
+        for(var j=0;j<bin.length;j++)arr2[j]=bin.charCodeAt(j);
+        r.xkt=arr2;delete r._xktBase64;
+      }
+      // v2: attach binary XKT from map
+      if(isV2&&xktMap[r.vid]) r.xkt=xktMap[r.vid];
+      await new Promise(function(res){dbP('ifcbin',r,res);});count.i++;
+    }
+
+    alert('Backup restaurado:\n'+count.p+' obras · '+count.v+' versiones · '+count.b+' BC3 · '+count.i+' modelos 3D');
     loadHome();
   }catch(e){
     alert('Error al restaurar: '+e.message);
     console.error(e);
   }
 }
+
 
 // Helper: read all records from a store
 function dbG_all(store, cb){
