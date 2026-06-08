@@ -1065,6 +1065,7 @@ function rMED(){
 function rTXT(){
   var d=el('dc');if(!selP||!curBC){d.innerHTML='<div class="ed"><p>Selecciona una partida</p></div>';return;}
   var con=curBC.c[selP]||{};
+  console.log('[TXT] selP:',selP,'curBC.t keys:',(curBC.t?Object.keys(curBC.t).length:0),'has key:',(curBC.t&&curBC.t[selP])?'YES':'NO');
   var longText=(curBC.t&&curBC.t[selP])||'';
   var shortDesc=con.desc||'';
   var html='';
