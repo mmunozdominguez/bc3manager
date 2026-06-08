@@ -164,7 +164,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .tb{font-size:8px;font-weight:600;padding:1px 4px;border-radius:3px;border:1px solid;flex-shrink:0;margin-right:3px;white-space:nowrap;letter-spacing:.03em;}
 /* Detalle */
 .tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;}
-.tab{flex:1;text-align:center;padding:6px 4px;font-size:10px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
+.tab{flex:1;text-align:center;padding:4px 4px;font-size:10px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
 .tab:hover{color:var(--text);}
 .tab.a{color:var(--acc);border-bottom-color:var(--acc);}
 #dc{flex:1;overflow-y:auto;padding:10px 10px;}
@@ -451,6 +451,15 @@ html.dark scrollbar-color: var(--bd) var(--panel);
         Importar .bc3m
       </label>
       <input type="file" id="fimport-home" style="position:absolute;left:-9999px;" accept=".bc3m">
+      <button class="btn" id="bn-backup" title="Exportar copia de seguridad completa" style="display:inline-flex;align-items:center;gap:5px;">
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Backup
+      </button>
+      <label for="f-restore" class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Restaurar copia de seguridad">
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+        Restaurar
+      </label>
+      <input type="file" id="f-restore" style="position:absolute;left:-9999px;" accept=".bc3mbackup,.json">
       <button class="btn" id="bn-dark" title="Cambiar tema" style="padding:6px 8px;">
         <svg id="icon-dark" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         <svg id="icon-light" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -548,7 +557,7 @@ html.dark scrollbar-color: var(--bd) var(--panel);
     <div class="vcol" id="col2">
       <div class="col-header">
         <span>Detalle</span>
-        <div class="col-meta" id="dt">—</div>
+        <div class="col-meta" id="dt" style="display:none;"></div>
         <button class="col-tog" id="tog-col2" title="Colapsar">‹</button>
       </div>
       <div class="tabs">
@@ -2235,6 +2244,123 @@ function isolateCategory(type,entities){
   buildTypesPanel();el('bn-iso').classList.add('a');
 }
 
+
+// ── BACKUP COMPLETO ───────────────────────────────────────────────────────
+async function exportBackup(){
+  try{
+    // Read all data from IndexedDB
+    var projects = await new Promise(function(res,rej){
+      dbG_all('projects',res);
+    });
+    var versions = await new Promise(function(res,rej){
+      dbG_all('versions',res);
+    });
+    var bc3data = await new Promise(function(res,rej){
+      dbG_all('bc3data',res);
+    });
+    var ifcbin = await new Promise(function(res,rej){
+      dbG_all('ifcbin',res);
+    });
+
+    // XKT is binary — convert to base64 for JSON serialization
+    var ifcbinSer = ifcbin.map(function(rec){
+      var r = Object.assign({},rec);
+      if(r.xkt){
+        var arr = r.xkt instanceof Uint8Array ? r.xkt : new Uint8Array(r.xkt);
+        // Convert to base64
+        var binary = '';
+        arr.forEach(function(b){binary+=String.fromCharCode(b);});
+        r.xkt = btoa(binary);
+        r._xktBase64 = true;
+      }
+      return r;
+    });
+
+    var backup = {
+      version: 1,
+      created: new Date().toISOString(),
+      app: 'BC3 Manager',
+      counts: {
+        projects: projects.length,
+        versions: versions.length,
+        bc3data: bc3data.length,
+        ifcbin: ifcbin.length
+      },
+      data: {projects:projects, versions:versions, bc3data:bc3data, ifcbin:ifcbinSer}
+    };
+
+    var json = JSON.stringify(backup);
+    var blob = new Blob([json],{type:'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    var d = new Date().toISOString().slice(0,10);
+    a.download = 'BC3Manager_backup_'+d+'.bc3mbackup';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    alert('Backup exportado:\n'+projects.length+' obras, '+versions.length+' versiones, '+bc3data.length+' BC3, '+ifcbin.length+' modelos 3D');
+  }catch(e){
+    alert('Error en backup: '+e.message);
+    console.error(e);
+  }
+}
+
+async function restoreBackup(file){
+  if(!confirm('¿Restaurar copia de seguridad?\nSe añadirán los datos al contenido actual (no se borran los existentes).'))return;
+  try{
+    var txt = await file.text();
+    var backup = JSON.parse(txt);
+    if(!backup.data||!backup.version){alert('Archivo de backup no válido');return;}
+
+    var d = backup.data;
+    var count = {p:0,v:0,b:0,i:0};
+
+    // Restore projects
+    for(var p of (d.projects||[])){
+      await new Promise(function(res){dbP('projects',p,res);});
+      count.p++;
+    }
+    // Restore versions
+    for(var v of (d.versions||[])){
+      await new Promise(function(res){dbP('versions',v,res);});
+      count.v++;
+    }
+    // Restore bc3data
+    for(var b of (d.bc3data||[])){
+      await new Promise(function(res){dbP('bc3data',b,res);});
+      count.b++;
+    }
+    // Restore ifcbin — decode base64 XKT back to Uint8Array
+    for(var rec of (d.ifcbin||[])){
+      var r = Object.assign({},rec);
+      if(r._xktBase64&&r.xkt){
+        var binary = atob(r.xkt);
+        var arr = new Uint8Array(binary.length);
+        for(var i=0;i<binary.length;i++) arr[i]=binary.charCodeAt(i);
+        r.xkt = arr;
+        delete r._xktBase64;
+      }
+      await new Promise(function(res){dbP('ifcbin',r,res);});
+      count.i++;
+    }
+
+    alert('Backup restaurado:\n'+count.p+' obras, '+count.v+' versiones, '+count.b+' BC3, '+count.i+' modelos 3D');
+    loadHome();
+  }catch(e){
+    alert('Error al restaurar: '+e.message);
+    console.error(e);
+  }
+}
+
+// Helper: read all records from a store
+function dbG_all(store, cb){
+  openDB(function(db){
+    var tx = db.transaction(store,'readonly');
+    var req = tx.objectStore(store).getAll();
+    req.onsuccess = function(){cb(req.result||[]);};
+    req.onerror = function(){cb([]);};
+  });
+}
+
 // ── ARRANQUE ──────────────────────────────────────────────────────────────
 (function(){
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
@@ -2259,6 +2385,11 @@ function isolateCategory(type,entities){
   }
   applyDark(_dark);
   on('bn-dark','click',function(){applyDark(!_dark);});
+on('bn-backup','click',exportBackup);
+on('f-restore','change',function(){
+  if(this.files[0])restoreBackup(this.files[0]);
+  this.value='';
+});
 
   loadHome();
   // PWA install prompt
