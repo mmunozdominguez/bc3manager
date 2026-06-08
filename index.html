@@ -2253,72 +2253,73 @@ async function exportBackup(){
     var bc3data  = await new Promise(function(res){dbG_all('bc3data',res);});
     var ifcbin   = await new Promise(function(res){dbG_all('ifcbin',res);});
 
-    // Separar XKT binarios del resto (evita base64 que falla con archivos grandes)
+    // Metadata sin binarios
     var ifcMeta = ifcbin.map(function(r){
       return {vid:r.vid, name:r.name, savedAt:r.savedAt, meta:r.meta, hasXkt:!!r.xkt};
     });
 
-    // Cabecera JSON
     var header = {
       version:2, created:new Date().toISOString(), app:'BC3 Manager',
-      counts:{projects:projects.length,versions:versions.length,
-              bc3data:bc3data.length,ifcbin:ifcbin.length},
+      counts:{projects:projects.length, versions:versions.length,
+              bc3data:bc3data.length, ifcbin:ifcbin.length},
       data:{projects:projects, versions:versions, bc3data:bc3data, ifcMeta:ifcMeta}
     };
-    var headerJson = JSON.stringify(header);
-    var headerBytes = new TextEncoder().encode(headerJson);
 
-    // Recoger buffers XKT
+    var headerBytes = new TextEncoder().encode(JSON.stringify(header));
+
+    // Recoger XKT chunks
     var xktChunks = [];
     ifcbin.forEach(function(r){
       if(r.xkt){
-        var arr = r.xkt instanceof Uint8Array ? r.xkt :
-                  (r.xkt.buffer ? new Uint8Array(r.xkt.buffer) : new Uint8Array(0));
+        var arr = r.xkt instanceof Uint8Array ? r.xkt : new Uint8Array(r.xkt.buffer||r.xkt);
         xktChunks.push({vid:r.vid, data:arr});
       }
     });
 
-    // Formato binario: MAGIC(4) + headerLen(4) + header + N×[vidLen(2)+vid+dataLen(4)+data]
-    var MAGIC = new Uint8Array([0x42,0x43,0x33,0x4D]); // "BC3M"
-    var headerLen = new Uint32Array([headerBytes.length]);
-    var nChunks = new Uint32Array([xktChunks.length]);
+    // Construir usando array de partes (evita allocar un ArrayBuffer gigante)
+    var parts = [];
+    var enc = new TextEncoder();
 
-    // Calcular tamaño total
-    var totalSize = 4 + 4 + headerBytes.length + 4;
-    xktChunks.forEach(function(ch){
-      totalSize += 2 + new TextEncoder().encode(ch.vid).length + 4 + ch.data.length;
-    });
+    // Magic "BC3M"
+    parts.push(new Uint8Array([0x42,0x43,0x33,0x4D]));
 
-    var buf = new ArrayBuffer(totalSize);
-    var view = new DataView(buf);
-    var uint8 = new Uint8Array(buf);
-    var offset = 0;
+    // Header length (4 bytes LE)
+    var hLen = new ArrayBuffer(4);
+    new DataView(hLen).setUint32(0, headerBytes.length, true);
+    parts.push(new Uint8Array(hLen));
 
-    // Magic
-    uint8.set(MAGIC, offset); offset+=4;
-    // Header length
-    view.setUint32(offset, headerBytes.length, true); offset+=4;
     // Header JSON
-    uint8.set(headerBytes, offset); offset+=headerBytes.length;
-    // Chunk count
-    view.setUint32(offset, xktChunks.length, true); offset+=4;
+    parts.push(headerBytes);
 
-    // XKT chunks
+    // Chunk count (4 bytes LE)
+    var nBuf = new ArrayBuffer(4);
+    new DataView(nBuf).setUint32(0, xktChunks.length, true);
+    parts.push(new Uint8Array(nBuf));
+
+    // Each XKT chunk: [vidLen u16][vid bytes][dataLen u32][data]
     xktChunks.forEach(function(ch){
-      var vidBytes = new TextEncoder().encode(ch.vid);
-      view.setUint16(offset, vidBytes.length, true); offset+=2;
-      uint8.set(vidBytes, offset); offset+=vidBytes.length;
-      view.setUint32(offset, ch.data.length, true); offset+=4;
-      uint8.set(ch.data, offset); offset+=ch.data.length;
+      var vidBytes = enc.encode(ch.vid);
+      var vl = new ArrayBuffer(2);
+      new DataView(vl).setUint16(0, vidBytes.length, true);
+      parts.push(new Uint8Array(vl));
+      parts.push(vidBytes);
+      var dl = new ArrayBuffer(4);
+      new DataView(dl).setUint32(0, ch.data.length, true);
+      parts.push(new Uint8Array(dl));
+      // Ensure it's a plain Uint8Array copy (important for Safari)
+      parts.push(new Uint8Array(ch.data.buffer, ch.data.byteOffset, ch.data.byteLength));
     });
 
-    var blob = new Blob([buf], {type:'application/octet-stream'});
+    // Blob accepts array of parts directly — no giant ArrayBuffer needed
+    var blob = new Blob(parts, {type:'application/octet-stream'});
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     var d = new Date().toISOString().slice(0,10);
     a.download = 'BC3Manager_backup_'+d+'.bc3mbackup';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
     alert('Backup exportado:\n'+projects.length+' obras · '+versions.length+
           ' versiones · '+bc3data.length+' BC3 · '+ifcbin.length+' modelos 3D');
   }catch(e){
@@ -2377,7 +2378,7 @@ async function restoreBackup(file){
         r.xkt=arr2;delete r._xktBase64;
       }
       // v2: attach binary XKT from map
-      if(isV2&&xktMap[r.vid]) r.xkt=xktMap[r.vid];
+      if(isV2&&xktMap[r.vid]) r.xkt=new Uint8Array(xktMap[r.vid]); // copy to avoid detached buffer
       await new Promise(function(res){dbP('ifcbin',r,res);});count.i++;
     }
 
