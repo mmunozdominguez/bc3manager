@@ -24,6 +24,20 @@
   --par:#92400e;--par-bg:#fffbeb;--par-bd:#fcd34d;
   --hi:#f59e0b;
 }
+/* Dark mode */
+html.dark{
+  --bg:#0f1117;--panel:#1a1d27;--panel2:#151820;--bd:#2a2d3a;--bd2:#363a4a;
+  --text:#e8eaf0;--muted:#8b909e;--muted2:#5a5f6e;
+  --acc:#3b82f6;--acc-bg:#1e2a3e;--acc-bd:#2d4a72;
+  --ok:#22c55e;--ok-bg:#0d2318;--ok-bd:#166534;
+  --warn:#f59e0b;--warn-bg:#261d0a;--warn-bd:#854d0e;
+  --danger:#f87171;--danger-bg:#2a0f0f;
+  --cap:#4ade80;--cap-bg:#0d2318;--cap-bd:#166534;
+  --sub:#60a5fa;--sub-bg:#1e2a3e;--sub-bd:#2d4a72;
+  --par:#fbbf24;--par-bg:#261d0a;--par-bd:#854d0e;
+  --hi:#f59e0b;
+}
+
 html,body{height:100%;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;}
 button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .view{display:none;height:100vh;overflow:hidden;flex-direction:column;}
@@ -347,14 +361,30 @@ button,input,select,textarea{-webkit-appearance:none;}
 .proj-date{font-size:10px;color:var(--muted);margin-top:4px;}
 
 /* ── Tarjetas de versiones ─────────────────────────────────────── */
-.ver-card{background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:14px 16px;
-  margin-bottom:8px;display:flex;flex-direction:column;gap:8px;transition:border-color .15s;}
-.ver-card:hover{border-color:var(--acc-bd);}
-.ver-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.ver-name{font-size:13px;font-weight:600;color:var(--text);}
-.ver-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-.ver-meta span{font-size:11px;color:var(--muted);}
-.ver-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.ver-card{background:var(--panel);border:1px solid var(--bd);border-radius:8px;
+  margin-bottom:8px;overflow:hidden;transition:border-color .15s;}
+.ver-card:hover{border-color:var(--bd2);}
+.ver-card.current{border-left:3px solid var(--ok);}
+.ver-card.draft{border-left:3px solid var(--warn);}
+.ver-card.closed{border-left:3px solid var(--bd2);}
+.ver-header{padding:12px 14px 8px;display:flex;align-items:center;gap:8px;}
+.ver-sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.ver-sdot.current{background:var(--ok);}
+.ver-sdot.draft{background:var(--warn);}
+.ver-sdot.closed{background:var(--muted2);}
+.ver-title{flex:1;min-width:0;}
+.ver-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ver-date{font-size:10px;color:var(--muted);margin-top:2px;}
+.ver-chips{padding:0 14px 8px;display:flex;gap:5px;flex-wrap:wrap;}
+.chip{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;border:1px solid;}
+.chip.bc3{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.chip.xkt{background:#faf5ff;color:#6b21a8;border-color:#d8b4fe;}
+.chip.none{background:var(--panel2);color:var(--muted);border-color:var(--bd);}
+.chip.sv{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
+.chip.sd{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-bd);}
+.chip.sc{background:var(--panel2);color:var(--muted);border-color:var(--bd);}
+.ver-actions{padding:0 14px 12px;display:flex;gap:6px;align-items:center;}
+.ver-actions-sep{flex:1;}
 .btn.sm{font-size:10px;padding:3px 9px;min-height:26px;}
 
 /* ── Info proyecto ─────────────────────────────────────────────── */
@@ -365,6 +395,39 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 /* ── Sección título ────────────────────────────────────────────── */
 .ht{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;}
+
+/* ── Dark mode overrides for hardcoded colors ────────────────────────── */
+html.dark .t3btn,
+html.dark .t3{
+  color:var(--muted);
+}
+html.dark .t3btn:hover,
+html.dark .t3:hover{
+  background:var(--bd);
+  color:var(--text);
+}
+html.dark .t3btn.active,
+html.dark .t3.a{
+  background:var(--acc-bg);
+  color:var(--acc);
+}
+html.dark #p3d{background:#0f1117;}
+html.dark #dz{color:var(--muted);}
+html.dark .slice-panel-inner,
+html.dark #slice-panel,
+html.dark #storeys-panel,
+html.dark #types-panel{
+  background:var(--panel)!important;
+  border-color:var(--bd)!important;
+  color:var(--text)!important;
+}
+html.dark #types-panel label,
+html.dark #types-list div{color:var(--text)!important;}
+html.dark #hc{background:rgba(26,29,39,.95)!important;color:var(--text)!important;border-color:var(--bd)!important;}
+html.dark .ver-card .chip.xkt{background:#1e1030;color:#c4b5fd;border-color:#4c1d95;}
+html.dark input[type=range]{accent-color:var(--acc);}
+html.dark .col-header{background:var(--panel);}
+html.dark scrollbar-color: var(--bd) var(--panel);
 </style>
 </head>
 <body>
@@ -376,9 +439,19 @@ button,input,select,textarea{-webkit-appearance:none;}
   <div class="topbar">
     <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v1</span></div>
     <div class="tr">
-      <button class="btn p" id="bn-np">+ Nueva obra</button>
-      <label for="fimport-home" class="btn" style="cursor:pointer;">⬆ Importar .bc3m</label>
+      <button class="btn p" id="bn-np">
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva obra
+      </button>
+      <label for="fimport-home" class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importar .bc3m
+      </label>
       <input type="file" id="fimport-home" style="position:absolute;left:-9999px;" accept=".bc3m">
+      <button class="btn" id="bn-dark" title="Cambiar tema" style="padding:6px 8px;">
+        <svg id="icon-dark" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-light" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
     </div>
   </div>
   <div class="pc">
@@ -433,6 +506,9 @@ button,input,select,textarea{-webkit-appearance:none;}
       <button class="btn" id="bn-export" title="Exportar .bc3m">⬇ Exportar</button>
       <span class="sd" id="sd"></span>
       <span id="sm" style="font-size:11px;color:var(--muted);">—</span>
+      <button class="btn" id="bn-dark-v" title="Cambiar tema" style="padding:5px 7px;margin-left:2px;">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
     </div>
   </div>
   <!-- 3 columnas -->
@@ -476,15 +552,15 @@ button,input,select,textarea{-webkit-appearance:none;}
       <div class="col-header">
         <span>Modelo 3D</span>
         <div style="display:flex;gap:3px;align-items:center;flex:1;justify-content:flex-end;padding-right:4px;flex-wrap:wrap;">
-          <button class="t3" id="bn-fit" title="Encuadrar todo">⊡</button>
-          <button class="t3" id="bn-ghost" title="Modo fantasma / XRay">◈</button>
-          <button class="t3" id="bn-iso" title="Aislar selección">◎</button>
-          <button class="t3" id="bn-clr" title="Limpiar todo">✕</button>
-          <button class="t3" id="bn-slice" title="Sección horizontal (Z)">⬛</button>
-          <button class="t3" id="bn-slice-elem" title="Sección paralela al elemento seleccionado">⧉</button>
-          <button class="t3" id="bn-storeys" title="Plantas del edificio">🏢</button>
-          <button class="t3" id="bn-measure" title="Medir distancias">📐</button>
-          <button class="t3 a" id="bn-types" title="Categorías">▤</button>
+          <button class="t3" id="bn-fit" title="Encuadrar todo" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+          <button class="t3" id="bn-ghost" title="Modo fantasma / XRay" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></button>
+          <button class="t3" id="bn-iso" title="Aislar selección" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9" stroke-dasharray="3 2"/></svg></button>
+          <button class="t3" id="bn-clr" title="Limpiar todo" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <button class="t3" id="bn-slice" title="Sección horizontal (Z)" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="12" x2="21" y2="12"/></svg></button>
+          <button class="t3" id="bn-slice-elem" title="Sección paralela al elemento seleccionado" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="3" x2="12" y2="21"/><path d="M8 7l4-4 4 4"/></svg></button>
+          <button class="t3" id="bn-storeys" title="Plantas del edificio" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10" width="18" height="3" rx="1"/><rect x="3" y="16" width="18" height="3" rx="1"/></svg></button>
+          <button class="t3" id="bn-measure" title="Medir distancias" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 8"/><line x1="5" y1="13" x2="9" y2="13"/><line x1="17" y1="7" x2="21" y2="11"/><line x1="21" y1="7" x2="17" y2="11"/></svg></button>
+          <button class="t3 a" id="bn-types" title="Categorías" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></button>
         </div>
         <button class="col-tog" id="tog-col3" title="Colapsar">‹</button>
       </div>
@@ -505,7 +581,7 @@ button,input,select,textarea{-webkit-appearance:none;}
         <div id="slice-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:260px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <span style="font-size:11px;font-weight:700;color:#374151;" id="slice-title">Sección horizontal</span>
-            <button id="slice-off" style="border:none;background:none;cursor:pointer;font-size:13px;color:#9ca3af;padding:0;">✕</button>
+            <button id="slice-off" style="border:none;background:none;cursor:pointer;font-size:13px;color:#9ca3af;padding:0;" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:10px;color:#9ca3af;">▼</span>
@@ -664,33 +740,46 @@ function loadProj(id){
       if(!vers.length){vl.innerHTML='<div style="padding:20px;color:var(--muted);font-size:13px;">No hay versiones. Pulsa <strong>+ Nueva versión</strong>.</div>';return;}
       vl.innerHTML='';
       vers.forEach(function(v){
+        var st=v.status||'draft';
         var card=document.createElement('div');
-        card.className='ver-card';
-        var statusColors={'current':'var(--ok)','draft':'var(--warn)','closed':'var(--muted)'};
+        card.className='ver-card '+st;
         var statusLabels={'current':'Vigente','draft':'Borrador','closed':'Cerrada'};
-        card.innerHTML='<div class="ver-top">'
-          +'<div class="ver-name">'+esc(v.name)+'</div>'
-          +'<span style="font-size:10px;color:'+statusColors[v.status||'draft']+';">'+statusLabels[v.status||'draft']+'</span>'
+        var xktChip=v.hasXkt
+          ?'<span class="chip xkt"><svg viewBox="0 0 24 24" width="9" height="9" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Modelo 3D</span>'
+          :'<span class="chip none">Sin modelo 3D</span>';
+        var bc3info=(v.nPartidas?v.nPartidas+' partidas':'')+(v.nBimLinked?' · '+v.nBimLinked+' BIM':'');
+        card.innerHTML=
+          '<div class="ver-header">'
+            +'<div class="ver-sdot '+st+'"></div>'
+            +'<div class="ver-title">'
+              +'<div class="ver-name">'+esc(v.name)+'</div>'
+              +'<div class="ver-date">'+new Date(v.createdAt).toLocaleDateString('es-ES')+(v.fileName?' · '+esc(v.fileName):'')+'</div>'
+            +'</div>'
+            +'<span class="chip s'+st.charAt(0)+'">'+statusLabels[st]+'</span>'
           +'</div>'
-          +'<div class="ver-meta">'
-          +(v.nPartidas?'<span>'+v.nPartidas+' partidas</span>':'')
-          +(v.hasXkt?'<span style="color:var(--ok);">● 3D</span>':'')
-          +(v.nBimLinked?'<span>'+v.nBimLinked+' BIM</span>':'')
-          +'<span>'+new Date(v.createdAt).toLocaleDateString('es-ES')+'</span>'
+          +'<div class="ver-chips">'
+            +(bc3info?'<span class="chip bc3"><svg viewBox="0 0 24 24" width="9" height="9" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'+bc3info+'</span>':'')
+            +xktChip
           +'</div>'
           +'<div class="ver-actions"></div>';
         // Botones
         var va=card.querySelector('.ver-actions');
         var btnOpen=document.createElement('button');
-        btnOpen.className='btn p sm';btnOpen.textContent='Abrir visor';
+        btnOpen.className='btn p';
+        btnOpen.style.cssText='font-size:12px;padding:7px 14px;display:inline-flex;align-items:center;gap:5px;';
+        btnOpen.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Abrir';
         (function(vid){btnOpen.addEventListener('click',function(e){e.stopPropagation();openVer(vid);});})(v.id);
         va.appendChild(btnOpen);
         var btnExp=document.createElement('button');
-        btnExp.className='btn sm';btnExp.textContent='⬇ Exportar';
+        btnExp.className='btn';
+        btnExp.style.cssText='font-size:12px;padding:7px 14px;display:inline-flex;align-items:center;gap:5px;';
+        btnExp.innerHTML='<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar';
         (function(vid){btnExp.addEventListener('click',function(e){e.stopPropagation();exportVersion(vid);});})(v.id);
         va.appendChild(btnExp);
         var btnDel=document.createElement('button');
-        btnDel.className='btn g sm';btnDel.textContent='🗑';
+        btnDel.className='btn';
+        btnDel.style.cssText='padding:7px 9px;color:var(--danger);border-color:transparent;background:transparent;display:inline-flex;align-items:center;';
+        btnDel.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
         (function(vid){btnDel.addEventListener('click',function(e){
           e.stopPropagation();
           if(!confirm('¿Eliminar esta versión?'))return;
@@ -980,11 +1069,12 @@ async function initXeokit(){
     canvas.style.height=h+'px';
     canvas.width=w; canvas.height=h;
     console.log('[XK] canvas size:', w, h);
+    var isDark=document.documentElement.classList.contains('dark');
     xv=new XK.Viewer({
       canvasId:'cv',
       transparent:true,
       antialias:true,
-      backgroundColor:[0.94,0.93,0.91],
+      backgroundColor:isDark?[0.06,0.07,0.09]:[0.94,0.93,0.91],
       dtxEnabled:true,
       saoEnabled:true
     });
@@ -1965,6 +2055,13 @@ on('bn-types','click',function(){
   }
 });
 on('bn-export','click',function(){if(curVR)exportVersion(curVR);});
+on('bn-dark-v','click',function(){
+  var d=!document.documentElement.classList.contains('dark');
+  document.documentElement.classList.toggle('dark',d);
+  localStorage.setItem('bc3m-dark',d?'1':'0');
+  if(window.xv&&window.xv.scene)
+    window.xv.scene.backgroundColor=d?[0.06,0.07,0.09]:[0.94,0.93,0.91];
+});
 
 // Import .bc3m
 on('fimport-home','change',function(){if(this.files[0])importBc3m(this.files[0]);this.value='';});
@@ -2078,6 +2175,26 @@ function isolateCategory(type,entities){
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
   var ind=el('dev-ind');
   if(ind)ind.textContent=(isTouch?'📲':'💻')+' v1';
+
+  // ── Dark mode ──────────────────────────────────────────────────────
+  var _dark = localStorage.getItem('bc3m-dark')==='1';
+  function applyDark(dark){
+    _dark=dark;
+    document.documentElement.classList.toggle('dark',dark);
+    localStorage.setItem('bc3m-dark',dark?'1':'0');
+    // Toggle icons
+    var id=document.getElementById('icon-dark');
+    var il=document.getElementById('icon-light');
+    if(id)id.style.display=dark?'none':'block';
+    if(il)il.style.display=dark?'block':'none';
+    // Update xeokit background if viewer active
+    if(window.xv&&window.xv.scene){
+      window.xv.scene.backgroundColor=dark?[0.06,0.07,0.09]:[0.94,0.93,0.91];
+    }
+  }
+  applyDark(_dark);
+  on('bn-dark','click',function(){applyDark(!_dark);});
+
   loadHome();
   // PWA install prompt
   var _deferredInstall=null;
