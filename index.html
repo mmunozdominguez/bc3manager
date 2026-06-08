@@ -847,7 +847,7 @@ function openVer(vid){
 
 // ── BC3 PARSER ────────────────────────────────────────────────────────────
 function parseBC3(txt){
-  var BC={c:{},h:{},m:{},g:{}};
+  var BC={c:{},h:{},m:{},g:{},t:{}};
   var asmRE=/^([A-Z]{2,5}-\d{3,4}(?:\.\d+)?)(?:\s|$)/;
   var ifc22RE=/[\s\-]([0-9A-Za-z_$]{22})$/;
   var raw=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
@@ -860,6 +860,7 @@ function parseBC3(txt){
     if(t==='~C')pC(BC,b);
     else if(t==='~D')pD(BC,b);
     else if(t==='~M')pM(BC,b,asmRE,ifc22RE);
+    else if(t==='~T')pT(BC,b);
   });
   return BC;
 }
@@ -904,6 +905,15 @@ function pM(BC,s,asmRE,ifc22RE){
 }
 
 // ── ÁRBOL BC3 ─────────────────────────────────────────────────────────────
+function pT(BC,s){
+  var p=s.split('|');
+  var code=(p[0]||'').trim().replace(/#/g,'').trim();
+  if(!code)return;
+  var txt=(p[1]||'').trim();
+  txt=txt.replace(/\\par /g,' ').replace(/\\/g,'').replace(/<[^>]+>/g,'');
+  if(txt)BC.t[code]=txt;
+}
+
 function renderTree(){
   if(!curBC)return;
   var BC=curBC;
@@ -1041,21 +1051,27 @@ function rMED(){
   var ms=curBC.m[selP]||[];
   if(!ms.length){d.innerHTML='<div style="padding:12px;color:var(--muted);font-size:12px;">Sin mediciones</div>';return;}
   var tot=0;
-  var h='<table class="mt"><thead><tr><th>Descripción</th><th class="nr">Nº</th><th class="nr">A</th><th class="nr">B</th><th class="nr">Parc.</th></tr></thead><tbody>';
+  var h='<table class="mt"><thead><tr><th>Descripción</th><th class="nr">N</th><th class="nr">L</th><th class="nr">A</th><th class="nr">H</th><th class="nr">Cant.</th></tr></thead><tbody>';
   ms.forEach(function(m){
     var parc=m.parc!=null?m.parc:(m.nd&&m.a?m.nd*m.a:m.a||0);
     tot+=parc;
-    h+='<tr><td>'+esc(m.txt||'—')+'</td><td class="nr">'+(m.nd||'')+'</td><td class="nr">'+(m.a||'')+'</td><td class="nr">'+(m.b||'')+'</td><td class="nr">'+(parc?parc.toFixed(3):'')+'</td></tr>';
+    h+='<tr><td>'+esc(m.txt||'—')+'</td><td class="nr">'+(m.nd||'')+'</td><td class="nr">'+(m.a||'')+'</td><td class="nr">'+(m.b||'')+'</td><td class="nr"></td><td class="nr">'+(parc?parc.toFixed(3):'')+'</td></tr>';
   });
-  h+='<tr class="tf"><td>Total</td><td></td><td></td><td></td><td class="nr">'+tot.toFixed(3)+'</td></tr>';
+  h+='<tr class="tf"><td>Total</td><td></td><td></td><td></td><td></td><td class="nr">'+tot.toFixed(3)+'</td></tr>';
   h+='</tbody></table>';
   d.innerHTML=h;
 }
 
 function rTXT(){
   var d=el('dc');if(!selP||!curBC){d.innerHTML='<div class="ed"><p>Selecciona una partida</p></div>';return;}
-  var c=curBC.c[selP]||{};
-  d.innerHTML='<div style="padding:12px;font-size:12px;line-height:1.6;white-space:pre-wrap;">'+esc(c.desc||'Sin descripción')+'</div>';
+  var con=curBC.c[selP]||{};
+  var longText=(curBC.t&&curBC.t[selP])||'';
+  var shortDesc=con.desc||'';
+  var html='';
+  if(shortDesc)html+='<div style="padding:12px 14px 8px;font-size:12px;font-weight:600;color:var(--text);border-bottom:1px solid var(--bd);">'+esc(shortDesc)+'</div>';
+  if(longText)html+='<div style="padding:12px 14px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text);">'+esc(longText)+'</div>';
+  else html+='<div style="padding:12px 14px;font-size:11px;color:var(--muted);">Sin texto de pliego de condiciones</div>';
+  d.innerHTML=html;
 }
 
 // ── VISOR XEOKIT ──────────────────────────────────────────────────────────
