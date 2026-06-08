@@ -1298,13 +1298,43 @@ function hlPart(code,BC){
   var found=[];
   guids.forEach(function(g){var o=xscene.objects[g];if(o){o.selected=true;found.push(g);}});
   vsHl=found;
-  // Solo volar si hay pocos elementos (no zoom out masivo con partidas grandes)
-  if(found.length>0&&found.length<=50){
-    xv.cameraFlight.flyTo({objectIds:found,duration:0.5,fitFactor:0.5});
-  } else if(found.length>0){
-    // Para muchos elementos: solo mostrar sin volar
-    // el usuario puede usar el botón ⊡ para encuadrar
-  }
+  if(!found.length)return;
+
+  // Calcular AABB combinado de todos los elementos seleccionados
+  var minX=Infinity,minY=Infinity,minZ=Infinity;
+  var maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+  found.forEach(function(id){
+    var obj=xscene.objects[id];
+    if(!obj||!obj.aabb)return;
+    var a=obj.aabb;
+    if(a[0]<minX)minX=a[0]; if(a[1]<minY)minY=a[1]; if(a[2]<minZ)minZ=a[2];
+    if(a[3]>maxX)maxX=a[3]; if(a[4]>maxY)maxY=a[4]; if(a[5]>maxZ)maxZ=a[5];
+  });
+  if(!isFinite(minX))return;
+
+  // Tamaño del grupo de elementos
+  var sx=maxX-minX, sy=maxY-minY, sz=maxZ-minZ;
+  var size=Math.max(sx,sy,sz);
+
+  // fitFactor: cuanto menor más zoom in. 
+  // Para 1 elemento muy pequeño → zoom in justo.
+  // Para muchos elementos dispersos → zoom out suficiente para verlos todos.
+  var modelSize=Math.max(
+    xscene.aabb[3]-xscene.aabb[0],
+    xscene.aabb[4]-xscene.aabb[1],
+    xscene.aabb[5]-xscene.aabb[2]
+  );
+  // Ratio del grupo respecto al modelo total
+  var ratio = size / (modelSize||1);
+  // fitFactor entre 0.3 (zoom in cercano) y 0.8 (más alejado)
+  // Ratio pequeño → elementos pequeños → zoom más cercano
+  var fit = Math.min(0.8, Math.max(0.3, ratio * 1.2 + 0.25));
+
+  xv.cameraFlight.flyTo({
+    aabb: [minX,minY,minZ,maxX,maxY,maxZ],
+    fitFactor: fit,
+    duration: 0.6
+  });
 }
 
 function hlGuids(guids){
