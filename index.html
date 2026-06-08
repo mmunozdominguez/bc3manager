@@ -1196,6 +1196,21 @@ async function initXeokit(){
           }
         }
         selP=fp;renderDet();
+        // Señalar el vínculo BIM concreto en la columna detalle
+        setTimeout(function(){
+          var gs=curBC.g[fp]||[];
+          gs.forEach(function(g,i){
+            var ec=el('ec'+i);if(!ec)return;
+            var match=false;
+            if(g.type==='asm'&&asmCode&&(g.asmCode===asmCode||asmCode.indexOf(g.asmCode)===0)) match=true;
+            if(g.type==='ifc22'&&g.ifc22===entityId) match=true;
+            if(match){
+              document.querySelectorAll('.ec').forEach(function(x){x.classList.remove('h');});
+              ec.classList.add('h');
+              ec.scrollIntoView({block:'nearest',behavior:'smooth'});
+            }
+          });
+        },50);
       }
       showHC(name,fp,asmCode||entityId.slice(0,12));
     }
