@@ -1944,6 +1944,14 @@ on('bn-storeys','click',function(){
   else{p.style.display='none';this.classList.remove('a');}
 });
 on('bn-measure','click',toggleMeasure);
+on('slice-off','click',function(){
+  if(xSection&&xSectionPlugin){xSectionPlugin.destroySectionPlane('sec1');xSection=null;}
+  el('slice-panel').style.display='none';
+  el('bn-slice').classList.remove('a');
+  el('bn-slice-elem').classList.remove('a');
+});
+var _slEl=el('slice-slider');
+if(_slEl)_slEl.addEventListener('input',function(){updateSlice(parseInt(this.value));});
 on('bn-types','click',function(){
   var p=el('types-panel');if(!p)return;
   var isOpen=(p.style.display==='flex'||p.style.display==='block');
@@ -2071,6 +2079,33 @@ function isolateCategory(type,entities){
   var ind=el('dev-ind');
   if(ind)ind.textContent=(isTouch?'📲':'💻')+' v1';
   loadHome();
+  // PWA install prompt
+  var _deferredInstall=null;
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();
+    _deferredInstall=e;
+    var btn=document.getElementById('btn-install');
+    if(!btn){
+      btn=document.createElement('button');
+      btn.id='btn-install';
+      btn.className='btn';
+      btn.textContent='⬇ Instalar app';
+      btn.style.cssText='background:var(--acc);color:#fff;border:none;';
+      btn.addEventListener('click',function(){
+        if(_deferredInstall){_deferredInstall.prompt();_deferredInstall=null;btn.remove();}
+      });
+      var tr=document.querySelector('.topbar .tr');
+      if(tr)tr.appendChild(btn);
+    }
+  });
+  window.addEventListener('appinstalled',function(){
+    var btn=document.getElementById('btn-install');
+    if(btn)btn.remove();
+  });
+  // Register SW
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(function(e){console.warn('SW:',e);});
+  }
 })();
 
 </script>
