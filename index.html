@@ -885,16 +885,17 @@ function pM(BC,s,asmRE,ifc22RE){
   var toks=c0.split('\\');
   var code=(toks.length>=2?toks[1]:toks[0]).replace(/#/g,'').trim();if(!code)return;
   if(!BC.m[code])BC.m[code]=[];if(!BC.g[code])BC.g[code]=[];
-  var ls=(p.length>=4&&p[3]&&p[3].length>1)?p[3]:(p[1]||'');if(!ls)return;
+  var ls=(p.length>=5&&p[4]&&p[4].trim())?p[4]:(p[3]||'');if(!ls)return;
   var tk=ls.split('\\');
   for(var i=0;i<tk.length;i+=6){
     var txt=(tk[i+1]||'').trim();
     var nd=parseFloat((tk[i+2]||'').replace(',','.'))||0;
-    var a=parseFloat((tk[i+3]||'').replace(',','.'))||0;
-    var b2=parseFloat((tk[i+4]||'').replace(',','.'))||0;
-    var parc=nd&&a&&b2?nd*a*b2:nd&&a?nd*a:a||0;
-    if(txt||nd||a){
-      BC.m[code].push({txt:txt,nd:nd,a:a,b:b2,parc:parc});
+    var L=parseFloat((tk[i+3]||'').replace(',','.'))||0;
+    var A=parseFloat((tk[i+4]||'').replace(',','.'))||0;
+    var H=parseFloat((tk[i+5]||'').replace(',','.'))||0;
+    var parc=nd&&L&&A&&H?nd*L*A*H:nd&&L&&A?nd*L*A:nd&&L?nd*L:L&&A?L*A:L||nd||0;
+    if(txt||nd||L||A){
+      BC.m[code].push({txt:txt,nd:nd,a:L,b:A,h:H,parc:parc});
       var m22=ifc22RE.exec(txt);
       if(m22){var esp=txt.slice(0,txt.lastIndexOf(m22[0])).replace(/[\s\-]+$/,'').trim();
         BC.g[code].push({ifc22:m22[1],esp:esp,type:'ifc22'});}
@@ -910,7 +911,6 @@ function pT(BC,s){
   var code=(p[0]||'').trim().replace(/#/g,'').trim();
   if(!code)return;
   var txt=(p[1]||'').trim();
-  txt=txt.replace(/\\par /g,' ').replace(/\\/g,'').replace(/<[^>]+>/g,'');
   if(txt)BC.t[code]=txt;
 }
 
@@ -1055,7 +1055,7 @@ function rMED(){
   ms.forEach(function(m){
     var parc=m.parc!=null?m.parc:(m.nd&&m.a?m.nd*m.a:m.a||0);
     tot+=parc;
-    h+='<tr><td>'+esc(m.txt||'—')+'</td><td class="nr">'+(m.nd||'')+'</td><td class="nr">'+(m.a||'')+'</td><td class="nr">'+(m.b||'')+'</td><td class="nr"></td><td class="nr">'+(parc?parc.toFixed(3):'')+'</td></tr>';
+    h+='<tr><td>'+esc(m.txt||'—')+'</td><td class="nr">'+(m.nd||'')+'</td><td class="nr">'+(m.a||'')+'</td><td class="nr">'+(m.b||'')+'</td><td class="nr">'+(m.h||'')+'</td><td class="nr">'+(parc?parc.toFixed(3):'')+'</td></tr>';
   });
   h+='<tr class="tf"><td>Total</td><td></td><td></td><td></td><td></td><td class="nr">'+tot.toFixed(3)+'</td></tr>';
   h+='</tbody></table>';
