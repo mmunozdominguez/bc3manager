@@ -88,7 +88,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 #vb-body{flex:1;display:flex;overflow:hidden;position:relative;}
 .vcol{display:flex;flex-direction:column;overflow:hidden;background:var(--panel);min-width:0;position:relative;}
 .vcol.collapsed{flex:0 0 32px!important;min-width:32px!important;max-width:32px!important;}
-.vcol.collapsed .col-scroll,.vcol.collapsed .tabs,.vcol.collapsed .vtb,.vcol.collapsed .sb,.vcol.collapsed #dc,.vcol.collapsed #tv{display:none!important;}
+.vcol.collapsed .col-scroll,.vcol.collapsed .tabs,.vcol.collapsed .vtb,.vcol.collapsed .sb,.vcol.collapsed #dc,.vcol.collapsed #tv,.vcol.collapsed .vtoolbar,.vcol.collapsed #bn-showcodes{display:none!important;}
 #p3d{flex:1;position:relative;overflow:hidden;background:#f0eff8;min-height:0;}
 .vcol.collapsed .col-header{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--bd);background:var(--panel);flex-shrink:0;min-height:36px;overflow:visible;flex-wrap:wrap;}
 .vcol.collapsed .col-header{writing-mode:vertical-rl;text-orientation:mixed;justify-content:center;padding:12px 4px;flex-wrap:nowrap;}
@@ -607,7 +607,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
       <div class="col-header">
         <span>Presupuesto</span>
         <div class="col-meta"><span id="bt">—</span></div>
-        <button class="btn" id="bn-showcodes" title="Mostrar/ocultar códigos" style="font-size:10px;font-family:var(--mono);padding:0 7px;height:24px;line-height:1;">#</button>
+        <button class="btn" id="bn-showcodes" title="Mostrar/ocultar códigos" style="font-size:11px;font-family:var(--mono);padding:0 8px;min-width:28px;min-height:28px;line-height:1;display:flex;align-items:center;justify-content:center;">#</button>
         <button class="col-tog" id="tog-col1" title="Colapsar">‹</button>
       </div>
       <div class="sb" id="stb">
@@ -640,7 +640,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
     <div class="vcol" id="col3">
       <div class="col-header">
         <span>Modelo 3D</span>
-        <div style="display:flex;gap:3px;align-items:center;flex:1;justify-content:flex-end;padding-right:4px;flex-wrap:wrap;">
+        <div class="vtoolbar" style="display:flex;gap:3px;align-items:center;flex:1;justify-content:flex-end;padding-right:4px;flex-wrap:wrap;">
           <button class="t3" id="bn-fit" title="Encuadrar todo" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
           <button class="t3" id="bn-ghost" title="Modo fantasma / XRay" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></button>
           <button class="t3" id="bn-iso" title="Aislar selección" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9" stroke-dasharray="3 2"/></svg></button>
@@ -2213,7 +2213,14 @@ function toggleMeasure(){
       var isOpen=colState[id]==='open';
       col.classList.toggle('collapsed',!isOpen);
       var btn=col.querySelector('.col-tog');
-      if(btn) btn.textContent=isOpen?'‹':'›';
+      if(btn){
+        // col3 está a la derecha: flecha apunta izquierda cuando abierta, derecha cuando colapsada
+        // col1/col2 están a la izquierda: flecha apunta derecha cuando abierta, izquierda cuando colapsada — no, al revés
+        // col1: abierta → ‹ cierra hacia izq. Colapsada → › abre hacia der. ✓
+        // col3: abierta → › cierra hacia der. Colapsada → ‹ abre hacia izq.
+        if(id==='col3') btn.textContent=isOpen?'›':'‹';
+        else btn.textContent=isOpen?'‹':'›';
+      }
     });
 
     // Notify xeokit of resize
