@@ -628,8 +628,8 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
       <div class="tabs">
         <div class="tab a" data-t="bim">BIM</div>
         <div class="tab" data-t="med">Medición</div>
-        <div class="tab" data-t="des">Descompuesto</div>
         <div class="tab" data-t="txt">Texto</div>
+        <div class="tab" data-t="des">Descompuesto</div>
       </div>
       <div id="dc" class="col-scroll"><div class="ed"><p>Selecciona una partida</p></div></div>
     </div>
@@ -978,7 +978,13 @@ function openVer(vid){
     });
     // Cargar BC3
     dbG('bc3data',vid,function(d){
-      if(d&&d.bc3){curBC=d.bc3;renderTree();}
+      if(d&&d.bc3){
+        curBC=d.bc3;
+        // Migrar formato antiguo: si no tiene BC.d, inicializarlo vacío
+        // El usuario deberá reimportar el BC3 para tener descompuestos
+        if(!curBC.d)curBC.d={};
+        renderTree();
+      }
     });
     // Cargar XKT si existe
     if(v.hasXkt){
@@ -1179,7 +1185,14 @@ function rDES(){
   if(!selP||!curBC){d.innerHTML='<div class="ed"><p>Selecciona una partida</p></div>';return;}
   var kids=curBC.d[selP]||[];
   if(!kids.length){
-    d.innerHTML='<div class="ed"><p style="color:var(--muted);">Esta partida no tiene precio descompuesto.</p></div>';return;
+    // Comprobar si es formato antiguo (no hay ningún descompuesto en todo el BC)
+    var hayDescomp=Object.keys(curBC.d).some(function(k){return curBC.d[k].length>0;});
+    if(!hayDescomp){
+      d.innerHTML='<div class="ed"><p style="color:var(--muted);font-size:12px;">Para ver precios descompuestos, reimporta el BC3 desde <strong>Archivos → Reimportar BC3</strong>.</p></div>';
+    } else {
+      d.innerHTML='<div class="ed"><p style="color:var(--muted);">Esta partida no tiene precio descompuesto.</p></div>';
+    }
+    return;
   }
   var groupLabels={1:'Mano de obra',2:'Maquinaria y equipos',3:'Materiales',0:'Auxiliares / partidas'};
   var groupColors={1:'var(--ok)',2:'var(--warn)',3:'var(--acc)',0:'var(--muted)'};
