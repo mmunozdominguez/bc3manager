@@ -1111,8 +1111,20 @@ function renderTree(){
   var allH=new Set();
   Object.values(BC.h).forEach(function(hs){hs.forEach(function(h){allH.add(h);});});
   var roots=Object.keys(BC.h).filter(function(c){return !allH.has(c);});
-  
-  var tv=el('tv');tv.innerHTML='';
+
+  // Guardar qué nodos están abiertos antes de reconstruir
+  var tv=el('tv');
+  var openCodes={};
+  tv.querySelectorAll('.tn').forEach(function(n){
+    var code=n.dataset.code;
+    if(code){
+      var cw=n.parentElement&&n.parentElement.querySelector('.tc');
+      if(cw&&cw.classList.contains('o'))openCodes[code]=true;
+    }
+  });
+  var hadOpen=Object.keys(openCodes).length>0;
+
+  tv.innerHTML='';
   var cnt={c:0,s:0,p:0,b:0};
 
   function mkN(code,dep){
@@ -1134,9 +1146,10 @@ function renderTree(){
     // Toggle
     var tog=document.createElement('div');tog.className='tg'+(hk?'':' leaf');
     if(hk)tog.innerHTML='<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,2 8,5 2,8"/></svg>';
-    // Label
+    // Label — mostrar código solo si desc no empieza ya por él
     var lbl=document.createElement('div');lbl.className='tl';
-    lbl.textContent=(BC._showCodes&&code?(code+' | '):'')+( c.desc||code);
+    var showCode=BC._showCodes&&code&&!(c.desc||'').toLowerCase().startsWith(code.toLowerCase());
+    lbl.textContent=(showCode?(code+' | '):'')+( c.desc||code);
     lbl.title=code+': '+(c.desc||'');
     // Precio
     var ta=document.createElement('div');ta.className='ta';
@@ -1163,7 +1176,26 @@ function renderTree(){
     return wrap;
   }
 
-  roots.forEach(function(r){var n=mkN(r,0);n.querySelector('.tc').classList.add('o');n.querySelector('.tg').classList.add('o');tv.appendChild(n);});
+  roots.forEach(function(r){
+    var n=mkN(r,0);
+    // Primera carga: abrir solo roots. Re-render: restaurar estado previo
+    if(!hadOpen||openCodes[r]){
+      n.querySelector('.tc').classList.add('o');
+      n.querySelector('.tg').classList.add('o');
+    }
+    // Restaurar hijos abiertos
+    if(hadOpen){
+      n.querySelectorAll('.tn').forEach(function(nd){
+        if(openCodes[nd.dataset.code]){
+          var cw=nd.parentElement&&nd.parentElement.querySelector('.tc');
+          var tg=nd.querySelector('.tg');
+          if(cw)cw.classList.add('o');
+          if(tg)tg.classList.add('o');
+        }
+      });
+    }
+    tv.appendChild(n);
+  });
   if(el('sc'))el('sc').textContent=cnt.c;
   if(el('ss'))el('ss').textContent=cnt.s;
   if(el('sp'))el('sp').textContent=cnt.p;
