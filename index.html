@@ -2674,7 +2674,7 @@ on('f-restore','change',function(){
         has3d:has3d,
         hasPliego:hasPliego,
         path:getPath(code),
-        _n:norm(code)+' '+norm(c.desc)+' '+norm(c.ud)
+        _n:norm(code)+' '+norm(c.desc)+' '+norm(c.ud)+' '+norm(BC.t[code]||'')
       });
     });
   }
