@@ -1364,7 +1364,22 @@ async function initXeokit(){
       },{passive:true});
     }
     if(window.innerWidth<900||'ontouchstart' in window)xscene.canvas.resolutionScale=0.75;
-    window.addEventListener('resize',function(){if(xv)xv.scene.canvas.resolutionScale=window.devicePixelRatio>1?0.75:1.0;});
+    // ResizeObserver: redimensiona el canvas cuando cambia el contenedor
+    var _resizeTimer=null;
+    var _ro=new ResizeObserver(function(){
+      clearTimeout(_resizeTimer);
+      _resizeTimer=setTimeout(function(){
+        if(!xv)return;
+        var p=el('p3d');if(!p)return;
+        var cw=p.clientWidth,ch=p.clientHeight;
+        if(cw<10||ch<10)return;
+        var cv=el('cv');
+        cv.style.width=cw+'px';cv.style.height=ch+'px';
+        cv.width=cw;cv.height=ch;
+        xv.scene.canvas.resolutionScale=window.devicePixelRatio>1?0.75:1.0;
+      },60);
+    });
+    _ro.observe(el('p3d'));
     st3('Visor listo','ok');
   }catch(e){st3('Error visor: '+e.message,'');console.error('[XK]',e);}
 }
@@ -1558,8 +1573,11 @@ function toggleGhost(){
 
 function showHC(name,partida,extra){
   var hc=el('hc');if(!hc)return;
-  el('hct').textContent=name||'—';
-  if(el('hcp'))el('hcp').textContent=(partida||'')+(extra?' · '+extra:'');
+  // Mostrar solo código de partida + descripción corta
+  var desc='';
+  if(partida&&curBC&&curBC.c[partida])desc=curBC.c[partida].desc||'';
+  el('hct').textContent=(partida||name||'—')+(desc?' · '+desc:'');
+  if(el('hcp'))el('hcp').textContent='';
   hc.style.display='block';
   clearTimeout(hc._t);hc._t=setTimeout(function(){hc.style.display='none';},4000);
 }
