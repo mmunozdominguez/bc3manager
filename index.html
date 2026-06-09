@@ -1200,6 +1200,14 @@ function rDES(){
   kids.forEach(function(item){
     var c=curBC.c[item.code]||{code:item.code,desc:item.code,ud:'',pr:0,nat:3};
     var n=typeof c.nat==='number'?c.nat:3;
+    // Si nat está fuera de rango (parser viejo con fecha), inferir desde prefijo del código
+    if(n<0||n>3){
+      var pfx=(c.code||'')[0]||'';
+      if(pfx==='O'||pfx==='o')n=1;       // mano de obra
+      else if(pfx==='M'||pfx==='m')n=2;  // maquinaria
+      else if(pfx==='P'||pfx==='p')n=3;  // material
+      else n=0;                           // auxiliar/partida
+    }
     if(!groups[n])groups[n]=[];
     groups[n].push({c:c,rend:item.rend});
   });
