@@ -433,7 +433,7 @@ html.dark .col-header{background:var(--panel);}
 html.dark scrollbar-color: var(--bd) var(--panel);
 
 /* ── BUSCADOR MODAL ───────────────────────────────────────────────────── */
-#srch-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:flex-start;justify-content:center;padding-top:80px;}
+#srch-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;align-items:flex-start;justify-content:center;padding-top:80px;}
 #srch-overlay.o{display:flex;}
 #srch-box{background:var(--panel);border-radius:12px;border:1px solid var(--bd);width:min(640px,95vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 #srch-input-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--bd);flex-shrink:0;}
@@ -731,32 +731,7 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
 </div>
 
 <!-- ══ BUSCADOR ══════════════════════════════════════════════════════════ -->
-<div id="srch-overlay">
-  <div id="srch-box">
-    <div id="srch-input-row">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input id="srch-q" placeholder="Buscar partidas, códigos, materiales…" autocomplete="off" spellcheck="false">
-      <span class="srch-kbd">ESC</span>
-    </div>
-    <div id="srch-filters">
-      <button class="sf on" data-f="all">Todo</button>
-      <button class="sf" data-f="cap">Capítulos</button>
-      <button class="sf" data-f="par">Partidas</button>
-      <button class="sf" data-f="3d">Con modelo 3D</button>
-      <button class="sf" data-f="pl">Con pliego</button>
-    </div>
-    <div id="srch-stats"></div>
-    <div id="srch-results"></div>
-    <div id="srch-footer">
-      <div class="sh">
-        <span><kbd>↑↓</kbd> navegar</span>
-        <span><kbd>↵</kbd> abrir</span>
-        <span><kbd>ESC</kbd> cerrar</span>
-      </div>
-      <span>Ctrl+K</span>
-    </div>
-  </div>
-</div>
+
 
 <!-- ══ MODALES ══════════════════════════════════════════════════════════ -->
 
@@ -2849,5 +2824,33 @@ on('f-restore','change',function(){
 })();
 
 </script>
+<!-- ══ BUSCADOR (al final del body para evitar stacking context) ══════════ -->
+<div id="srch-overlay">
+  <div id="srch-box">
+    <div id="srch-input-row">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="srch-q" placeholder="Buscar partidas, códigos, materiales…" autocomplete="off" spellcheck="false">
+      <span class="srch-kbd">ESC</span>
+    </div>
+    <div id="srch-filters">
+      <button class="sf on" data-f="all">Todo</button>
+      <button class="sf" data-f="cap">Capítulos</button>
+      <button class="sf" data-f="par">Partidas</button>
+      <button class="sf" data-f="3d">Con modelo 3D</button>
+      <button class="sf" data-f="pl">Con pliego</button>
+    </div>
+    <div id="srch-stats"></div>
+    <div id="srch-results"></div>
+    <div id="srch-footer">
+      <div class="sh">
+        <span><kbd>↑↓</kbd> navegar</span>
+        <span><kbd>↵</kbd> abrir</span>
+        <span><kbd>ESC</kbd> cerrar</span>
+      </div>
+      <span>Ctrl+K</span>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
