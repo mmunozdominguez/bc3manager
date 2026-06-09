@@ -164,7 +164,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .tb{font-size:8px;font-weight:600;padding:1px 4px;border-radius:3px;border:1px solid;flex-shrink:0;margin-right:3px;white-space:nowrap;letter-spacing:.03em;}
 /* Detalle */
 .tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;}
-.tab{flex:1;text-align:center;padding:4px 4px;font-size:10px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
+.tab{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 4px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
 .tab:hover{color:var(--text);}
 .tab.a{color:var(--acc);border-bottom-color:var(--acc);}
 #dc{flex:1;overflow-y:auto;padding:10px 10px;}
@@ -626,10 +626,10 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <button class="col-tog" id="tog-col2" title="Colapsar">‹</button>
       </div>
       <div class="tabs">
-        <div class="tab a" data-t="bim">BIM</div>
-        <div class="tab" data-t="med">Medición</div>
-        <div class="tab" data-t="txt">Texto</div>
-        <div class="tab" data-t="des">Descompuesto</div>
+        <div class="tab a" data-t="bim" title="BIM — vínculos y modelo 3D"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+        <div class="tab" data-t="med" title="Medición"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+        <div class="tab" data-t="txt" title="Texto — pliego de condiciones"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></div>
+        <div class="tab" data-t="des" title="Precio descompuesto"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       </div>
       <div id="dc" class="col-scroll"><div class="ed"><p>Selecciona una partida</p></div></div>
     </div>
