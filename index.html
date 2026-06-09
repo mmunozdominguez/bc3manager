@@ -482,8 +482,17 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
 .stag-3d{background:var(--acc-bg);color:var(--acc);}
 .stag-pl{background:var(--warn-bg);color:var(--warn);}
 .sri-price{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;min-width:68px;text-align:right;padding-top:1px;flex-shrink:0;}
-.sri-arr{color:var(--muted2);opacity:0;transition:opacity .1s;padding-top:2px;flex-shrink:0;}
-.sri:hover .sri-arr,.sri.f .sri-arr{opacity:1;color:var(--acc);}
+.des-header{display:grid;grid-template-columns:80px 1fr 30px 44px 52px 52px;gap:4px;padding:4px 12px;font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted2);border-bottom:1px solid var(--bd);background:var(--panel2);}
+.des-group{padding:5px 12px 2px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-top:1px solid var(--bd);margin-top:2px;}
+.des-row{display:grid;grid-template-columns:80px 1fr 30px 44px 52px 52px;gap:4px;padding:5px 12px;font-size:11px;border-bottom:1px solid var(--bd);align-items:center;}
+.des-row:hover{background:var(--panel2);}
+.des-code{font-family:var(--mono);font-size:10px;color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.des-desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);}
+.des-ud{font-size:10px;color:var(--muted);text-align:center;}
+.des-rend{font-family:var(--mono);font-size:10px;color:var(--text);text-align:right;}
+.des-pr{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:right;}
+.des-imp{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);text-align:right;}
+.des-total{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--bd);background:var(--panel2);}
 .sri-snippet{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px;font-style:italic;}
 .sri-snippet mark{background:rgba(37,99,235,.15);color:var(--acc);border-radius:2px;padding:0 1px;font-style:normal;}
 html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
@@ -619,6 +628,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
       <div class="tabs">
         <div class="tab a" data-t="bim">BIM</div>
         <div class="tab" data-t="med">Medición</div>
+        <div class="tab" data-t="des">Descompuesto</div>
         <div class="tab" data-t="txt">Texto</div>
       </div>
       <div id="dc" class="col-scroll"><div class="ed"><p>Selecciona una partida</p></div></div>
@@ -986,7 +996,7 @@ function openVer(vid){
 
 // ── BC3 PARSER ────────────────────────────────────────────────────────────
 function parseBC3(txt){
-  var BC={c:{},h:{},m:{},g:{},t:{}};
+  var BC={c:{},h:{},d:{},m:{},g:{},t:{}};
   var asmRE=/^([A-Z]{2,5}-\d{3,4}(?:\.\d+)?)(?:\s|$)/;
   var ifc22RE=/[\s\-]([0-9A-Za-z_$]{22})$/;
   var raw=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
@@ -1007,17 +1017,35 @@ function pC(BC,s){
   var p=s.split('|'),raw=(p[0]||'').trim();
   var cp=raw.split('\\')[0],isChap=cp.indexOf('#')>=0;
   var code=cp.replace(/#/g,'').trim();if(!code)return;
+  var nat=parseInt((p[4]||'0').replace(/\\/g,'').trim())||0;
   BC.c[code]={code:code,ch:isChap,
     desc:(p[2]||'').trim(),
     ud:(p[1]||'').replace(/\\/g,'').trim(),
-    pr:parseFloat((p[3]||'0').replace(',','.'))||0};
+    pr:parseFloat((p[3]||'0').replace(',','.'))||0,
+    nat:nat};  // 0=partida, 1=mano obra, 2=maquinaria, 3=material/equipo
 }
 function pD(BC,s){
-  var p=s.split('|'),par=(p[0]||'').trim().replace(/#/g,'').trim();
+  var p=s.split('|'),raw=(p[0]||'').trim();
+  var isChap=raw.indexOf('#')>=0;
+  var par=raw.replace(/#/g,'').trim();
   if(!par)return;
-  if(!BC.h[par])BC.h[par]=[];
   var tk=(p[1]||'').split('\\');
-  for(var i=0;i<tk.length;i+=3){var h=tk[i].replace(/#/g,'').trim();if(h)BC.h[par].push(h);}
+  var kids=[];
+  for(var i=0;i<tk.length;i+=3){var h=tk[i].replace(/#/g,'').trim();if(h)kids.push(h);}
+  if(isChap){
+    // ~D de capítulo → jerarquía de árbol
+    if(!BC.h[par])BC.h[par]=[];
+    kids.forEach(function(h){BC.h[par].push(h);});
+  } else {
+    // ~D de partida (sin #) → descompuesto, NO va al árbol
+    if(!BC.d[par])BC.d[par]=[];
+    // tk: code\factor\rendimiento\  (grupos de 3)
+    for(var i=0;i<tk.length;i+=3){
+      var h=tk[i].replace(/#/g,'').trim();if(!h)continue;
+      var rend=parseFloat((tk[i+2]||'0').replace(',','.'))||0;
+      BC.d[par].push({code:h,rend:rend});
+    }
+  }
 }
 function pM(BC,s,asmRE,ifc22RE){
   var p=s.split('|'),c0=(p[0]||'').trim();
@@ -1128,7 +1156,59 @@ function filterTree(q){
 }
 
 // ── DETALLE ───────────────────────────────────────────────────────────────
-function renderDet(){if(curDT==='bim')rBIM();else if(curDT==='med')rMED();else rTXT();}
+function renderDet(){if(curDT==='bim')rBIM();else if(curDT==='med')rMED();else if(curDT==='des')rDES();else rTXT();}
+
+function rDES(){
+  var d=el('dc');
+  if(!selP||!curBC){d.innerHTML='<div class="ed"><p>Selecciona una partida</p></div>';return;}
+  var kids=curBC.d[selP]||[];
+  if(!kids.length){
+    d.innerHTML='<div class="ed"><p style="color:var(--muted);">Esta partida no tiene precio descompuesto.</p></div>';return;
+  }
+  var groupLabels={1:'Mano de obra',2:'Maquinaria y equipos',3:'Materiales',0:'Auxiliares / partidas'};
+  var groupColors={1:'var(--ok)',2:'var(--warn)',3:'var(--acc)',0:'var(--muted)'};
+  var groups={1:[],2:[],3:[],0:[]};
+  kids.forEach(function(item){
+    var c=curBC.c[item.code]||{code:item.code,desc:item.code,ud:'',pr:0,nat:3};
+    var n=typeof c.nat==='number'?c.nat:3;
+    if(!groups[n])groups[n]=[];
+    groups[n].push({c:c,rend:item.rend});
+  });
+  var partida=curBC.c[selP]||{};
+  var h='<div style="padding:10px 12px 6px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--bd);">'
+    +'<span style="font-size:12px;font-weight:600;">'+esc(partida.desc||selP)+'</span>'
+    +'<span style="font-size:11px;color:var(--muted);">'+esc(partida.ud||'')+'</span>'
+    +'</div>';
+  // Header columnas
+  h+='<div class="des-header">'
+    +'<div class="des-code">Código</div>'
+    +'<div class="des-desc">Descripción</div>'
+    +'<div class="des-ud">Ud</div>'
+    +'<div class="des-rend">Rend.</div>'
+    +'<div class="des-pr">P.unit.</div>'
+    +'<div class="des-imp">Importe</div>'
+    +'</div>';
+  [1,2,3,0].forEach(function(nat){
+    var items=groups[nat];if(!items||!items.length)return;
+    h+='<div class="des-group" style="color:'+groupColors[nat]+';">'+groupLabels[nat]+'</div>';
+    items.forEach(function(item){
+      var c=item.c, rend=item.rend, imp=c.pr*rend;
+      h+='<div class="des-row">'
+        +'<div class="des-code mono" style="color:var(--acc);font-size:10px;">'+esc(c.code)+'</div>'
+        +'<div class="des-desc">'+esc(c.desc||c.code)+'</div>'
+        +'<div class="des-ud">'+esc(c.ud||'')+'</div>'
+        +'<div class="des-rend mono">'+rend+'</div>'
+        +'<div class="des-pr mono">'+fmt(c.pr)+'</div>'
+        +'<div class="des-imp mono">'+fmt(imp)+'</div>'
+        +'</div>';
+    });
+  });
+  h+='<div class="des-total">'
+    +'<span style="font-size:10px;color:var(--muted);">Precio unitario</span>'
+    +'<span class="mono" style="font-size:13px;font-weight:600;">'+fmt(partida.pr||0)+' €</span>'
+    +'</div>';
+  d.innerHTML=h;
+}
 
 function rBIM(){
   var d=el('dc');if(!selP||!curBC){d.innerHTML='<div class="ed"><p>Selecciona una partida</p></div>';return;}
