@@ -433,9 +433,23 @@ html.dark .col-header{background:var(--panel);}
 html.dark scrollbar-color: var(--bd) var(--panel);
 
 /* ── BUSCADOR MODAL ───────────────────────────────────────────────────── */
-#srch-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;align-items:flex-start;justify-content:center;padding-top:80px;}
-#srch-overlay.o{display:flex;}
-#srch-box{background:var(--panel);border-radius:12px;border:1px solid var(--bd);width:min(640px,95vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+#srch-overlay{
+  display:none;
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.45);
+  z-index:99999;
+  -webkit-overflow-scrolling:touch;
+}
+#srch-overlay.o{display:block;}
+#srch-box{
+  position:absolute;
+  top:72px;left:50%;transform:translateX(-50%);
+  width:min(640px,92vw);
+  max-height:calc(100vh - 100px);
+  background:var(--panel);border-radius:12px;border:1px solid var(--bd2);
+  box-shadow:0 20px 60px rgba(0,0,0,.4);
+  display:flex;flex-direction:column;overflow:hidden;
+}
 #srch-input-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--bd);flex-shrink:0;}
 #srch-input-row svg{color:var(--acc);flex-shrink:0;}
 #srch-q{flex:1;background:transparent;border:none;outline:none;font-size:14px;color:var(--text);caret-color:var(--acc);}
@@ -590,10 +604,9 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
         <div class="st"><b id="sbim">0</b> BIM</div>
       </div>
       <div class="vtb">
-        <button id="bn-search" style="width:100%;display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--bg);border:1px solid var(--bd);border-radius:5px;color:var(--muted);font-size:12px;cursor:pointer;text-align:left;" title="Buscar partida (Ctrl+K)">
-          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <span style="flex:1;color:var(--muted2);">Buscar partidas…</span>
-          <span style="font-size:10px;background:var(--panel);border:1px solid var(--bd);border-radius:3px;padding:1px 5px;color:var(--muted2);">Ctrl+K</span>
+        <button id="bn-search" class="btn" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;" title="Buscar partida (Ctrl+K)">
+          <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Buscar
         </button>
       </div>
       <div id="tv" class="col-scroll"></div>
@@ -2785,7 +2798,13 @@ on('f-restore','change',function(){
     el('srch-overlay').classList.remove('o');
   }
 
-  // Botón en topbar
+  // Mover overlay al root del body para escapar cualquier stacking context
+  (function(){
+    var ov=el('srch-overlay');
+    if(ov&&ov.parentNode!==document.body)document.body.appendChild(ov);
+  })();
+
+  // Botón en col1
   on('bn-search','click',openSearch);
 
   // Ctrl+K / Cmd+K
