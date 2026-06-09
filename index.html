@@ -484,6 +484,9 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
 .sri-price{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;min-width:68px;text-align:right;padding-top:1px;flex-shrink:0;}
 .sri-arr{color:var(--muted2);opacity:0;transition:opacity .1s;padding-top:2px;flex-shrink:0;}
 .sri:hover .sri-arr,.sri.f .sri-arr{opacity:1;color:var(--acc);}
+.sri-snippet{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px;font-style:italic;}
+.sri-snippet mark{background:rgba(37,99,235,.15);color:var(--acc);border-radius:2px;padding:0 1px;font-style:normal;}
+html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 #srch-empty{padding:36px 14px;text-align:center;color:var(--muted);font-size:13px;}
 </style>
 </head>
@@ -2673,6 +2676,7 @@ on('f-restore','change',function(){
         type:type,
         has3d:has3d,
         hasPliego:hasPliego,
+        pliego:BC.t[code]||'',
         path:getPath(code),
         _n:norm(code)+' '+norm(c.desc)+' '+norm(c.ud)+' '+norm(BC.t[code]||'')
       });
@@ -2747,17 +2751,37 @@ on('f-restore','change',function(){
     setFocus(_focus);
   }
 
+  function getSnippet(text, q, ctxLen){
+    if(!text||!q)return '';
+    ctxLen=ctxLen||60;
+    var nText=norm(text), nQ=norm(q);
+    var pos=nText.indexOf(nQ);
+    if(pos<0)return '';
+    var start=Math.max(0,pos-ctxLen);
+    var end=Math.min(text.length,pos+q.length+ctxLen);
+    var snippet=(start>0?'…':'')+text.slice(start,end)+(end<text.length?'…':'');
+    return snippet;
+  }
+
   function renderItem(r,q){
     var pathHtml=r.path.length?r.path.map(function(p){return '<span>'+esc(p)+'</span>';}).join('<span class="sx">›</span>'):'';
     var tags='';
     if(r.ud)tags+='<span class="stag stag-ud">'+esc(r.ud)+'</span>';
     if(r.has3d)tags+='<span class="stag stag-3d">3D</span>';
     if(r.hasPliego)tags+='<span class="stag stag-pl">Pliego</span>';
-    var priceHtml=(!r.type||r.type==='par')&&r.pr?fmt(r.pr)+' €':'';
+    var priceHtml=(r.type==='par')&&r.pr?fmt(r.pr)+' €':'';
+    // Snippet: solo si el match está en el pliego (no en desc/code)
+    var snippetHtml='';
+    var nq=norm(q);
+    if(q&&r.pliego&&norm(r.pliego).indexOf(nq)>=0&&norm(r.desc).indexOf(nq)<0&&norm(r.code).indexOf(nq)<0){
+      var snip=getSnippet(r.pliego,q,55);
+      if(snip)snippetHtml='<div class="sri-snippet">'+highlight(snip,q)+'</div>';
+    }
     return '<div class="sri" data-code="'+esc(r.code)+'">'
       +'<div class="sri-code">'+highlight(r.code,q)+'</div>'
       +'<div class="sri-body">'
         +'<div class="sri-desc">'+highlight(r.desc||r.code,q)+'</div>'
+        +snippetHtml
         +'<div class="sri-meta">'
           +(pathHtml?'<span class="sri-path">'+pathHtml+'</span>':'')
           +tags
