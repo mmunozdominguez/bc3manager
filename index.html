@@ -1003,14 +1003,53 @@ function parseBC3(txt){
   var regs=[],cur='';
   raw.split('\n').forEach(function(l){if(l.charAt(0)==='~'){if(cur)regs.push(cur);cur=l;}else cur+='\n'+l;});
   if(cur)regs.push(cur);
+
+  // PRIMERA PASADA: recoger ~C, ~T, ~M y todos los ~D en bruto
+  var rawD={}; // rawD[code] = [{code,rend}] — todos los ~D sin clasificar
   regs.forEach(function(r){
     if(r.length<2)return;
     var t=r.slice(0,2),b=r.slice(3);
     if(t==='~C')pC(BC,b);
-    else if(t==='~D')pD(BC,b);
-    else if(t==='~M')pM(BC,b,asmRE,ifc22RE);
     else if(t==='~T')pT(BC,b);
+    else if(t==='~M')pM(BC,b,asmRE,ifc22RE);
+    else if(t==='~D'){
+      var p=b.split('|'),raw0=(p[0]||'').trim();
+      var par=raw0.replace(/#/g,'').trim();
+      if(!par)return;
+      var isChap=raw0.indexOf('#')>=0;
+      var tk=(p[1]||'').split('\\');
+      var items=[];
+      for(var i=0;i<tk.length;i+=3){
+        var h=tk[i].replace(/#/g,'').trim();if(!h)continue;
+        var rend=parseFloat((tk[i+2]||'0').replace(',','.'))||0;
+        items.push({code:h,rend:rend});
+      }
+      if(isChap){
+        // ~D de capítulo → siempre jerarquía de árbol
+        if(!BC.h[par])BC.h[par]=[];
+        items.forEach(function(it){BC.h[par].push(it.code);});
+      } else {
+        // ~D de partida/auxiliar → guardar en bruto para segunda pasada
+        rawD[par]=items;
+      }
+    }
   });
+
+  // SEGUNDA PASADA: determinar qué códigos son "partidas del árbol"
+  // Un código es del árbol si aparece como hijo de un CAPÍTULO (BC.h)
+  var enArbol={};
+  Object.keys(BC.h).forEach(function(cap){
+    BC.h[cap].forEach(function(code){enArbol[code]=true;});
+  });
+
+  // Ahora clasificar rawD:
+  // - Si el padre está en el árbol (partida) → sus hijos son descompuestos → BC.d
+  // - Si el padre NO está en el árbol (es él mismo un descompuesto/auxiliar) → también BC.d
+  // En ambos casos van a BC.d, ya que NUNCA son ramas del árbol
+  Object.keys(rawD).forEach(function(par){
+    BC.d[par]=rawD[par];
+  });
+
   return BC;
 }
 function pC(BC,s){
@@ -1023,29 +1062,6 @@ function pC(BC,s){
     ud:(p[1]||'').replace(/\\/g,'').trim(),
     pr:parseFloat((p[3]||'0').replace(',','.'))||0,
     nat:nat};  // 0=partida, 1=mano obra, 2=maquinaria, 3=material/equipo
-}
-function pD(BC,s){
-  var p=s.split('|'),raw=(p[0]||'').trim();
-  var isChap=raw.indexOf('#')>=0;
-  var par=raw.replace(/#/g,'').trim();
-  if(!par)return;
-  var tk=(p[1]||'').split('\\');
-  var kids=[];
-  for(var i=0;i<tk.length;i+=3){var h=tk[i].replace(/#/g,'').trim();if(h)kids.push(h);}
-  if(isChap){
-    // ~D de capítulo → jerarquía de árbol
-    if(!BC.h[par])BC.h[par]=[];
-    kids.forEach(function(h){BC.h[par].push(h);});
-  } else {
-    // ~D de partida (sin #) → descompuesto, NO va al árbol
-    if(!BC.d[par])BC.d[par]=[];
-    // tk: code\factor\rendimiento\  (grupos de 3)
-    for(var i=0;i<tk.length;i+=3){
-      var h=tk[i].replace(/#/g,'').trim();if(!h)continue;
-      var rend=parseFloat((tk[i+2]||'0').replace(',','.'))||0;
-      BC.d[par].push({code:h,rend:rend});
-    }
-  }
 }
 function pM(BC,s,asmRE,ifc22RE){
   var p=s.split('|'),c0=(p[0]||'').trim();
@@ -2760,7 +2776,14 @@ on('f-restore','change',function(){
       while(parentOf[c]){c=parentOf[c];var d=BC.c[c];parts.unshift(d?d.desc||c:c);}
       return parts;
     }
+    // Solo indexar lo que está en el árbol (caps y partidas), no descompuestos
+    var enArbol={};
+    Object.keys(BC.h).forEach(function(par){
+      enArbol[par]=true;
+      (BC.h[par]||[]).forEach(function(ch){enArbol[ch]=true;});
+    });
     Object.keys(BC.c).forEach(function(code){
+      if(!enArbol[code])return; // excluir descompuestos
       var c=BC.c[code];
       var kids=(BC.h[code]||[]).length>0;
       var has3d=(BC.g[code]||[]).length>0;
