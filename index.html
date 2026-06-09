@@ -576,6 +576,7 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
       <input type="file" id="fxkt" style="position:absolute;left:-9999px;" accept=".xkt">
       <input type="file" id="fmeta" style="position:absolute;left:-9999px;" accept=".json">
       <input type="file" id="fbc3r" style="position:absolute;left:-9999px;" accept=".bc3,.BC3">
+      <button class="btn" id="bn-search" style="display:inline-flex;align-items:center;gap:5px;" title="Buscar partida"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar</button>
       <button class="btn" id="bn-archivos" style="display:inline-flex;align-items:center;gap:5px;" title="Gestión de archivos"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Archivos</button>
       <span class="sd" id="sd"></span>
       <span id="sm" style="font-size:11px;color:var(--muted);">—</span>
@@ -599,12 +600,7 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
         <div class="st"><b id="sp">0</b> part.</div>
         <div class="st"><b id="sbim">0</b> BIM</div>
       </div>
-      <div class="vtb">
-        <button id="bn-search" class="btn" style="width:100%;justify-content:center;gap:5px;font-size:11px;padding:3px 8px;">
-          <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Buscar
-        </button>
-      </div>
+      <div class="vtb" style="display:none;"></div>
       <div id="tv" class="col-scroll"></div>
     </div>
     <div class="col-div" id="div12" data-cols="col1,col2"></div>
@@ -2775,7 +2771,7 @@ on('f-restore','change',function(){
   function openSearch(){
     if(!curBC){alert('Abre una versión con BC3 primero.');return;}
     buildIdx();
-    el('srch-overlay').classList.add('o');
+    el('srch-overlay').style.display='block';
     el('srch-q').value='';_q='';_filter='all';
     el('srch-filters').querySelectorAll('.sf').forEach(function(b){b.classList.toggle('on',b.dataset.f==='all');});
     runSearch();
@@ -2783,7 +2779,7 @@ on('f-restore','change',function(){
   }
 
   function closeSearch(){
-    el('srch-overlay').classList.remove('o');
+    el('srch-overlay').style.display='none';
   }
 
   // Botón en col1
@@ -2792,7 +2788,6 @@ on('f-restore','change',function(){
   // Botón cerrar X
   on('srch-close','click',closeSearch);
 
-  // Cerrar al tap fuera del box
   el('srch-overlay').addEventListener('click',function(e){if(e.target===this)closeSearch();});
 
   // Input
@@ -2810,13 +2805,12 @@ on('f-restore','change',function(){
 
   // Reconstruir índice al cargar nuevo BC3
   var _origRender=renderTree;
-  renderTree=function(){_origRender();if(el('srch-overlay').classList.contains('o')){buildIdx();runSearch();}else{_idx=[];}};
-})();
+  renderTree=function(){_origRender();if(el('srch-overlay').style.display==='block'){buildIdx();runSearch();}else{_idx=[];}};})();
 
 </script>
 <!-- ══ BUSCADOR (al final del body para evitar stacking context) ══════════ -->
-<div id="srch-overlay">
-  <div id="srch-box">
+<div id="srch-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:99999;">
+  <div id="srch-box" style="position:absolute;top:72px;left:50%;transform:translateX(-50%);width:min(640px,92vw);max-height:calc(100vh - 100px);background:var(--panel);border-radius:12px;border:1px solid var(--bd2);box-shadow:0 20px 60px rgba(0,0,0,.4);display:flex;flex-direction:column;overflow:hidden;">
     <div id="srch-input-row">
       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input id="srch-q" placeholder="Buscar partidas, códigos, materiales…" autocomplete="off" spellcheck="false">
