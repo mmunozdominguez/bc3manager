@@ -1062,12 +1062,12 @@ function pC(BC,s){
   var p=s.split('|'),raw=(p[0]||'').trim();
   var cp=raw.split('\\')[0],isChap=cp.indexOf('#')>=0;
   var code=cp.replace(/#/g,'').trim();if(!code)return;
-  var nat=parseInt((p[4]||'0').replace(/\\/g,'').trim())||0;
+  var nat=parseInt((p[5]||'0').replace(/[^0-9]/g,''))||0;
   BC.c[code]={code:code,ch:isChap,
     desc:(p[2]||'').trim(),
     ud:(p[1]||'').replace(/\\/g,'').trim(),
-    pr:parseFloat((p[3]||'0').replace(',','.'))||0,
-    nat:nat};  // 0=partida, 1=mano obra, 2=maquinaria, 3=material/equipo
+    pr:parseFloat((p[3]||'0').replace(/\\/g,'').replace(',','.'))||0,
+    nat:nat};
 }
 function pM(BC,s,asmRE,ifc22RE){
   var p=s.split('|'),c0=(p[0]||'').trim();
