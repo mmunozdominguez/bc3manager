@@ -433,33 +433,22 @@ html.dark .col-header{background:var(--panel);}
 html.dark scrollbar-color: var(--bd) var(--panel);
 
 /* ── BUSCADOR MODAL ───────────────────────────────────────────────────── */
-#srch-overlay{
-  display:none;position:fixed;inset:0;z-index:1000;
-  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-  align-items:flex-start;justify-content:center;padding-top:56px;
-}
-#srch-overlay.o{display:flex;animation:srch-in .14s ease;}
-@keyframes srch-in{from{opacity:0;}to{opacity:1;}}
-#srch-box{
-  width:min(660px,94vw);
-  background:var(--panel);border:1px solid var(--bd2);border-radius:12px;
-  box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;
-  animation:srch-drop .16s cubic-bezier(.34,1.3,.64,1);
-}
-@keyframes srch-drop{from{transform:translateY(-10px) scale(.98);opacity:0;}to{transform:none;opacity:1;}}
-#srch-input-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--bd);}
+#srch-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:flex-start;justify-content:center;padding-top:80px;}
+#srch-overlay.o{display:flex;}
+#srch-box{background:var(--panel);border-radius:12px;border:1px solid var(--bd);width:min(640px,95vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+#srch-input-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--bd);flex-shrink:0;}
 #srch-input-row svg{color:var(--acc);flex-shrink:0;}
-#srch-q{flex:1;background:transparent;border:none;outline:none;font-size:15px;color:var(--text);caret-color:var(--acc);}
+#srch-q{flex:1;background:transparent;border:none;outline:none;font-size:14px;color:var(--text);caret-color:var(--acc);}
 #srch-q::placeholder{color:var(--muted2);}
 .srch-kbd{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);background:var(--panel2);border:1px solid var(--bd);border-radius:4px;padding:2px 7px;flex-shrink:0;}
-#srch-filters{display:flex;gap:5px;padding:7px 14px;border-bottom:1px solid var(--bd);overflow-x:auto;scrollbar-width:none;}
+#srch-filters{display:flex;gap:5px;padding:7px 14px;border-bottom:1px solid var(--bd);overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
 #srch-filters::-webkit-scrollbar{display:none;}
 .sf{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid var(--bd);color:var(--muted);cursor:pointer;white-space:nowrap;background:transparent;transition:all .1s;}
 .sf:hover{border-color:var(--bd2);color:var(--text);}
 .sf.on{border-color:var(--acc);color:var(--acc);background:var(--acc-bg);}
-#srch-stats{padding:5px 14px;font-size:11px;color:var(--muted2);font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--bd);}
+#srch-stats{padding:5px 14px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--bd);flex-shrink:0;}
 #srch-stats b{color:var(--acc);}
-#srch-results{max-height:370px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bd) transparent;}
+#srch-results{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bd) transparent;}
 #srch-results::-webkit-scrollbar{width:4px;}
 #srch-results::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px;}
 .srch-glabel{padding:7px 14px 3px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);}
@@ -482,7 +471,7 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
 .sri-arr{color:var(--muted2);opacity:0;transition:opacity .1s;padding-top:2px;flex-shrink:0;}
 .sri:hover .sri-arr,.sri.f .sri-arr{opacity:1;color:var(--acc);}
 #srch-empty{padding:36px 14px;text-align:center;color:var(--muted);font-size:13px;}
-#srch-footer{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-top:1px solid var(--bd);font-size:10px;color:var(--muted2);font-family:'JetBrains Mono',monospace;}
+#srch-footer{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-top:1px solid var(--bd);font-size:10px;color:var(--muted2);flex-shrink:0;}
 #srch-footer .sh{display:flex;gap:12px;}
 #srch-footer .sh span{display:flex;align-items:center;gap:4px;}
 #srch-footer kbd{background:var(--panel2);border:1px solid var(--bd);border-radius:3px;padding:1px 5px;font-size:10px;}
@@ -573,16 +562,13 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
       <span id="bv2">—</span>
     </div>
     <div class="tr" id="sm-wrap">
-      <label for="fxkt" class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Cargar modelo XKT"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>XKT</label>
+      <!-- file inputs hidden, triggered from modal -->
       <input type="file" id="fxkt" style="position:absolute;left:-9999px;" accept=".xkt">
-      <label for="fmeta" class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Metadatos de categorías"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Meta</label>
       <input type="file" id="fmeta" style="position:absolute;left:-9999px;" accept=".json">
-      <label for="fbc3r" class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Reimportar BC3"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>BC3</label>
       <input type="file" id="fbc3r" style="position:absolute;left:-9999px;" accept=".bc3,.BC3">
-      <button class="btn" id="bn-export" title="Exportar .bc3m" style="display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar</button>
+      <button class="btn" id="bn-archivos" style="display:inline-flex;align-items:center;gap:5px;" title="Gestión de archivos"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Archivos</button>
       <span class="sd" id="sd"></span>
       <span id="sm" style="font-size:11px;color:var(--muted);">—</span>
-      <button class="btn" id="bn-search" title="Buscar partida (Ctrl+K)" style="display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar</button>
       <button class="btn" id="bn-dark-v" title="Cambiar tema" style="padding:5px 7px;margin-left:2px;">
         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
@@ -604,7 +590,11 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
         <div class="st"><b id="sbim">0</b> BIM</div>
       </div>
       <div class="vtb">
-        <input type="text" placeholder="Buscar…" id="si" style="width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:5px;padding:5px 8px;color:var(--text);font-size:12px;outline:none;">
+        <button id="bn-search" style="width:100%;display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--bg);border:1px solid var(--bd);border-radius:5px;color:var(--muted);font-size:12px;cursor:pointer;text-align:left;" title="Buscar partida (Ctrl+K)">
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span style="flex:1;color:var(--muted2);">Buscar partidas…</span>
+          <span style="font-size:10px;background:var(--panel);border:1px solid var(--bd);border-radius:3px;padding:1px 5px;color:var(--muted2);">Ctrl+K</span>
+        </button>
       </div>
       <div id="tv" class="col-scroll"></div>
     </div>
@@ -687,6 +677,56 @@ html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ══ MODAL ARCHIVOS ════════════════════════════════════════════════════ -->
+<div class="mb" id="m-archivos">
+  <div class="md" style="width:380px;">
+    <h3 style="display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Gestión de archivos</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      <label for="fxkt" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+        <span style="width:32px;height:32px;border-radius:6px;background:var(--acc-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--acc)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </span>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;">Cargar modelo XKT</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Modelo 3D en formato XKT para el visor</div>
+        </div>
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </label>
+      <label for="fmeta" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+        <span style="width:32px;height:32px;border-radius:6px;background:var(--ok-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--ok)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </span>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;">Cargar metadatos JSON</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Categorías IFC para filtrado por tipo</div>
+        </div>
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </label>
+      <label for="fbc3r" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+        <span style="width:32px;height:32px;border-radius:6px;background:var(--warn-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--warn)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+        </span>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;">Reimportar BC3</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Actualiza el presupuesto de esta versión</div>
+        </div>
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </label>
+      <button id="bn-export" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);width:100%;text-align:left;transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+        <span style="width:32px;height:32px;border-radius:6px;background:#f5f3ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="#7c3aed" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </span>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;">Exportar .bc3m</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Guarda esta versión como archivo bc3m</div>
+        </div>
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+    </div>
+    <div class="ma"><button class="btn" id="bn-can-archivos">Cerrar</button></div>
   </div>
 </div>
 
@@ -2244,7 +2284,7 @@ on('bn-types','click',function(){
     this.classList.remove('a');
   }
 });
-on('bn-export','click',function(){if(curVR)exportVersion(curVR);});
+on('bn-export','click',function(){if(curVR){exportVersion(curVR);hideM('m-archivos');}});
 on('bn-dark-p','click',function(){
   var d=!document.documentElement.classList.contains('dark');
   document.documentElement.classList.toggle('dark',d);
@@ -2272,7 +2312,12 @@ document.querySelectorAll('.tab').forEach(function(t){
 });
 
 // Búsqueda árbol
-on('si','input',function(){filterTree(this.value);});
+on('bn-archivos','click',function(){showM('m-archivos');});
+on('bn-can-archivos','click',function(){hideM('m-archivos');});
+// Close archivos modal when a file input is triggered
+['fxkt','fmeta','fbc3r'].forEach(function(id){
+  on(id,'change',function(){hideM('m-archivos');});
+});
 
 
 // ── FILTROS POR CATEGORÍA ─────────────────────────────────────────────────
