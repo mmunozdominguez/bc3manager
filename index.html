@@ -102,6 +102,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .col-meta{flex:1;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .col-tog{border:none;background:none;cursor:pointer;color:var(--muted);font-size:16px;padding:6px 8px;min-width:32px;min-height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;}
 .col-tog:hover{background:var(--bd);color:var(--text);}
+.col-tog.a{background:var(--acc-bg);color:var(--acc);}
 .col-tog-r{margin-right:auto;}
 /* Divisores arrastrables */
 .col-div{flex:0 0 8px;background:var(--bd);cursor:col-resize;position:relative;z-index:10;touch-action:none;}
@@ -606,6 +607,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
       <div class="col-header">
         <span>Presupuesto</span>
         <div class="col-meta"><span id="bt">—</span></div>
+        <button class="col-tog" id="bn-showcodes" title="Mostrar/ocultar códigos" style="font-size:10px;font-family:var(--mono);letter-spacing:0;padding:0 6px;width:auto;">#</button>
         <button class="col-tog" id="tog-col1" title="Colapsar">‹</button>
       </div>
       <div class="sb" id="stb">
@@ -1109,13 +1111,13 @@ function renderTree(){
   var allH=new Set();
   Object.values(BC.h).forEach(function(hs){hs.forEach(function(h){allH.add(h);});});
   var roots=Object.keys(BC.h).filter(function(c){return !allH.has(c);});
-  roots.sort(function(a,b){return a.localeCompare(b,'es',{numeric:true});});
+  
   var tv=el('tv');tv.innerHTML='';
   var cnt={c:0,s:0,p:0,b:0};
 
   function mkN(code,dep){
     var c=BC.c[code]||{code:code,ch:dep===0,desc:code,ud:'',pr:0};
-    var kids=(BC.h[code]||[]).slice().sort(function(a,b){return a.localeCompare(b,'es',{numeric:true});});
+    var kids=(BC.h[code]||[]).slice();
     var hk=kids.length>0,hb=(BC.g[code]||[]).length>0;
     if(hb)cnt.b++;
     var bc,bt;
@@ -1134,7 +1136,8 @@ function renderTree(){
     if(hk)tog.innerHTML='<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,2 8,5 2,8"/></svg>';
     // Label
     var lbl=document.createElement('div');lbl.className='tl';
-    lbl.textContent=c.desc||code;lbl.title=code+': '+(c.desc||'');
+    lbl.textContent=(BC._showCodes&&code?(code+' | '):'')+( c.desc||code);
+    lbl.title=code+': '+(c.desc||'');
     // Precio
     var ta=document.createElement('div');ta.className='ta';
     if(!hk&&c.pr)ta.textContent=fmt(c.pr)+'€';
@@ -2188,6 +2191,15 @@ function toggleMeasure(){
       },100);
     }
   }
+
+  // Toggle códigos en árbol
+  on('bn-showcodes','click',function(e){
+    e.stopPropagation();
+    if(!curBC)return;
+    curBC._showCodes=!curBC._showCodes;
+    el('bn-showcodes').classList.toggle('a', !!curBC._showCodes);
+    renderTree();
+  });
 
   // Toggle buttons
   document.querySelectorAll('.col-tog').forEach(function(btn){
