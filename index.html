@@ -2193,14 +2193,69 @@ function initSectionPlugin(){
   xSectionPlugin=new XK.SectionPlanesPlugin(xv,{overviewCanvasId:null,overviewVisible:false});
 }
 
+// Detecta el eje horizontal dominante del edificio analizando AABBs de muros
+// Devuelve ángulo en radianes (rotación Y del modelo respecto a X world)
+function _sbDetectBuildingAngle(){
+  if(!xscene||!xscene.metaScene)return 0;
+  var bins=new Array(36).fill(0); // 0..175° en pasos de 5°
+  Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
+    if(mo.type!=='IfcWall'&&mo.type!=='IfcWallStandardCase')return;
+    var o=xscene.objects[mo.id];
+    if(!o||!o.aabb)return;
+    var dx=o.aabb[3]-o.aabb[0];
+    var dz=o.aabb[5]-o.aabb[2];
+    if(Math.max(dx,dz)<0.5)return; // muro muy pequeño, ignorar
+    if(dx<0.01&&dz<0.01)return;
+    var ang=Math.atan2(dz,dx); // ángulo de elongación en plano XZ
+    if(ang<0)ang+=Math.PI;
+    // Normalizar a 0..PI (muros perpendiculares son equivalentes)
+    if(ang>=Math.PI)ang-=Math.PI;
+    var bin=Math.round(ang/(Math.PI/36))%36;
+    var len=Math.sqrt(dx*dx+dz*dz);
+    bins[bin]+=len; // ponderar por longitud del muro
+  });
+  // Encontrar el bin dominante
+  var maxBin=0,maxVal=0;
+  bins.forEach(function(v,i){if(v>maxVal){maxVal=v;maxBin=i;}});
+  if(maxVal<0.001)return 0; // sin muros, usar ejes world
+  return maxBin*(Math.PI/36);
+}
+
+// Rota un vector [x,z] por ángulo θ en plano XZ
+function _rotXZ(x,z,t){return[x*Math.cos(t)-z*Math.sin(t),x*Math.sin(t)+z*Math.cos(t)];}
+
 function sbOpen(){
   if(!xv||!xscene)return;
   initSectionPlugin();if(!xSectionPlugin)return;
   if(_sb.active)sbClose();
+
+  // Detectar orientación del edificio
+  var angle=_sbDetectBuildingAngle();
+  _sb.angle=angle; // guardar para rebuild
+
   var aabb=xModel?xModel.aabb:xscene.aabb;
-  var initBox={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
-  _sb.box=Object.assign({},initBox);
-  _sb.initBox=initBox; // guardar para reset
+
+  // Proyectar todas las esquinas del AABB sobre los ejes rotados para obtener límites reales
+  var corners=[
+    [aabb[0],aabb[2]],[aabb[3],aabb[2]],
+    [aabb[0],aabb[5]],[aabb[3],aabb[5]]
+  ];
+  var u0=_rotXZ(1,0,-angle), u1=_rotXZ(0,1,-angle); // ejes del edificio en world
+  var uAxis=[Math.cos(angle),Math.sin(angle)];   // eje U del edificio (en XZ)
+  var vAxis=[-Math.sin(angle),Math.cos(angle)];  // eje V perpendicular
+  var uProj=corners.map(function(c){return c[0]*uAxis[0]+c[1]*uAxis[1];});
+  var vProj=corners.map(function(c){return c[0]*vAxis[0]+c[1]*vAxis[1];});
+  var umin=Math.min.apply(null,uProj),umax=Math.max.apply(null,uProj);
+  var vmin=Math.min.apply(null,vProj),vmax=Math.max.apply(null,vProj);
+
+  _sb.box={
+    xmin:umin,xmax:umax, // eje U (eje dominante)
+    ymin:aabb[1],ymax:aabb[4], // eje Y siempre vertical
+    zmin:vmin,zmax:vmax  // eje V (perpendicular)
+  };
+  _sb.uAxis=uAxis; _sb.vAxis=vAxis; // guardar ejes para transform pos/dir
+  _sb.initBox=Object.assign({},_sb.box);
+
   _sbCreatePlanes();
   _sbCreateMesh();
   _sb.active=true;
@@ -2224,13 +2279,21 @@ function sbClose(){
 
 function _sbCreatePlanes(){
   var b=_sb.box;
+  var uA=_sb.uAxis||[1,0]; // eje U en plano XZ
+  var vA=_sb.vAxis||[0,1]; // eje V en plano XZ
+  var cy=(b.ymin+b.ymax)/2;
+
+  // Convertir coordenada en eje U/V a posición mundo XZ
+  function posU(u){return[u*uA[0], 0, u*uA[1]];}
+  function posV(v){return[v*vA[0], 0, v*vA[1]];}
+
   var defs={
-    xmin:{pos:[b.xmin,0,0],dir:[1,0,0]},
-    xmax:{pos:[b.xmax,0,0],dir:[-1,0,0]},
-    ymin:{pos:[0,b.ymin,0],dir:[0,1,0]},
-    ymax:{pos:[0,b.ymax,0],dir:[0,-1,0]},
-    zmin:{pos:[0,0,b.zmin],dir:[0,0,1]},
-    zmax:{pos:[0,0,b.zmax],dir:[0,0,-1]}
+    xmin:{pos:posU(b.xmin),      dir:[ uA[0], 0, uA[1]]},
+    xmax:{pos:posU(b.xmax),      dir:[-uA[0], 0,-uA[1]]},
+    ymin:{pos:[0,b.ymin,0],      dir:[0,1,0]},
+    ymax:{pos:[0,b.ymax,0],      dir:[0,-1,0]},
+    zmin:{pos:posV(b.zmin),      dir:[ vA[0], 0, vA[1]]},
+    zmax:{pos:posV(b.zmax),      dir:[-vA[0], 0,-vA[1]]}
   };
   Object.keys(defs).forEach(function(k){
     if(_sb.planes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sb.planes[k]=null;
@@ -2241,55 +2304,73 @@ function _sbCreatePlanes(){
 function _sbCreateMesh(){
   var XK=window._XK;if(!XK)return;
   var b=_sb.box;
-  var cx=(b.xmin+b.xmax)/2,cy=(b.ymin+b.ymax)/2,cz=(b.zmin+b.zmax)/2;
-  var sx=b.xmax-b.xmin,sy=b.ymax-b.ymin,sz=b.zmax-b.zmin;
+  var uA=_sb.uAxis||[1,0];
+  var vA=_sb.vAxis||[0,1];
+  var angle=_sb.angle||0;
+
+  // Centro en espacio mundo
+  var uc=(b.xmin+b.xmax)/2, vc=(b.zmin+b.zmax)/2;
+  var cx=uc*uA[0]+vc*vA[0];
+  var cy=(b.ymin+b.ymax)/2;
+  var cz=uc*uA[1]+vc*vA[1];
+  var sx=b.xmax-b.xmin, sy=b.ymax-b.ymin, sz=b.zmax-b.zmin;
+
   // Destruir meshes anteriores
   if(_sb.meshWire){try{_sb.meshWire.destroy();}catch(e){}}_sb.meshWire=null;
   _sb.meshFaces.forEach(function(m){try{m.destroy();}catch(e){}});_sb.meshFaces=[];
-  // Caja alámbrica — 12 aristas
+
   if(XK.buildBoxLinesGeometry&&XK.VBOGeometry&&XK.Mesh&&XK.PhongMaterial){
     try{
       var wireGeo=new XK.VBOGeometry(xscene,XK.buildBoxLinesGeometry({xSize:sx/2,ySize:sy/2,zSize:sz/2}));
       var wireMat=new XK.PhongMaterial(xscene,{emissive:[0.2,0.6,1],lineWidth:2});
       _sb.meshWire=new XK.Mesh(xscene,{
         id:'sb_wire',geometry:wireGeo,material:wireMat,
-        position:[cx,cy,cz],pickable:false,collidable:false,clippable:false
+        position:[cx,cy,cz],
+        rotation:[0, -(angle*180/Math.PI), 0], // grados, eje Y
+        pickable:false,collidable:false,clippable:false
       });
     }catch(e){console.warn('[SB] wire mesh error:',e);}
   }
-  // 6 caras transparentes pickables para drag
-  // Cada cara: quad centrado en la cara correspondiente
+
+  // 6 caras transparentes — posición y orientación en espacio mundo
   var faces=[
-    {id:'xmin',pos:[b.xmin,cy,cz],xs:sz/2,ys:sy/2,axis:'x',sign:-1},
-    {id:'xmax',pos:[b.xmax,cy,cz],xs:sz/2,ys:sy/2,axis:'x',sign: 1},
-    {id:'ymin',pos:[cx,b.ymin,cz],xs:sx/2,ys:sz/2,axis:'y',sign:-1},
-    {id:'ymax',pos:[cx,b.ymax,cz],xs:sx/2,ys:sz/2,axis:'y',sign: 1},
-    {id:'zmin',pos:[cx,cy,b.zmin],xs:sx/2,ys:sy/2,axis:'z',sign:-1},
-    {id:'zmax',pos:[cx,cy,b.zmax],xs:sx/2,ys:sy/2,axis:'z',sign: 1},
+    {id:'xmin',uOff:b.xmin,vOff:vc,hw:sz/2,hh:sy/2,axis:'x',sign:-1},
+    {id:'xmax',uOff:b.xmax,vOff:vc,hw:sz/2,hh:sy/2,axis:'x',sign: 1},
+    {id:'ymin',uOff:uc,    vOff:vc,hw:sx/2,hh:sz/2,axis:'y',sign:-1},
+    {id:'ymax',uOff:uc,    vOff:vc,hw:sx/2,hh:sz/2,axis:'y',sign: 1},
+    {id:'zmin',uOff:uc,    vOff:b.zmin,hw:sx/2,hh:sy/2,axis:'z',sign:-1},
+    {id:'zmax',uOff:uc,    vOff:b.zmax,hw:sx/2,hh:sy/2,axis:'z',sign: 1},
   ];
+
   if(XK.VBOGeometry&&XK.Mesh&&XK.PhongMaterial){
     faces.forEach(function(f){
       try{
-        // Geometría de quad (dos triángulos)
+        var hw=f.hw,hh=f.hh;
         var vs,is=[0,1,2,0,2,3];
-        var hw=f.xs,hh=f.ys;
         if(f.axis==='x'){vs=[0,-hh,-hw, 0,-hh,hw, 0,hh,hw, 0,hh,-hw];}
         else if(f.axis==='y'){vs=[-hw,0,-hh, hw,0,-hh, hw,0,hh, -hw,0,hh];}
         else{vs=[-hw,-hh,0, hw,-hh,0, hw,hh,0, -hw,hh,0];}
-        var geo=new XK.VBOGeometry(xscene,{
-          primitive:'triangles',
-          positions:vs,
-          indices:is,
-          normals:f.axis==='x'?[f.sign,0,0,f.sign,0,0,f.sign,0,0,f.sign,0,0]:
-                  f.axis==='y'?[0,f.sign,0,0,f.sign,0,0,f.sign,0,0,f.sign,0]:
-                               [0,0,f.sign,0,0,f.sign,0,0,f.sign,0,0,f.sign]
-        });
-        var mat=new XK.PhongMaterial(xscene,{
-          diffuse:[0.3,0.6,1],alpha:0.08,backfaces:true
-        });
+        var normals=f.axis==='x'?[f.sign,0,0,f.sign,0,0,f.sign,0,0,f.sign,0,0]:
+                    f.axis==='y'?[0,f.sign,0,0,f.sign,0,0,f.sign,0,0,f.sign,0]:
+                                 [0,0,f.sign,0,0,f.sign,0,0,f.sign,0,0,f.sign];
+        var geo=new XK.VBOGeometry(xscene,{primitive:'triangles',positions:vs,indices:is,normals:normals});
+        var mat=new XK.PhongMaterial(xscene,{diffuse:[0.3,0.6,1],alpha:0.08,backfaces:true});
+        // Posición de la cara en espacio mundo
+        var px,pz,py;
+        if(f.axis==='y'){
+          px=f.uOff*uA[0]+f.vOff*vA[0];
+          py=f.sign<0?b.ymin:b.ymax;
+          pz=f.uOff*uA[1]+f.vOff*vA[1];
+        } else {
+          px=f.uOff*uA[0]+f.vOff*vA[0];
+          py=cy;
+          pz=f.uOff*uA[1]+f.vOff*vA[1];
+        }
         var mesh=new XK.Mesh(xscene,{
           id:'sb_face_'+f.id,geometry:geo,material:mat,
-          position:f.pos,pickable:true,collidable:false,clippable:false
+          position:[px,py,pz],
+          rotation:[0,-(angle*180/Math.PI),0],
+          pickable:true,collidable:false,clippable:false
         });
         mesh._sbFace=f.id;mesh._sbAxis=f.axis;mesh._sbSign=f.sign;
         _sb.meshFaces.push(mesh);
@@ -2299,13 +2380,7 @@ function _sbCreateMesh(){
 }
 
 function sbUpdate(){
-  var b=_sb.box;
-  if(_sb.planes.xmin)_sb.planes.xmin.pos=[b.xmin,0,0];
-  if(_sb.planes.xmax)_sb.planes.xmax.pos=[b.xmax,0,0];
-  if(_sb.planes.ymin)_sb.planes.ymin.pos=[0,b.ymin,0];
-  if(_sb.planes.ymax)_sb.planes.ymax.pos=[0,b.ymax,0];
-  if(_sb.planes.zmin)_sb.planes.zmin.pos=[0,0,b.zmin];
-  if(_sb.planes.zmax)_sb.planes.zmax.pos=[0,0,b.zmax];
+  _sbCreatePlanes(); // recrea planos con ejes rotados actualizados
   _sbCreateMesh();
 }
 
@@ -2375,15 +2450,15 @@ function _sbSliderChange(pct){
     newVal=valSel + t*(valOpp-valSel+margin);
   }
   _sb.box[faceId]=newVal;
-  // Mover el plano de sección
+  // Mover el plano usando _sbCreatePlanes (respeta ejes rotados)
+  var uA=_sb.uAxis||[1,0];
+  var vA=_sb.vAxis||[0,1];
   var plane=_sb.planes[faceId];
   if(plane){
-    var p=plane.pos;
-    if(axis==='x') plane.pos=[newVal,p[1],p[2]];
-    else if(axis==='y') plane.pos=[p[0],newVal,p[2]];
-    else plane.pos=[p[0],p[1],newVal];
+    if(axis==='x') plane.pos=[newVal*uA[0], plane.pos[1], newVal*uA[1]];
+    else if(axis==='y') plane.pos=[plane.pos[0], newVal, plane.pos[2]];
+    else plane.pos=[newVal*vA[0], plane.pos[1], newVal*vA[1]];
   }
-  // Redibujar la caja para que la cara se mueva visualmente
   _sbCreateMesh();
 }
 
