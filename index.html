@@ -42,7 +42,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;font-size:13px;color:var(--
 button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .view{display:none;height:100vh;overflow:hidden;flex-direction:column;}
 .view.active{display:flex;}
-.topbar{height:48px;background:var(--panel);border-bottom:1px solid var(--bd);padding:0 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.topbar{height:56px;background:var(--panel);border-bottom:1px solid var(--bd);padding:0 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
 .logo{font-weight:600;font-size:14px;letter-spacing:-.3px;}
 .logo em{color:var(--acc);font-style:normal;}
 .bc{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);}
@@ -88,7 +88,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 #vb-body{flex:1;display:flex;overflow:hidden;position:relative;}
 .vcol{display:flex;flex-direction:column;overflow:hidden;background:var(--panel);min-width:0;position:relative;}
 .vcol.collapsed{flex:0 0 32px!important;min-width:32px!important;max-width:32px!important;}
-.vcol.collapsed .col-scroll,.vcol.collapsed .tabs,.vcol.collapsed .vtb,.vcol.collapsed .sb,.vcol.collapsed #dc,.vcol.collapsed #tv{display:none!important;}
+.vcol.collapsed .col-scroll,.vcol.collapsed .tabs,.vcol.collapsed .vtb,.vcol.collapsed .sb,.vcol.collapsed #dc,.vcol.collapsed #tv,.vcol.collapsed .vtoolbar,.vcol.collapsed #bn-showcodes{display:none!important;}
 #p3d{flex:1;position:relative;overflow:hidden;background:#f0eff8;min-height:0;}
 .vcol.collapsed .col-header{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--bd);background:var(--panel);flex-shrink:0;min-height:36px;overflow:visible;flex-wrap:wrap;}
 .vcol.collapsed .col-header{writing-mode:vertical-rl;text-orientation:mixed;justify-content:center;padding:12px 4px;flex-wrap:nowrap;}
@@ -102,6 +102,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .col-meta{flex:1;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .col-tog{border:none;background:none;cursor:pointer;color:var(--muted);font-size:16px;padding:6px 8px;min-width:32px;min-height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;}
 .col-tog:hover{background:var(--bd);color:var(--text);}
+.col-tog.a{background:var(--acc-bg);color:var(--acc);}
 .col-tog-r{margin-right:auto;}
 /* Divisores arrastrables */
 .col-div{flex:0 0 8px;background:var(--bd);cursor:col-resize;position:relative;z-index:10;touch-action:none;}
@@ -164,7 +165,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .tb{font-size:8px;font-weight:600;padding:1px 4px;border-radius:3px;border:1px solid;flex-shrink:0;margin-right:3px;white-space:nowrap;letter-spacing:.03em;}
 /* Detalle */
 .tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;}
-.tab{flex:1;text-align:center;padding:4px 4px;font-size:10px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
+.tab{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 4px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
 .tab:hover{color:var(--text);}
 .tab.a{color:var(--acc);border-bottom-color:var(--acc);}
 #dc{flex:1;overflow-y:auto;padding:10px 10px;}
@@ -381,8 +382,11 @@ button,input,select,textarea{-webkit-appearance:none;}
 .chip.xkt{background:#faf5ff;color:#6b21a8;border-color:#d8b4fe;}
 .chip.none{background:var(--panel2);color:var(--muted);border-color:var(--bd);}
 .chip.sv{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-bd);}
-.chip.sd{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-bd);}
-.chip.sc{background:var(--panel2);color:var(--muted);border-color:var(--bd);}
+.ver-status-sel{border:1px solid;outline:none;background:inherit;}
+.ver-status-sel:hover{opacity:0.8;}
+.ver-status-sel.scu{background:var(--ok-bg);color:var(--ok);border-color:var(--ok);}
+.ver-status-sel.sdr{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-bd);}
+.ver-status-sel.scl{background:var(--panel2);color:var(--muted);border-color:var(--bd);}
 .ver-actions{padding:0 14px 12px;display:flex;gap:6px;align-items:center;}
 .ver-actions-sep{flex:1;}
 .btn.sm{font-size:10px;padding:3px 9px;min-height:26px;}
@@ -438,6 +442,72 @@ html.dark .tn.ms-sel{background:var(--acc-bg);}
 #ms-bar{display:none;flex-shrink:0;padding:8px 10px;background:var(--acc-bg);border-top:1px solid var(--acc-bd);align-items:center;gap:8px;}
 #ms-bar.visible{display:flex;}
 html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
+
+/* ── BUSCADOR MODAL ───────────────────────────────────────────────────── */
+#srch-overlay{
+  display:none;
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.45);
+  z-index:99999;
+  -webkit-overflow-scrolling:touch;
+}
+#srch-overlay.o{display:block;}
+#srch-box{
+  position:absolute;
+  top:72px;left:50%;transform:translateX(-50%);
+  width:min(640px,92vw);
+  max-height:calc(100vh - 100px);
+  background:var(--panel);border-radius:12px;border:1px solid var(--bd2);
+  box-shadow:0 20px 60px rgba(0,0,0,.4);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#srch-input-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--bd);flex-shrink:0;}
+#srch-input-row svg{color:var(--acc);flex-shrink:0;}
+#srch-q{flex:1;background:transparent;border:none;outline:none;font-size:14px;color:var(--text);caret-color:var(--acc);}
+#srch-q::placeholder{color:var(--muted2);}
+.srch-kbd{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);background:var(--panel2);border:1px solid var(--bd);border-radius:4px;padding:2px 7px;flex-shrink:0;}
+#srch-filters{display:flex;gap:5px;padding:7px 14px;border-bottom:1px solid var(--bd);overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+#srch-filters::-webkit-scrollbar{display:none;}
+.sf{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid var(--bd);color:var(--muted);cursor:pointer;white-space:nowrap;background:transparent;transition:all .1s;}
+.sf:hover{border-color:var(--bd2);color:var(--text);}
+.sf.on{border-color:var(--acc);color:var(--acc);background:var(--acc-bg);}
+#srch-stats{padding:5px 14px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--bd);flex-shrink:0;}
+#srch-stats b{color:var(--acc);}
+#srch-results{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bd) transparent;}
+#srch-results::-webkit-scrollbar{width:4px;}
+#srch-results::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px;}
+.srch-glabel{padding:7px 14px 3px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);}
+.sri{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;cursor:pointer;border-left:2px solid transparent;transition:all .1s;}
+.sri:hover,.sri.f{background:var(--panel2);border-left-color:var(--acc);}
+.sri.f{background:var(--acc-bg);}
+.sri-code{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--acc);min-width:84px;padding-top:1px;flex-shrink:0;}
+.sri-body{flex:1;min-width:0;}
+.sri-desc{font-size:12px;color:var(--text);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sri-desc mark{background:rgba(37,99,235,.18);color:var(--acc);border-radius:2px;padding:0 1px;font-style:normal;}
+html.dark .sri-desc mark{background:rgba(59,130,246,.25);}
+.sri-meta{display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;}
+.sri-path{font-size:10px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;}
+.sri-path .sx{color:var(--bd2);margin:0 2px;}
+.stag{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;}
+.stag-ud{background:var(--ok-bg);color:var(--ok);}
+.stag-3d{background:var(--acc-bg);color:var(--acc);}
+.stag-pl{background:var(--warn-bg);color:var(--warn);}
+.sri-price{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;min-width:68px;text-align:right;padding-top:1px;flex-shrink:0;}
+.des-header{display:grid;grid-template-columns:80px 1fr 30px 44px 52px 52px;gap:4px;padding:4px 12px;font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted2);border-bottom:1px solid var(--bd);background:var(--panel2);}
+.des-group{padding:5px 12px 2px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-top:1px solid var(--bd);margin-top:2px;}
+.des-row{display:grid;grid-template-columns:80px 1fr 30px 44px 52px 52px;gap:4px;padding:5px 12px;font-size:11px;border-bottom:1px solid var(--bd);align-items:center;}
+.des-row:hover{background:var(--panel2);}
+.des-code{font-family:var(--mono);font-size:10px;color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.des-desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);}
+.des-ud{font-size:10px;color:var(--muted);text-align:center;}
+.des-rend{font-family:var(--mono);font-size:10px;color:var(--text);text-align:right;}
+.des-pr{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:right;}
+.des-imp{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);text-align:right;}
+.des-total{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--bd);background:var(--panel2);}
+.sri-snippet{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px;font-style:italic;}
+.sri-snippet mark{background:rgba(37,99,235,.15);color:var(--acc);border-radius:2px;padding:0 1px;font-style:normal;}
+html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
+#srch-empty{padding:36px 14px;text-align:center;color:var(--muted);font-size:13px;}
 </style>
 </head>
 <body>
@@ -467,7 +537,7 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
         Restaurar
       </label>
       <input type="file" id="f-restore" style="position:absolute;left:-9999px;" accept=".bc3mbackup,.json,application/octet-stream,application/json,*/*">
-      <button class="btn" id="bn-dark" title="Cambiar tema" style="padding:6px 8px;">
+      <button class="btn" id="bn-dark" title="Cambiar tema" style="display:flex;align-items:center;justify-content:center;padding:0;width:32px;height:32px;">
         <svg id="icon-dark" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         <svg id="icon-light" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       </button>
@@ -487,11 +557,13 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
 <div class="view" id="v-proj">
   <div class="topbar">
     <div class="logo">BC3 <em>Manager</em></div>
-    <div class="bc">
-      <span class="crumb" id="bh2" style="cursor:pointer;">Obras</span>
-      <span class="sep">/</span>
-      <span id="bp2">—</span>
-    </div>
+    <span style="color:var(--bd2);font-size:16px;">|</span>
+    <button class="btn" id="bh2" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Mis obras
+    </button>
+    <span style="color:var(--bd2);font-size:16px;">|</span>
+    <span id="bp2" style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px;">—</span>
     <div class="tr">
       <button class="btn p" id="bn-nv" style="display:inline-flex;align-items:center;gap:5px;">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -501,8 +573,9 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4h6v2"/></svg>
         Eliminar obra
       </button>
-      <button class="btn" id="bn-dark-p" title="Cambiar tema" style="padding:5px 7px;">
-        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <button class="btn" id="bn-dark-p" title="Cambiar tema" style="display:flex;align-items:center;justify-content:center;padding:0;width:32px;height:32px;">
+        <svg id="icon-dark-p" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-light-p" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       </button>
     </div>
   </div>
@@ -517,25 +590,25 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
 <div class="view" id="v-visor">
   <div class="topbar">
     <div class="logo">BC3 <em>Manager</em></div>
-    <div class="bc">
-      <span class="crumb" id="bh3" style="cursor:pointer;">Obras</span>
-      <span class="sep">/</span>
-      <span class="crumb" id="bp3" style="cursor:pointer;">—</span>
-      <span class="sep">/</span>
-      <span id="bv2">—</span>
-    </div>
+    <span style="color:var(--bd2);font-size:16px;">|</span>
+    <button class="btn" id="bp3" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span id="bp3-label">Obra</span>
+    </button>
+    <span style="color:var(--bd2);font-size:16px;">|</span>
+    <span id="bv2" style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">—</span>
     <div class="tr" id="sm-wrap">
-      <label for="fxkt" class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Cargar modelo XKT"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>XKT</label>
+      <!-- file inputs hidden, triggered from modal -->
       <input type="file" id="fxkt" style="position:absolute;left:-9999px;" accept=".xkt">
-      <label for="fmeta" class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Metadatos de categorías"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Meta</label>
       <input type="file" id="fmeta" style="position:absolute;left:-9999px;" accept=".json">
-      <label for="fbc3r" class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Reimportar BC3"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>BC3</label>
       <input type="file" id="fbc3r" style="position:absolute;left:-9999px;" accept=".bc3,.BC3">
-      <button class="btn" id="bn-export" title="Exportar .bc3m" style="display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar</button>
+      <button class="btn" id="bn-search" style="display:inline-flex;align-items:center;gap:5px;" title="Buscar partida"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar</button>
+      <button class="btn" id="bn-archivos" style="display:inline-flex;align-items:center;gap:5px;" title="Gestión de archivos"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Archivos</button>
       <span class="sd" id="sd"></span>
       <span id="sm" style="font-size:11px;color:var(--muted);">—</span>
-      <button class="btn" id="bn-dark-v" title="Cambiar tema" style="padding:5px 7px;margin-left:2px;">
-        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <button class="btn" id="bn-dark-v" title="Cambiar tema" style="display:flex;align-items:center;justify-content:center;padding:0;width:32px;height:32px;margin-left:2px;">
+        <svg id="icon-dark-v" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-light-v" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       </button>
     </div>
   </div>
@@ -546,6 +619,7 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
       <div class="col-header">
         <span>Presupuesto</span>
         <div class="col-meta"><span id="bt">—</span></div>
+        <button class="btn" id="bn-showcodes" title="Mostrar/ocultar códigos" style="font-size:11px;font-family:var(--mono);padding:0 8px;min-width:28px;min-height:28px;line-height:1;display:flex;align-items:center;justify-content:center;">#</button>
         <button class="col-tog" id="tog-col1" title="Colapsar">‹</button>
       </div>
       <div class="sb" id="stb">
@@ -554,9 +628,7 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
         <div class="st"><b id="sp">0</b> part.</div>
         <div class="st"><b id="sbim">0</b> BIM</div>
       </div>
-      <div class="vtb">
-        <input type="text" placeholder="Buscar…" id="si" style="width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:5px;padding:5px 8px;color:var(--text);font-size:12px;outline:none;">
-      </div>
+      <div class="vtb" style="display:none;"></div>
       <div id="tv" class="col-scroll"></div>
       <!-- Barra multi-selección -->
       <div id="ms-bar">
@@ -574,9 +646,10 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
         <button class="col-tog" id="tog-col2" title="Colapsar">‹</button>
       </div>
       <div class="tabs">
-        <div class="tab a" data-t="bim">BIM</div>
-        <div class="tab" data-t="med">Medición</div>
-        <div class="tab" data-t="txt">Texto</div>
+        <div class="tab a" data-t="bim" title="BIM — vínculos y modelo 3D"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+        <div class="tab" data-t="med" title="Medición"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+        <div class="tab" data-t="txt" title="Texto — pliego de condiciones"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></div>
+        <div class="tab" data-t="des" title="Precio descompuesto"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       </div>
       <div id="dc" class="col-scroll"><div class="ed"><p>Selecciona una partida</p></div></div>
     </div>
@@ -585,7 +658,7 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
     <div class="vcol" id="col3">
       <div class="col-header">
         <span>Modelo 3D</span>
-        <div style="display:flex;gap:3px;align-items:center;flex:1;justify-content:flex-end;padding-right:4px;flex-wrap:wrap;">
+        <div class="vtoolbar" style="display:flex;gap:3px;align-items:center;flex:1;justify-content:flex-end;padding-right:4px;flex-wrap:wrap;">
           <button class="t3" id="bn-fit" title="Encuadrar todo" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
           <button class="t3" id="bn-ghost" title="Modo fantasma / XRay" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></button>
           <button class="t3" id="bn-iso" title="Aislar selección" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9" stroke-dasharray="3 2"/></svg></button>
@@ -602,7 +675,7 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
         <div id="dz">
           <div style="font-size:32px;">🧊</div>
           <div style="font-size:12px;color:var(--muted);text-align:center;padding:0 20px;">
-            Carga un modelo XKT con el botón <strong>⬆ XKT</strong>
+            Carga un modelo XKT con el botón <strong>Archivos</strong>
           </div>
         </div>
         <canvas id="cv"></canvas>
@@ -647,12 +720,65 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
   </div>
 </div>
 
+<!-- ══ MODAL ARCHIVOS ════════════════════════════════════════════════════ -->
+<div class="mb" id="m-archivos">
+  <div class="md" style="width:380px;">
+    <h3 style="display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Gestión de archivos</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      <label for="fxkt" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+        <span style="width:32px;height:32px;border-radius:6px;background:var(--acc-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--acc)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </span>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;">Cargar modelo XKT</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Modelo 3D en formato XKT para el visor</div>
+        </div>
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </label>
+      <label for="fmeta" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+        <span style="width:32px;height:32px;border-radius:6px;background:var(--ok-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--ok)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </span>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;">Cargar metadatos JSON</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Categorías IFC para filtrado por tipo</div>
+        </div>
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </label>
+      <label for="fbc3r" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+        <span style="width:32px;height:32px;border-radius:6px;background:var(--warn-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--warn)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+        </span>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;">Reimportar BC3</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Actualiza el presupuesto de esta versión</div>
+        </div>
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </label>
+      <button id="bn-export" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);width:100%;text-align:left;transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+        <span style="width:32px;height:32px;border-radius:6px;background:#f5f3ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="#7c3aed" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </span>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;">Exportar .bc3m</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Guarda esta versión como archivo bc3m</div>
+        </div>
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+    </div>
+    <div class="ma"><button class="btn" id="bn-can-archivos">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- ══ BUSCADOR ══════════════════════════════════════════════════════════ -->
+
+
 <!-- ══ MODALES ══════════════════════════════════════════════════════════ -->
 
 <!-- Nueva obra -->
 <div class="mb" id="m-proj">
   <div class="md"><h3>Nueva obra</h3>
-    <div class="fr"><label>Nombre *</label><input id="i-pn" placeholder="Rehabilitación Castelló 108"></div>
+    <div class="fr"><label>Nombre *</label><input id="i-pn" placeholder="Nombre de la obra"></div>
     <div class="fr"><label>Dirección</label><input id="i-pa"></div>
     <div class="fr"><label>Cliente</label><input id="i-pc"></div>
     <div class="fr"><label>Notas</label><textarea id="i-po" rows="2"></textarea></div>
@@ -683,6 +809,28 @@ html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
       <button class="btn" id="bn-canv">Cancelar</button>
       <button class="btn p" id="bn-okv">Guardar versión</button>
     </div>
+  </div>
+</div>
+
+<!-- ══ BUSCADOR ══════════════════════════════════════════════════════════ -->
+<div id="srch-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:99999;">
+  <div id="srch-box" style="position:absolute;top:68px;left:50%;transform:translateX(-50%);width:min(640px,92vw);max-height:calc(100vh - 84px);background:var(--panel);border-radius:12px;border:1px solid var(--bd2);box-shadow:0 20px 60px rgba(0,0,0,.4);display:flex;flex-direction:column;overflow:hidden;">
+    <div id="srch-input-row">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="srch-q" placeholder="Buscar partidas, códigos, materiales…" autocomplete="off" spellcheck="false">
+      <button id="srch-close" style="border:none;background:none;cursor:pointer;padding:6px;color:var(--muted);display:flex;align-items:center;justify-content:center;border-radius:4px;flex-shrink:0;">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="srch-filters">
+      <button class="sf on" data-f="all">Todo</button>
+      <button class="sf" data-f="cap">Capítulos</button>
+      <button class="sf" data-f="par">Partidas</button>
+      <button class="sf" data-f="3d">Con modelo 3D</button>
+      <button class="sf" data-f="pl">Con pliego</button>
+    </div>
+    <div id="srch-stats"></div>
+    <div id="srch-results"></div>
   </div>
 </div>
 
@@ -760,8 +908,8 @@ function loadProj(id){
   curPJ=id;
   dbG('projects',id,function(p){
     if(!p){loadHome();return;}
-    el('bp2').textContent=p.name;
-    el('bp3').textContent=p.name;
+    var bp2label=el('bp2');if(bp2label)bp2label.textContent=p.name;
+    var bp3label=el('bp3-label');if(bp3label)bp3label.textContent=p.name;
     // Info del proyecto
     el('pib').innerHTML='<div class="pi"><div class="pl">Obra</div><div class="pv">'+esc(p.name)+'</div></div>'
       +(p.address?'<div class="pi"><div class="pl">Dirección</div><div class="pv">'+esc(p.address)+'</div></div>':'')
@@ -779,6 +927,7 @@ function loadProj(id){
         var card=document.createElement('div');
         card.className='ver-card '+st;
         var statusLabels={'current':'Vigente','draft':'Borrador','closed':'Cerrada'};
+        var chipClass={'current':'scu','draft':'sdr','closed':'scl'};
         var xktChip=v.hasXkt
           ?'<span class="chip xkt"><svg viewBox="0 0 24 24" width="9" height="9" stroke="currentColor" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Modelo 3D</span>'
           :'<span class="chip none">Sin modelo 3D</span>';
@@ -790,13 +939,59 @@ function loadProj(id){
               +'<div class="ver-name">'+esc(v.name)+'</div>'
               +'<div class="ver-date">'+new Date(v.createdAt).toLocaleDateString('es-ES')+(v.fileName?' · '+esc(v.fileName):'')+'</div>'
             +'</div>'
-            +'<span class="chip s'+st.charAt(0)+'">'+statusLabels[st]+'</span>'
+            +'<select class="ver-status-sel chip '+chipClass[st]+'" data-vid="'+esc(v.id)+'" style="border-radius:20px;font-size:10px;font-weight:500;padding:2px 7px;cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center;">'
+              +'<option value="current"'+(st==='current'?' selected':'')+'>Vigente</option>'
+              +'<option value="draft"'+(st==='draft'?' selected':'')+'>Borrador</option>'
+              +'<option value="closed"'+(st==='closed'?' selected':'')+'>Cerrada</option>'
+            +'</select>'
           +'</div>'
           +'<div class="ver-chips">'
             +(bc3info?'<span class="chip bc3"><svg viewBox="0 0 24 24" width="9" height="9" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'+bc3info+'</span>':'')
             +xktChip
           +'</div>'
           +'<div class="ver-actions"></div>';
+
+        var sel=card.querySelector('.ver-status-sel');
+        (function(vid, allVers, selEl, cardEl){
+          selEl.addEventListener('change',function(e){
+            e.stopPropagation();
+            var newSt=this.value;
+            var chipC={'current':'scu','draft':'sdr','closed':'scl'};
+            // Actualizar color del select inmediatamente
+            selEl.className='ver-status-sel chip '+chipC[newSt];
+            cardEl.className='ver-card '+newSt;
+            function doUpdate(){
+              dbG('versions',vid,function(vv){
+                if(!vv)return;
+                vv.status=newSt;
+                dbP('versions',vv,function(){loadProj(curPJ);});
+              });
+            }
+            if(newSt==='current'){
+              var otherCurrents=allVers.filter(function(ov){return ov.id!==vid&&ov.status==='current';});
+              var pending=otherCurrents.length;
+              if(pending===0){doUpdate();return;}
+              otherCurrents.forEach(function(ov){
+                dbG('versions',ov.id,function(vv){
+                  if(vv){vv.status='draft';dbP('versions',vv,function(){});}
+                  pending--;
+                  if(pending===0)doUpdate();
+                });
+              });
+            } else {
+              var wasCurrent=allVers.find(function(ov){return ov.id===vid;});
+              if(wasCurrent&&wasCurrent.status==='current'){
+                var others=allVers.filter(function(ov){return ov.id!==vid;});
+                if(others.length>0){
+                  dbG('versions',others[0].id,function(vv){
+                    if(vv){vv.status='current';dbP('versions',vv,function(){});}
+                    doUpdate();
+                  });
+                } else {doUpdate();}
+              } else {doUpdate();}
+            }
+          });
+        })(v.id, vers, sel, card);
         // Botones
         var va=card.querySelector('.ver-actions');
         var btnOpen=document.createElement('button');
@@ -846,13 +1041,18 @@ function openVer(vid){
     dbG('projects',v.projectId,function(p){
       if(!p)return;
       el('bv2').textContent=v.name;
-      el('bp3').textContent=p.name;
-      el('bh3').textContent='Obras';
+      var bp3l=el('bp3-label');if(bp3l)bp3l.textContent=p.name;
       el('bt').textContent=v.name;
     });
     // Cargar BC3
     dbG('bc3data',vid,function(d){
-      if(d&&d.bc3){curBC=d.bc3;renderTree();}
+      if(d&&d.bc3){
+        curBC=d.bc3;
+        // Migrar formato antiguo: si no tiene BC.d, inicializarlo vacío
+        // El usuario deberá reimportar el BC3 para tener descompuestos
+        if(!curBC.d)curBC.d={};
+        renderTree();
+      }
     });
     // Cargar XKT si existe
     if(v.hasXkt){
@@ -870,38 +1070,72 @@ function openVer(vid){
 
 // ── BC3 PARSER ────────────────────────────────────────────────────────────
 function parseBC3(txt){
-  var BC={c:{},h:{},m:{},g:{},t:{}};
+  var BC={c:{},h:{},d:{},m:{},g:{},t:{}};
   var asmRE=/^([A-Z]{2,5}-\d{3,4}(?:\.\d+)?)(?:\s|$)/;
   var ifc22RE=/[\s\-]([0-9A-Za-z_$]{22})$/;
   var raw=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
   var regs=[],cur='';
   raw.split('\n').forEach(function(l){if(l.charAt(0)==='~'){if(cur)regs.push(cur);cur=l;}else cur+='\n'+l;});
   if(cur)regs.push(cur);
+
+  // PRIMERA PASADA: recoger ~C, ~T, ~M y todos los ~D en bruto
+  var rawD={}; // rawD[code] = [{code,rend}] — todos los ~D sin clasificar
   regs.forEach(function(r){
     if(r.length<2)return;
     var t=r.slice(0,2),b=r.slice(3);
     if(t==='~C')pC(BC,b);
-    else if(t==='~D')pD(BC,b);
-    else if(t==='~M')pM(BC,b,asmRE,ifc22RE);
     else if(t==='~T')pT(BC,b);
+    else if(t==='~M')pM(BC,b,asmRE,ifc22RE);
+    else if(t==='~D'){
+      var p=b.split('|'),raw0=(p[0]||'').trim();
+      var par=raw0.replace(/#/g,'').trim();
+      if(!par)return;
+      var isChap=raw0.indexOf('#')>=0;
+      var tk=(p[1]||'').split('\\');
+      var items=[];
+      for(var i=0;i<tk.length;i+=3){
+        var h=tk[i].replace(/#/g,'').trim();if(!h)continue;
+        var rend=parseFloat((tk[i+2]||'0').replace(',','.'))||0;
+        items.push({code:h,rend:rend});
+      }
+      if(isChap){
+        // ~D de capítulo → siempre jerarquía de árbol
+        if(!BC.h[par])BC.h[par]=[];
+        items.forEach(function(it){BC.h[par].push(it.code);});
+      } else {
+        // ~D de partida/auxiliar → guardar en bruto para segunda pasada
+        rawD[par]=items;
+      }
+    }
   });
+
+  // SEGUNDA PASADA: determinar qué códigos son "partidas del árbol"
+  // Un código es del árbol si aparece como hijo de un CAPÍTULO (BC.h)
+  var enArbol={};
+  Object.keys(BC.h).forEach(function(cap){
+    BC.h[cap].forEach(function(code){enArbol[code]=true;});
+  });
+
+  // Ahora clasificar rawD:
+  // - Si el padre está en el árbol (partida) → sus hijos son descompuestos → BC.d
+  // - Si el padre NO está en el árbol (es él mismo un descompuesto/auxiliar) → también BC.d
+  // En ambos casos van a BC.d, ya que NUNCA son ramas del árbol
+  Object.keys(rawD).forEach(function(par){
+    BC.d[par]=rawD[par];
+  });
+
   return BC;
 }
 function pC(BC,s){
   var p=s.split('|'),raw=(p[0]||'').trim();
   var cp=raw.split('\\')[0],isChap=cp.indexOf('#')>=0;
   var code=cp.replace(/#/g,'').trim();if(!code)return;
+  var nat=parseInt((p[5]||'0').replace(/[^0-9]/g,''))||0;
   BC.c[code]={code:code,ch:isChap,
     desc:(p[2]||'').trim(),
     ud:(p[1]||'').replace(/\\/g,'').trim(),
-    pr:parseFloat((p[3]||'0').replace(',','.'))||0};
-}
-function pD(BC,s){
-  var p=s.split('|'),par=(p[0]||'').trim().replace(/#/g,'').trim();
-  if(!par)return;
-  if(!BC.h[par])BC.h[par]=[];
-  var tk=(p[1]||'').split('\\');
-  for(var i=0;i<tk.length;i+=3){var h=tk[i].replace(/#/g,'').trim();if(h)BC.h[par].push(h);}
+    pr:parseFloat((p[3]||'0').replace(/\\/g,'').replace(',','.'))||0,
+    nat:nat};
 }
 function pM(BC,s,asmRE,ifc22RE){
   var p=s.split('|'),c0=(p[0]||'').trim();
@@ -943,13 +1177,25 @@ function renderTree(){
   var allH=new Set();
   Object.values(BC.h).forEach(function(hs){hs.forEach(function(h){allH.add(h);});});
   var roots=Object.keys(BC.h).filter(function(c){return !allH.has(c);});
-  roots.sort(function(a,b){return a.localeCompare(b,'es',{numeric:true});});
-  var tv=el('tv');tv.innerHTML='';
+
+  // Guardar qué nodos están abiertos antes de reconstruir
+  var tv=el('tv');
+  var openCodes={};
+  tv.querySelectorAll('.tn').forEach(function(n){
+    var code=n.dataset.code;
+    if(code){
+      var cw=n.parentElement&&n.parentElement.querySelector('.tc');
+      if(cw&&cw.classList.contains('o'))openCodes[code]=true;
+    }
+  });
+  var hadOpen=Object.keys(openCodes).length>0;
+
+  tv.innerHTML='';
   var cnt={c:0,s:0,p:0,b:0};
 
   function mkN(code,dep){
     var c=BC.c[code]||{code:code,ch:dep===0,desc:code,ud:'',pr:0};
-    var kids=(BC.h[code]||[]).slice().sort(function(a,b){return a.localeCompare(b,'es',{numeric:true});});
+    var kids=(BC.h[code]||[]).slice();
     var hk=kids.length>0,hb=(BC.g[code]||[]).length>0;
     if(hb)cnt.b++;
     var bc,bt;
@@ -966,9 +1212,11 @@ function renderTree(){
     // Toggle
     var tog=document.createElement('div');tog.className='tg'+(hk?'':' leaf');
     if(hk)tog.innerHTML='<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,2 8,5 2,8"/></svg>';
-    // Label
+    // Label — mostrar código solo si desc no empieza ya por él
     var lbl=document.createElement('div');lbl.className='tl';
-    lbl.textContent=c.desc||code;lbl.title=code+': '+(c.desc||'');
+    var showCode=BC._showCodes&&code&&!(c.desc||'').toLowerCase().startsWith(code.toLowerCase());
+    lbl.textContent=(showCode?(code+' | '):'')+( c.desc||code);
+    lbl.title=code+': '+(c.desc||'');
     // Precio
     var ta=document.createElement('div');ta.className='ta';
     if(!hk&&c.pr)ta.textContent=fmt(c.pr)+'€';
@@ -979,7 +1227,7 @@ function renderTree(){
     // Children
     var cw=document.createElement('div');cw.className='tc';
     kids.forEach(function(k){cw.appendChild(mkN(k,dep+1));});
-    // Checkbox multi-selección (solo en partidas hoja y capítulos)
+    // Checkbox multi-selección
     var cb=document.createElement('input');
     cb.type='checkbox';cb.className='tn-cb';
     cb.title='Añadir a selección múltiple';
@@ -987,19 +1235,13 @@ function renderTree(){
     cb.addEventListener('change',function(e){
       e.stopPropagation();
       if(!hk){
-        // Partida hoja
         if(cb.checked)selMs.add(code); else selMs.delete(code);
       } else {
-        // Capítulo/subcapítulo: seleccionar/deseleccionar todas las hojas hijas
         var leaves=getAllLeaves(code,BC);
-        leaves.forEach(function(lc){
-          if(cb.checked)selMs.add(lc); else selMs.delete(lc);
-        });
-        // Actualizar visualmente los checkboxes hijos
+        leaves.forEach(function(lc){if(cb.checked)selMs.add(lc); else selMs.delete(lc);});
         cw.querySelectorAll('.tn-cb').forEach(function(cc){cc.checked=cb.checked;cc.indeterminate=false;});
       }
       updateMsBar();
-      // Actualizar estado indeterminado del padre
       updateParentCb(row);
     });
     row.insertBefore(cb,tog);
@@ -1007,7 +1249,7 @@ function renderTree(){
     row.addEventListener('click',function(e){
       e.stopPropagation();
       if(hk){cw.classList.toggle('o');tog.classList.toggle('o');}
-      // Select partida para detalle
+      // Select partida
       document.querySelectorAll('.tn').forEach(function(n){n.classList.remove('s');});
       row.classList.add('s');
       selP=code;renderDet();
@@ -1018,7 +1260,26 @@ function renderTree(){
     return wrap;
   }
 
-  roots.forEach(function(r){var n=mkN(r,0);n.querySelector('.tc').classList.add('o');n.querySelector('.tg').classList.add('o');tv.appendChild(n);});
+  roots.forEach(function(r){
+    var n=mkN(r,0);
+    // Primera carga: abrir solo roots. Re-render: restaurar estado previo
+    if(!hadOpen||openCodes[r]){
+      n.querySelector('.tc').classList.add('o');
+      n.querySelector('.tg').classList.add('o');
+    }
+    // Restaurar hijos abiertos
+    if(hadOpen){
+      n.querySelectorAll('.tn').forEach(function(nd){
+        if(openCodes[nd.dataset.code]){
+          var cw=nd.parentElement&&nd.parentElement.querySelector('.tc');
+          var tg=nd.querySelector('.tg');
+          if(cw)cw.classList.add('o');
+          if(tg)tg.classList.add('o');
+        }
+      });
+    }
+    tv.appendChild(n);
+  });
   if(el('sc'))el('sc').textContent=cnt.c;
   if(el('ss'))el('ss').textContent=cnt.s;
   if(el('sp'))el('sp').textContent=cnt.p;
@@ -1038,9 +1299,8 @@ function getAllLeaves(code,BC){
 }
 
 function updateParentCb(row){
-  // Sube por el DOM actualizando estados indeterminados
-  var wrap=row.parentElement; // div wrap
-  var parentTc=wrap?wrap.parentElement:null; // .tc del padre
+  var wrap=row.parentElement;
+  var parentTc=wrap?wrap.parentElement:null;
   if(!parentTc||!parentTc.classList.contains('tc'))return;
   var parentWrap=parentTc.parentElement;
   if(!parentWrap)return;
@@ -1059,8 +1319,7 @@ function updateParentCb(row){
 
 function updateMsBar(){
   var n=selMs.size;
-  var bar=el('ms-bar');
-  if(!bar)return;
+  var bar=el('ms-bar');if(!bar)return;
   if(n>0){
     bar.classList.add('visible');
     el('ms-cnt').textContent=n+' partida'+(n===1?'':'s')+' seleccionada'+(n===1?'':'s');
@@ -1107,7 +1366,74 @@ function filterTree(q){
 }
 
 // ── DETALLE ───────────────────────────────────────────────────────────────
-function renderDet(){if(curDT==='bim')rBIM();else if(curDT==='med')rMED();else rTXT();}
+function renderDet(){if(curDT==='bim')rBIM();else if(curDT==='med')rMED();else if(curDT==='des')rDES();else rTXT();}
+
+function rDES(){
+  var d=el('dc');
+  if(!selP||!curBC){d.innerHTML='<div class="ed"><p>Selecciona una partida</p></div>';return;}
+  var kids=curBC.d[selP]||[];
+  if(!kids.length){
+    // Comprobar si es formato antiguo (no hay ningún descompuesto en todo el BC)
+    var hayDescomp=Object.keys(curBC.d).some(function(k){return curBC.d[k].length>0;});
+    if(!hayDescomp){
+      d.innerHTML='<div class="ed"><p style="color:var(--muted);font-size:12px;">Para ver precios descompuestos, reimporta el BC3 desde <strong>Archivos → Reimportar BC3</strong>.</p></div>';
+    } else {
+      d.innerHTML='<div class="ed"><p style="color:var(--muted);">Esta partida no tiene precio descompuesto.</p></div>';
+    }
+    return;
+  }
+  var groupLabels={1:'Mano de obra',2:'Maquinaria y equipos',3:'Materiales',0:'Auxiliares / partidas'};
+  var groupColors={1:'var(--ok)',2:'var(--warn)',3:'var(--acc)',0:'var(--muted)'};
+  var groups={1:[],2:[],3:[],0:[]};
+  kids.forEach(function(item){
+    var c=curBC.c[item.code]||{code:item.code,desc:item.code,ud:'',pr:0,nat:3};
+    var n=typeof c.nat==='number'?c.nat:3;
+    // Si nat está fuera de rango (parser viejo con fecha), inferir desde prefijo del código
+    if(n<0||n>3){
+      var pfx=(c.code||'')[0]||'';
+      if(pfx==='O'||pfx==='o')n=1;       // mano de obra
+      else if(pfx==='M'||pfx==='m')n=2;  // maquinaria
+      else if(pfx==='P'||pfx==='p')n=3;  // material
+      else n=0;                           // auxiliar/partida
+    }
+    if(!groups[n])groups[n]=[];
+    groups[n].push({c:c,rend:item.rend});
+  });
+  var partida=curBC.c[selP]||{};
+  var h='<div style="padding:10px 12px 6px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--bd);">'
+    +'<span style="font-size:12px;font-weight:600;">'+esc(partida.desc||selP)+'</span>'
+    +'<span style="font-size:11px;color:var(--muted);">'+esc(partida.ud||'')+'</span>'
+    +'</div>';
+  // Header columnas
+  h+='<div class="des-header">'
+    +'<div class="des-code">Código</div>'
+    +'<div class="des-desc">Descripción</div>'
+    +'<div class="des-ud">Ud</div>'
+    +'<div class="des-rend">Rend.</div>'
+    +'<div class="des-pr">P.unit.</div>'
+    +'<div class="des-imp">Importe</div>'
+    +'</div>';
+  [1,2,3,0].forEach(function(nat){
+    var items=groups[nat];if(!items||!items.length)return;
+    h+='<div class="des-group" style="color:'+groupColors[nat]+';">'+groupLabels[nat]+'</div>';
+    items.forEach(function(item){
+      var c=item.c, rend=item.rend, imp=c.pr*rend;
+      h+='<div class="des-row">'
+        +'<div class="des-code mono" style="color:var(--acc);font-size:10px;">'+esc(c.code)+'</div>'
+        +'<div class="des-desc">'+esc(c.desc||c.code)+'</div>'
+        +'<div class="des-ud">'+esc(c.ud||'')+'</div>'
+        +'<div class="des-rend mono">'+rend+'</div>'
+        +'<div class="des-pr mono">'+fmt(c.pr)+'</div>'
+        +'<div class="des-imp mono">'+fmt(imp)+'</div>'
+        +'</div>';
+    });
+  });
+  h+='<div class="des-total">'
+    +'<span style="font-size:10px;color:var(--muted);">Precio unitario</span>'
+    +'<span class="mono" style="font-size:13px;font-weight:600;">'+fmt(partida.pr||0)+' €</span>'
+    +'</div>';
+  d.innerHTML=h;
+}
 
 function rBIM(){
   var d=el('dc');if(!selP||!curBC){d.innerHTML='<div class="ed"><p>Selecciona una partida</p></div>';return;}
@@ -1343,7 +1669,22 @@ async function initXeokit(){
       },{passive:true});
     }
     if(window.innerWidth<900||'ontouchstart' in window)xscene.canvas.resolutionScale=0.75;
-    window.addEventListener('resize',function(){if(xv)xv.scene.canvas.resolutionScale=window.devicePixelRatio>1?0.75:1.0;});
+    // ResizeObserver: redimensiona el canvas cuando cambia el contenedor
+    var _resizeTimer=null;
+    var _ro=new ResizeObserver(function(){
+      clearTimeout(_resizeTimer);
+      _resizeTimer=setTimeout(function(){
+        if(!xv)return;
+        var p=el('p3d');if(!p)return;
+        var cw=p.clientWidth,ch=p.clientHeight;
+        if(cw<10||ch<10)return;
+        var cv=el('cv');
+        cv.style.width=cw+'px';cv.style.height=ch+'px';
+        cv.width=cw;cv.height=ch;
+        xv.scene.canvas.resolutionScale=window.devicePixelRatio>1?0.75:1.0;
+      },60);
+    });
+    _ro.observe(el('p3d'));
     st3('Visor listo','ok');
   }catch(e){st3('Error visor: '+e.message,'');console.error('[XK]',e);}
 }
@@ -1475,9 +1816,9 @@ function hlPart(code,BC){
   );
   // Ratio del grupo respecto al modelo total
   var ratio = size / (modelSize||1);
-  // fitFactor entre 0.3 (zoom in cercano) y 0.8 (más alejado)
+  // fitFactor entre 0.5 (zoom in) y 0.8 (más alejado)
   // Ratio pequeño → elementos pequeños → zoom más cercano
-  var fit = Math.min(0.8, Math.max(0.3, ratio * 1.2 + 0.25));
+  var fit = Math.min(0.8, Math.max(0.5, ratio * 1.2 + 0.25));
 
   xv.cameraFlight.flyTo({
     aabb: [minX,minY,minZ,maxX,maxY,maxZ],
@@ -1537,8 +1878,11 @@ function toggleGhost(){
 
 function showHC(name,partida,extra){
   var hc=el('hc');if(!hc)return;
-  el('hct').textContent=name||'—';
-  if(el('hcp'))el('hcp').textContent=(partida||'')+(extra?' · '+extra:'');
+  // Mostrar solo código de partida + descripción corta
+  var desc='';
+  if(partida&&curBC&&curBC.c[partida])desc=curBC.c[partida].desc||'';
+  el('hct').textContent=(partida||name||'—')+(desc?' · '+desc:'');
+  if(el('hcp'))el('hcp').textContent='';
   hc.style.display='block';
   clearTimeout(hc._t);hc._t=setTimeout(function(){hc.style.display='none';},4000);
 }
@@ -2022,7 +2366,14 @@ function toggleMeasure(){
       var isOpen=colState[id]==='open';
       col.classList.toggle('collapsed',!isOpen);
       var btn=col.querySelector('.col-tog');
-      if(btn) btn.textContent=isOpen?'‹':'›';
+      if(btn){
+        // col3 está a la derecha: flecha apunta izquierda cuando abierta, derecha cuando colapsada
+        // col1/col2 están a la izquierda: flecha apunta derecha cuando abierta, izquierda cuando colapsada — no, al revés
+        // col1: abierta → ‹ cierra hacia izq. Colapsada → › abre hacia der. ✓
+        // col3: abierta → › cierra hacia der. Colapsada → ‹ abre hacia izq.
+        if(id==='col3') btn.textContent=isOpen?'›':'‹';
+        else btn.textContent=isOpen?'‹':'›';
+      }
     });
 
     // Notify xeokit of resize
@@ -2032,6 +2383,15 @@ function toggleMeasure(){
       },100);
     }
   }
+
+  // Toggle códigos en árbol
+  on('bn-showcodes','click',function(e){
+    e.stopPropagation();
+    if(!curBC)return;
+    curBC._showCodes=!curBC._showCodes;
+    el('bn-showcodes').classList.toggle('a', !!curBC._showCodes);
+    renderTree();
+  });
 
   // Toggle buttons
   document.querySelectorAll('.col-tog').forEach(function(btn){
@@ -2109,7 +2469,6 @@ function toggleMeasure(){
 // ── EVENTOS ───────────────────────────────────────────────────────────────
 // Navegación
 on('bh2','click',loadHome);
-on('bh3','click',loadHome);
 on('bp3','click',function(){if(curPJ)loadProj(curPJ);});
 on('bn-dp','click',function(){
   if(!confirm('¿Eliminar esta obra y todas sus versiones?'))return;
@@ -2243,7 +2602,6 @@ on('bn-clr','click',function(){
 on('ms-iso','click',function(){
   if(!selMs.size)return;
   hlMulti();
-  // Aislar
   if(xv&&xscene&&vsHl.length>0){
     xscene.setObjectsVisible(xscene.objectIds,false);
     vsHl.forEach(function(g){var o=xscene.objects[g];if(o)o.visible=true;});
@@ -2253,7 +2611,6 @@ on('ms-iso','click',function(){
 on('ms-clr','click',function(){
   selMs.clear();
   document.querySelectorAll('.tn-cb').forEach(function(c){c.checked=false;c.indeterminate=false;});
-  document.querySelectorAll('.tn.ms-sel').forEach(function(n){n.classList.remove('ms-sel');});
   updateMsBar();
 });
 on('bn-slice','click',toggleSlice);
@@ -2285,21 +2642,9 @@ on('bn-types','click',function(){
     this.classList.remove('a');
   }
 });
-on('bn-export','click',function(){if(curVR)exportVersion(curVR);});
-on('bn-dark-p','click',function(){
-  var d=!document.documentElement.classList.contains('dark');
-  document.documentElement.classList.toggle('dark',d);
-  localStorage.setItem('bc3m-dark',d?'1':'0');
-  if(window.xv&&window.xv.scene)
-    window.xv.scene.backgroundColor=d?[0.06,0.07,0.09]:[0.94,0.93,0.91];
-});
-on('bn-dark-v','click',function(){
-  var d=!document.documentElement.classList.contains('dark');
-  document.documentElement.classList.toggle('dark',d);
-  localStorage.setItem('bc3m-dark',d?'1':'0');
-  if(window.xv&&window.xv.scene)
-    window.xv.scene.backgroundColor=d?[0.06,0.07,0.09]:[0.94,0.93,0.91];
-});
+on('bn-export','click',function(){if(curVR){exportVersion(curVR);hideM('m-archivos');}});
+on('bn-dark-p','click',function(){window.applyDark(!window._dark);});
+on('bn-dark-v','click',function(){window.applyDark(!window._dark);});
 
 // Import .bc3m
 on('fimport-home','change',function(){if(this.files[0])importBc3m(this.files[0]);this.value='';});
@@ -2313,7 +2658,12 @@ document.querySelectorAll('.tab').forEach(function(t){
 });
 
 // Búsqueda árbol
-on('si','input',function(){filterTree(this.value);});
+on('bn-archivos','click',function(){showM('m-archivos');});
+on('bn-can-archivos','click',function(){hideM('m-archivos');});
+// Close archivos modal when a file input is triggered
+['fxkt','fmeta','fbc3r'].forEach(function(id){
+  on(id,'change',function(){hideM('m-archivos');});
+});
 
 
 // ── FILTROS POR CATEGORÍA ─────────────────────────────────────────────────
@@ -2575,18 +2925,23 @@ function dbG_all(store, cb){
   var _dark = localStorage.getItem('bc3m-dark')==='1';
   function applyDark(dark){
     _dark=dark;
+    window._dark=dark;
     document.documentElement.classList.toggle('dark',dark);
     localStorage.setItem('bc3m-dark',dark?'1':'0');
-    // Toggle icons
-    var id=document.getElementById('icon-dark');
-    var il=document.getElementById('icon-light');
-    if(id)id.style.display=dark?'none':'block';
-    if(il)il.style.display=dark?'block':'none';
+    // Toggle icons en los tres botones (home, proyecto, visor)
+    ['','p','v'].forEach(function(suffix){
+      var s=suffix?'-'+suffix:'';
+      var id=document.getElementById('icon-dark'+s);
+      var il=document.getElementById('icon-light'+s);
+      if(id)id.style.display=dark?'none':'inline';
+      if(il)il.style.display=dark?'inline':'none';
+    });
     // Update xeokit background if viewer active
     if(window.xv&&window.xv.scene){
       window.xv.scene.backgroundColor=dark?[0.06,0.07,0.09]:[0.94,0.93,0.91];
     }
   }
+  window.applyDark=applyDark;
   applyDark(_dark);
   on('bn-dark','click',function(){applyDark(!_dark);});
 on('bn-backup','click',exportBackup);
@@ -2624,6 +2979,232 @@ on('f-restore','change',function(){
     navigator.serviceWorker.register('./sw.js').catch(function(e){console.warn('SW:',e);});
   }
 })();
+
+// ── BUSCADOR ─────────────────────────────────────────────────────────────
+(function(){
+  var _idx=[];       // índice plano
+  var _q='';
+  var _filter='all';
+  var _focus=0;
+  var _results=[];
+
+  // Normaliza texto para búsqueda insensible a tildes/mayúsculas
+  function norm(s){
+    return String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+  }
+
+  // Construye el índice desde curBC
+  function buildIdx(){
+    _idx=[];
+    if(!curBC)return;
+    var BC=curBC;
+    // Mapa de padres para construir rutas
+    var parentOf={};
+    Object.keys(BC.h).forEach(function(par){
+      (BC.h[par]||[]).forEach(function(ch){parentOf[ch]=par;});
+    });
+    function getPath(code){
+      var parts=[];var c=code;
+      while(parentOf[c]){c=parentOf[c];var d=BC.c[c];parts.unshift(d?d.desc||c:c);}
+      return parts;
+    }
+    // Solo indexar lo que está en el árbol (caps y partidas), no descompuestos
+    var enArbol={};
+    Object.keys(BC.h).forEach(function(par){
+      enArbol[par]=true;
+      (BC.h[par]||[]).forEach(function(ch){enArbol[ch]=true;});
+    });
+    Object.keys(BC.c).forEach(function(code){
+      if(!enArbol[code])return; // excluir descompuestos
+      var c=BC.c[code];
+      var kids=(BC.h[code]||[]).length>0;
+      var has3d=(BC.g[code]||[]).length>0;
+      var hasPliego=!!(BC.t[code]);
+      var type=kids?'cap':'par';
+      _idx.push({
+        code:code,
+        desc:c.desc||'',
+        ud:c.ud||'',
+        pr:c.pr||0,
+        type:type,
+        has3d:has3d,
+        hasPliego:hasPliego,
+        pliego:BC.t[code]||'',
+        path:getPath(code),
+        _n:norm(code)+' '+norm(c.desc)+' '+norm(c.ud)+' '+norm(BC.t[code]||'')
+      });
+    });
+  }
+
+  function highlight(text,q){
+    if(!q)return esc(text);
+    var nText=norm(text),nQ=norm(q);
+    var result='',i=0;
+    while(i<text.length){
+      var pos=nText.indexOf(nQ,i);
+      if(pos<0){result+=esc(text.slice(i));break;}
+      result+=esc(text.slice(i,pos))+'<mark>'+esc(text.slice(pos,pos+q.length))+'</mark>';
+      i=pos+q.length;
+    }
+    return result;
+  }
+
+  function runSearch(){
+    var q=(_q||'').trim();
+    var nq=norm(q);
+    var res=_idx.filter(function(item){
+      if(_filter==='cap'&&item.type!=='cap')return false;
+      if(_filter==='par'&&item.type!=='par')return false;
+      if(_filter==='3d'&&!item.has3d)return false;
+      if(_filter==='pl'&&!item.hasPliego)return false;
+      if(!nq)return true;
+      return item._n.includes(nq);
+    });
+    // Ordenar: primero coincidencias en código, luego en descripción
+    if(nq){
+      res.sort(function(a,b){
+        var ac=norm(a.code).includes(nq)?0:1;
+        var bc=norm(b.code).includes(nq)?0:1;
+        return ac-bc;
+      });
+    }
+    _results=res.slice(0,40);
+    _focus=0;
+    renderResults(q);
+  }
+
+  function renderResults(q){
+    var rDiv=el('srch-results');
+    var stats=el('srch-stats');
+    if(!_results.length){
+      rDiv.innerHTML='<div id="srch-empty">'+(q?'Sin resultados para <strong>'+esc(q)+'</strong>':'Escribe para buscar partidas, códigos o materiales…')+'</div>';
+      stats.innerHTML='';
+      return;
+    }
+    stats.innerHTML='<b>'+_results.length+(_results.length===40?'+':'')+' resultado'+(+_results.length!==1?'s':'')+'</b>';
+    // Agrupar caps vs partidas
+    var caps=_results.filter(function(r){return r.type==='cap';});
+    var pars=_results.filter(function(r){return r.type==='par';});
+    var html='';
+    var allItems=[];
+    if(caps.length){
+      html+='<div class="srch-glabel">Capítulos / subcapítulos</div>';
+      caps.forEach(function(r){html+=renderItem(r,q);allItems.push(r);});
+    }
+    if(pars.length){
+      html+='<div class="srch-glabel">Partidas</div>';
+      pars.forEach(function(r){html+=renderItem(r,q);allItems.push(r);});
+    }
+    rDiv.innerHTML=html;
+    // Bind clicks
+    rDiv.querySelectorAll('.sri').forEach(function(row,i){
+      row.addEventListener('click',function(){selectResult(allItems[i]);});
+      row.addEventListener('mouseenter',function(){setFocus(i);});
+    });
+    setFocus(_focus);
+  }
+
+  function getSnippet(text, q, ctxLen){
+    if(!text||!q)return '';
+    ctxLen=ctxLen||60;
+    var nText=norm(text), nQ=norm(q);
+    var pos=nText.indexOf(nQ);
+    if(pos<0)return '';
+    var start=Math.max(0,pos-ctxLen);
+    var end=Math.min(text.length,pos+q.length+ctxLen);
+    var snippet=(start>0?'…':'')+text.slice(start,end)+(end<text.length?'…':'');
+    return snippet;
+  }
+
+  function renderItem(r,q){
+    var pathHtml=r.path.length?r.path.map(function(p){return '<span>'+esc(p)+'</span>';}).join('<span class="sx">›</span>'):'';
+    var tags='';
+    if(r.ud)tags+='<span class="stag stag-ud">'+esc(r.ud)+'</span>';
+    if(r.has3d)tags+='<span class="stag stag-3d">3D</span>';
+    if(r.hasPliego)tags+='<span class="stag stag-pl">Pliego</span>';
+    var priceHtml=(r.type==='par')&&r.pr?fmt(r.pr)+' €':'';
+    // Snippet: solo si el match está en el pliego (no en desc/code)
+    var snippetHtml='';
+    var nq=norm(q);
+    if(q&&r.pliego&&norm(r.pliego).indexOf(nq)>=0&&norm(r.desc).indexOf(nq)<0&&norm(r.code).indexOf(nq)<0){
+      var snip=getSnippet(r.pliego,q,55);
+      if(snip)snippetHtml='<div class="sri-snippet">'+highlight(snip,q)+'</div>';
+    }
+    return '<div class="sri" data-code="'+esc(r.code)+'">'
+      +'<div class="sri-code">'+highlight(r.code,q)+'</div>'
+      +'<div class="sri-body">'
+        +'<div class="sri-desc">'+highlight(r.desc||r.code,q)+'</div>'
+        +snippetHtml
+        +'<div class="sri-meta">'
+          +(pathHtml?'<span class="sri-path">'+pathHtml+'</span>':'')
+          +tags
+        +'</div>'
+      +'</div>'
+      +(priceHtml?'<div class="sri-price">'+priceHtml+'</div>':'')
+      +'<svg class="sri-arr" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'
+      +'</div>';
+  }
+
+  function selectResult(item){
+    if(!item)return;
+    closeSearch();
+    // Navegar al nodo en el árbol
+    selP=item.code;
+    // Expandir árbol hasta ese nodo
+    var node=document.querySelector('.tn[data-code="'+item.code+'"]');
+    if(node){
+      // Expandir todos los ancestros
+      var p=node.parentElement;
+      while(p){
+        if(p.classList&&p.classList.contains('tc')){p.classList.add('o');var tog=p.previousElementSibling;if(tog)tog.querySelector&&tog.querySelector('.tg')&&tog.querySelector('.tg').classList.add('o');}
+        p=p.parentElement;
+      }
+      document.querySelectorAll('.tn').forEach(function(n){n.classList.remove('s');});
+      node.classList.add('s');
+      node.scrollIntoView({block:'center',behavior:'smooth'});
+    }
+    renderDet();
+    if(xv&&curBC)hlPart(item.code,curBC);
+  }
+
+  function openSearch(){
+    if(!curBC){alert('Abre una versión con BC3 primero.');return;}
+    buildIdx();
+    el('srch-overlay').style.display='block';
+    el('srch-q').value='';_q='';_filter='all';
+    el('srch-filters').querySelectorAll('.sf').forEach(function(b){b.classList.toggle('on',b.dataset.f==='all');});
+    runSearch();
+    setTimeout(function(){el('srch-q').focus();},50);
+  }
+
+  function closeSearch(){
+    el('srch-overlay').style.display='none';
+  }
+
+  // Botón en col1
+  on('bn-search','click',openSearch);
+
+  // Botón cerrar X
+  on('srch-close','click',closeSearch);
+
+  el('srch-overlay').addEventListener('click',function(e){if(e.target===this)closeSearch();});
+
+  // Input
+  on('srch-q','input',function(){_q=this.value;runSearch();});
+
+  // Filtros
+  el('srch-filters').querySelectorAll('.sf').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      _filter=this.dataset.f;
+      el('srch-filters').querySelectorAll('.sf').forEach(function(b){b.classList.remove('on');});
+      this.classList.add('on');
+      runSearch();
+    });
+  });
+
+  // Reconstruir índice al cargar nuevo BC3
+  var _origRender=renderTree;
+  renderTree=function(){_origRender();if(el('srch-overlay').style.display==='block'){buildIdx();runSearch();}else{_idx=[];}};})();
 
 </script>
 </body>
