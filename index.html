@@ -443,6 +443,8 @@ html.dark .tn.ms-sel{background:var(--acc-bg);}
 #ms-bar{display:none;flex-shrink:0;padding:8px 10px;background:var(--acc-bg);border-top:1px solid var(--acc-bd);align-items:center;gap:8px;}
 #ms-bar.visible{display:flex;}
 html.dark #ms-bar{background:var(--acc-bg);border-color:var(--acc-bd);}
+html.dark .tn-cb{background:#2a2a2a!important;border-color:#555!important;}
+html.dark .tn-cb[data-checked="1"]{background:var(--acc)!important;border-color:var(--acc)!important;}
 
 /* ── BUSCADOR MODAL ───────────────────────────────────────────────────── */
 #srch-overlay{
@@ -1223,25 +1225,35 @@ function renderTree(){
     // Children
     var cw=document.createElement('div');cw.className='tc';
     kids.forEach(function(k){cw.appendChild(mkN(k,dep+1));});
-    // Checkbox — usa el slot de .tbim (flex-shrink:0, margin-right:4px) que siempre fue visible
-    var cb=document.createElement('input');
-    cb.type='checkbox';cb.className='tn-cb';
+    // Checkbox custom — div totalmente controlado, no depende de CSS externo
+    var cb=document.createElement('div');
+    cb.className='tn-cb';
+    cb.dataset.checked='0';
+    cb.style.cssText='flex-shrink:0;width:14px;height:14px;min-width:14px;min-height:14px;border:1.5px solid #aaa;border-radius:3px;background:#fff;margin-left:auto;margin-right:6px;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;justify-content:center;';
     cb.title='Seleccionar';
-    cb.style.cssText='display:block;width:13px;height:13px;flex-shrink:0;margin-right:4px;cursor:pointer;accent-color:var(--acc);';
-    var cbWrap=document.createElement('div');
-    cbWrap.className='tbim';
-    cbWrap.style.cssText='width:auto;height:auto;background:none;border-radius:0;display:flex;align-items:center;';
-    cbWrap.appendChild(cb);
-    row.appendChild(cbWrap);
-    cb.addEventListener('click',function(e){e.stopPropagation();});
-    cb.addEventListener('change',function(e){
+    row.appendChild(cb);
+    cb.addEventListener('click',function(e){
       e.stopPropagation();
+      var checked=cb.dataset.checked==='1';
+      checked=!checked;
+      cb.dataset.checked=checked?'1':'0';
+      cb.style.background=checked?'var(--acc)':'#fff';
+      cb.style.borderColor=checked?'var(--acc)':'#aaa';
+      cb.innerHTML=checked?'<svg viewBox="0 0 10 10" style="width:9px;height:9px;fill:none;stroke:#fff;stroke-width:2"><polyline points="1.5,5 4,7.5 8.5,2"/></svg>':'';
+      // Indeterminate visual
       if(!hk){
-        if(cb.checked)selMs.add(code); else selMs.delete(code);
+        if(checked)selMs.add(code); else selMs.delete(code);
       } else {
         var leaves=getAllLeaves(code,BC);
-        leaves.forEach(function(lc){if(cb.checked)selMs.add(lc); else selMs.delete(lc);});
-        cw.querySelectorAll('.tn-cb').forEach(function(cc){cc.checked=cb.checked;cc.indeterminate=false;});
+        leaves.forEach(function(lc){if(checked)selMs.add(lc); else selMs.delete(lc);});
+        // Actualizar hijos visualmente
+        row.parentElement&&row.parentElement.querySelector('.tc')&&
+        row.parentElement.querySelector('.tc').querySelectorAll('.tn-cb').forEach(function(cc){
+          cc.dataset.checked=checked?'1':'0';
+          cc.style.background=checked?'var(--acc)':'#fff';
+          cc.style.borderColor=checked?'var(--acc)':'#aaa';
+          cc.innerHTML=checked?'<svg viewBox="0 0 10 10" style="width:9px;height:9px;fill:none;stroke:#fff;stroke-width:2"><polyline points="1.5,5 4,7.5 8.5,2"/></svg>':'';
+        });
       }
       updateMsBar();
       updateParentCb(row);
@@ -1311,10 +1323,17 @@ function updateParentCb(row){
   if(!parentCb)return;
   var allCbs=parentTc.querySelectorAll('.tn-cb');
   var checked=0,total=allCbs.length;
-  allCbs.forEach(function(c){if(c.checked&&!c.indeterminate)checked++;});
-  if(checked===0){parentCb.checked=false;parentCb.indeterminate=false;}
-  else if(checked===total){parentCb.checked=true;parentCb.indeterminate=false;}
-  else{parentCb.checked=false;parentCb.indeterminate=true;}
+  allCbs.forEach(function(c){if(c.dataset.checked==='1')checked++;});
+  if(checked===0){
+    parentCb.dataset.checked='0';parentCb.style.background='#fff';parentCb.style.borderColor='#aaa';
+    parentCb.innerHTML='';
+  } else if(checked===total){
+    parentCb.dataset.checked='1';parentCb.style.background='var(--acc)';parentCb.style.borderColor='var(--acc)';
+    parentCb.innerHTML='<svg viewBox="0 0 10 10" style="width:9px;height:9px;fill:none;stroke:#fff;stroke-width:2"><polyline points="1.5,5 4,7.5 8.5,2"/></svg>';
+  } else {
+    parentCb.dataset.checked='0';parentCb.style.background='var(--acc)';parentCb.style.borderColor='var(--acc)';
+    parentCb.innerHTML='<svg viewBox="0 0 10 10" style="width:6px;height:6px;fill:#fff"><rect x="1" y="4" width="8" height="2"/></svg>';
+  }
   updateParentCb(parentRow);
 }
 
@@ -2611,7 +2630,9 @@ on('ms-iso','click',function(){
 });
 on('ms-clr','click',function(){
   selMs.clear();
-  document.querySelectorAll('.tn-cb').forEach(function(c){c.checked=false;c.indeterminate=false;});
+  document.querySelectorAll('.tn-cb').forEach(function(c){
+    c.dataset.checked='0';c.style.background='#fff';c.style.borderColor='#aaa';c.innerHTML='';
+  });
   updateMsBar();
 });
 on('bn-slice','click',toggleSlice);
