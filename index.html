@@ -2195,39 +2195,29 @@ function initSectionPlugin(){
 
 function _sbDetectBuildingAngle(){
   if(!xscene)return 0;
-  var objs=xscene.objects;
-  var bins=new Array(180).fill(0);
-  var count=0;
-  Object.keys(objs).forEach(function(id){
-    var o=objs[id];
-    if(!o||!o.aabb)return;
+  // OBB mínimo: buscar el ángulo en [0,90°] que minimiza el área del bounding box
+  var pts=[];
+  Object.keys(xscene.objects).forEach(function(id){
+    var o=xscene.objects[id];if(!o||!o.aabb)return;
     var a=o.aabb;
-    var dx=a[3]-a[0],dz=a[5]-a[2];
-    if(Math.max(dx,dz)<1.0)return; // solo elementos >1m
-    var ang=Math.atan2(dz,dx)*180/Math.PI;
-    if(ang<0)ang+=180;
-    if(ang>=180)ang-=180;
-    bins[Math.round(ang)%180]+=Math.sqrt(dx*dx+dz*dz);
-    count++;
+    pts.push([a[0],a[2]]);pts.push([a[3],a[5]]);
   });
-  if(count<10){
-    // Fallback: usar ángulo del AABB global del modelo
-    var a=xscene.aabb;
-    return Math.atan2(a[5]-a[2],a[3]-a[0]);
+  if(pts.length<4)return 0;
+  var bestAngle=0,bestArea=Infinity;
+  for(var deg=0;deg<90;deg+=0.5){
+    var t=deg*Math.PI/180,cosT=Math.cos(t),sinT=Math.sin(t);
+    var uMin=Infinity,uMax=-Infinity,vMin=Infinity,vMax=-Infinity;
+    for(var i=0;i<pts.length;i++){
+      var u=pts[i][0]*cosT+pts[i][1]*sinT;
+      var v=-pts[i][0]*sinT+pts[i][1]*cosT;
+      if(u<uMin)uMin=u;if(u>uMax)uMax=u;
+      if(v<vMin)vMin=v;if(v>vMax)vMax=v;
+    }
+    var area=(uMax-uMin)*(vMax-vMin);
+    if(area<bestArea){bestArea=area;bestAngle=deg;}
   }
-  // Suavizar con ventana de ±5° y encontrar pico
-  var smooth=new Array(180).fill(0);
-  for(var i=0;i<180;i++){
-    for(var d=-5;d<=5;d++) smooth[i]+=bins[(i+d+180)%180];
-  }
-  var maxBin=0,maxVal=0;
-  smooth.forEach(function(v,i){if(v>maxVal){maxVal=v;maxBin=i;}});
-  // Centroide del pico ±5°
-  var sw=0,sa=0;
-  for(var d=-5;d<=5;d++){var b=(maxBin+d+180)%180;sw+=smooth[b];sa+=smooth[b]*b;}
-  var angle=(sa/sw)*Math.PI/180;
-  console.log('[SB] eje dominante: '+Math.round(angle*180/Math.PI)+'° ('+count+' objetos)');
-  return angle;
+  console.log('[SB] OBB angulo:',bestAngle,'°');
+  return bestAngle*Math.PI/180;
 }
 
 // Rota un vector [x,z] por ángulo θ en plano XZ
