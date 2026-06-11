@@ -688,32 +688,13 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <div id="pg" style="position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0%;transition:width .3s;display:none;z-index:20;"></div>
         <!-- Sección -->
         <!-- Caja de sección -->
-        <div id="secbox-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:240px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div id="secbox-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:8px 12px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:180px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
             <span style="font-size:11px;font-weight:700;color:#374151;">Caja de sección</span>
+            <button id="sb-reset" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Reset</button>
             <button id="secbox-off" style="border:none;background:none;cursor:pointer;color:#9ca3af;padding:0;line-height:1;font-size:16px;">×</button>
           </div>
-          <!-- Eje X -->
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-            <span style="font-size:10px;font-weight:700;color:#e74c3c;width:14px;">X</span>
-            <input type="range" id="sb-xmin" min="0" max="100" value="0"   style="flex:1;accent-color:#e74c3c;height:3px;">
-            <input type="range" id="sb-xmax" min="0" max="100" value="100" style="flex:1;accent-color:#e74c3c;height:3px;">
-          </div>
-          <!-- Eje Y -->
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-            <span style="font-size:10px;font-weight:700;color:#27ae60;width:14px;">Y</span>
-            <input type="range" id="sb-ymin" min="0" max="100" value="0"   style="flex:1;accent-color:#27ae60;height:3px;">
-            <input type="range" id="sb-ymax" min="0" max="100" value="100" style="flex:1;accent-color:#27ae60;height:3px;">
-          </div>
-          <!-- Eje Z -->
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:10px;font-weight:700;color:#2980b9;width:14px;">Z</span>
-            <input type="range" id="sb-zmin" min="0" max="100" value="0"   style="flex:1;accent-color:#2980b9;height:3px;">
-            <input type="range" id="sb-zmax" min="0" max="100" value="100" style="flex:1;accent-color:#2980b9;height:3px;">
-          </div>
-          <div style="display:flex;gap:6px;margin-top:8px;">
-            <button id="sb-reset" class="btn" style="flex:1;font-size:10px;padding:3px 0;height:auto;">Reset</button>
-          </div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:4px;">Arrastra las caras de la caja para seccionar</div>
         </div>
         <!-- Plantas -->
         <div id="storeys-panel" style="display:none;position:absolute;top:44px;right:8px;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:0;z-index:30;min-width:200px;max-height:360px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15);">
@@ -1598,11 +1579,12 @@ async function initXeokit(){
       });
     }
     xscene=xv.scene;
+    _sbInitCanvasEvents();
     // Material fantasma: gris claro, 10% opacidad
-    xscene.xrayMaterial.fillColor=[0.7,0.7,0.7];
-    xscene.xrayMaterial.fillAlpha=0.2;
-    xscene.xrayMaterial.edgeColor=[0.5,0.5,0.5];
-    xscene.xrayMaterial.edgeAlpha=0.15;
+    xscene.xrayMaterial.fillColor=[0.85,0.85,0.85];
+    xscene.xrayMaterial.fillAlpha=0.1;
+    xscene.xrayMaterial.edgeColor=[0.6,0.6,0.6];
+    xscene.xrayMaterial.edgeAlpha=0.2;
     xscene.xrayMaterial.fill=true;
     xscene.xrayMaterial.edges=true;
     xv.cameraControl.navMode='orbit';
@@ -2151,9 +2133,15 @@ async function applyMetaFile(file){
 
 // ── SECCIÓN, PLANTAS Y MEDICIÓN ─────────────────────────────────────────
 var xSection=null, xSectionPlugin=null, xMeasurePlugin=null;
-// ── CAJA DE SECCIÓN ──────────────────────────────────────────────────────
-var _sbPlanes={xmin:null,xmax:null,ymin:null,ymax:null,zmin:null,zmax:null};
-var _sbActive=false;
+// ── CAJA DE SECCIÓN FÍSICA ───────────────────────────────────────────────
+var _sb={
+  active:false,
+  planes:{xmin:null,xmax:null,ymin:null,ymax:null,zmin:null,zmax:null},
+  meshWire:null, meshFaces:[],
+  // Caja actual en coordenadas mundo
+  box:{xmin:0,xmax:1,ymin:0,ymax:1,zmin:0,zmax:1},
+  drag:{active:false,face:null,startPos:null,startVal:0,axis:null,sign:0}
+};
 
 function initSectionPlugin(){
   if(xSectionPlugin)return;
@@ -2164,63 +2152,189 @@ function initSectionPlugin(){
 
 function sbOpen(){
   if(!xv||!xscene)return;
-  initSectionPlugin();
-  if(!xSectionPlugin)return;
+  initSectionPlugin();if(!xSectionPlugin)return;
+  if(_sb.active)sbClose();
   var aabb=xscene.aabb;
-  var minX=aabb[0],maxX=aabb[3],minY=aabb[1],maxY=aabb[4],minZ=aabb[2],maxZ=aabb[5];
-  // Destruir planos anteriores
-  Object.keys(_sbPlanes).forEach(function(k){
-    if(_sbPlanes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sbPlanes[k]=null;
-  });
-  // Crear 6 planos con margen mínimo
-  _sbPlanes.xmin=xSectionPlugin.createSectionPlane({id:'sb_xmin',pos:[minX,0,0],dir:[1,0,0]});
-  _sbPlanes.xmax=xSectionPlugin.createSectionPlane({id:'sb_xmax',pos:[maxX,0,0],dir:[-1,0,0]});
-  _sbPlanes.ymin=xSectionPlugin.createSectionPlane({id:'sb_ymin',pos:[0,minY,0],dir:[0,1,0]});
-  _sbPlanes.ymax=xSectionPlugin.createSectionPlane({id:'sb_ymax',pos:[0,maxY,0],dir:[0,-1,0]});
-  _sbPlanes.zmin=xSectionPlugin.createSectionPlane({id:'sb_zmin',pos:[0,0,minZ],dir:[0,0,1]});
-  _sbPlanes.zmax=xSectionPlugin.createSectionPlane({id:'sb_zmax',pos:[0,0,maxZ],dir:[0,0,-1]});
-  // Reset sliders
-  ['xmin','xmax','ymin','ymax','zmin','zmax'].forEach(function(k){
-    var sl=el('sb-'+k);if(sl)sl.value=k.endsWith('max')?100:0;
-  });
-  _sbActive=true;
+  _sb.box={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
+  _sbCreatePlanes();
+  _sbCreateMesh();
+  _sb.active=true;
   el('secbox-panel').style.display='block';
   el('bn-secbox').classList.add('a');
 }
 
 function sbClose(){
-  Object.keys(_sbPlanes).forEach(function(k){
-    if(_sbPlanes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sbPlanes[k]=null;
+  // Destruir planos
+  Object.keys(_sb.planes).forEach(function(k){
+    if(_sb.planes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sb.planes[k]=null;
   });
-  _sbActive=false;
+  // Destruir meshes
+  if(_sb.meshWire){try{_sb.meshWire.destroy();}catch(e){}}_sb.meshWire=null;
+  _sb.meshFaces.forEach(function(m){try{m.destroy();}catch(e){}});
+  _sb.meshFaces=[];
+  _sb.active=false;
   el('secbox-panel').style.display='none';
   el('bn-secbox').classList.remove('a');
 }
 
-function sbUpdate(){
-  if(!xscene||!xSectionPlugin)return;
-  var aabb=xscene.aabb;
-  function lerp(a,b,t){return a+(b-a)*t;}
-  var vals={
-    xmin:lerp(aabb[0],aabb[3],(el('sb-xmin').value)/100),
-    xmax:lerp(aabb[0],aabb[3],(el('sb-xmax').value)/100),
-    ymin:lerp(aabb[1],aabb[4],(el('sb-ymin').value)/100),
-    ymax:lerp(aabb[1],aabb[4],(el('sb-ymax').value)/100),
-    zmin:lerp(aabb[2],aabb[5],(el('sb-zmin').value)/100),
-    zmax:lerp(aabb[2],aabb[5],(el('sb-zmax').value)/100),
+function _sbCreatePlanes(){
+  var b=_sb.box;
+  var defs={
+    xmin:{pos:[b.xmin,0,0],dir:[1,0,0]},
+    xmax:{pos:[b.xmax,0,0],dir:[-1,0,0]},
+    ymin:{pos:[0,b.ymin,0],dir:[0,1,0]},
+    ymax:{pos:[0,b.ymax,0],dir:[0,-1,0]},
+    zmin:{pos:[0,0,b.zmin],dir:[0,0,1]},
+    zmax:{pos:[0,0,b.zmax],dir:[0,0,-1]}
   };
-  if(_sbPlanes.xmin)_sbPlanes.xmin.pos=[vals.xmin,0,0];
-  if(_sbPlanes.xmax)_sbPlanes.xmax.pos=[vals.xmax,0,0];
-  if(_sbPlanes.ymin)_sbPlanes.ymin.pos=[0,vals.ymin,0];
-  if(_sbPlanes.ymax)_sbPlanes.ymax.pos=[0,vals.ymax,0];
-  if(_sbPlanes.zmin)_sbPlanes.zmin.pos=[0,0,vals.zmin];
-  if(_sbPlanes.zmax)_sbPlanes.zmax.pos=[0,0,vals.zmax];
+  Object.keys(defs).forEach(function(k){
+    if(_sb.planes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sb.planes[k]=null;
+    _sb.planes[k]=xSectionPlugin.createSectionPlane({id:'sb_'+k,pos:defs[k].pos,dir:defs[k].dir});
+  });
+}
+
+function _sbCreateMesh(){
+  var XK=window._XK;if(!XK)return;
+  var b=_sb.box;
+  var cx=(b.xmin+b.xmax)/2,cy=(b.ymin+b.ymax)/2,cz=(b.zmin+b.zmax)/2;
+  var sx=b.xmax-b.xmin,sy=b.ymax-b.ymin,sz=b.zmax-b.zmin;
+  // Destruir meshes anteriores
+  if(_sb.meshWire){try{_sb.meshWire.destroy();}catch(e){}}_sb.meshWire=null;
+  _sb.meshFaces.forEach(function(m){try{m.destroy();}catch(e){}});_sb.meshFaces=[];
+  // Caja alámbrica — 12 aristas
+  if(XK.buildBoxLinesGeometry&&XK.VBOGeometry&&XK.Mesh&&XK.PhongMaterial){
+    try{
+      var wireGeo=new XK.VBOGeometry(xscene,XK.buildBoxLinesGeometry({xSize:sx/2,ySize:sy/2,zSize:sz/2}));
+      var wireMat=new XK.PhongMaterial(xscene,{emissive:[0.2,0.6,1],lineWidth:2});
+      _sb.meshWire=new XK.Mesh(xscene,{
+        id:'sb_wire',geometry:wireGeo,material:wireMat,
+        position:[cx,cy,cz],pickable:false,collidable:false,clippable:false
+      });
+    }catch(e){console.warn('[SB] wire mesh error:',e);}
+  }
+  // 6 caras transparentes pickables para drag
+  // Cada cara: quad centrado en la cara correspondiente
+  var faces=[
+    {id:'xmin',pos:[b.xmin,cy,cz],xs:sz/2,ys:sy/2,axis:'x',sign:-1},
+    {id:'xmax',pos:[b.xmax,cy,cz],xs:sz/2,ys:sy/2,axis:'x',sign: 1},
+    {id:'ymin',pos:[cx,b.ymin,cz],xs:sx/2,ys:sz/2,axis:'y',sign:-1},
+    {id:'ymax',pos:[cx,b.ymax,cz],xs:sx/2,ys:sz/2,axis:'y',sign: 1},
+    {id:'zmin',pos:[cx,cy,b.zmin],xs:sx/2,ys:sy/2,axis:'z',sign:-1},
+    {id:'zmax',pos:[cx,cy,b.zmax],xs:sx/2,ys:sy/2,axis:'z',sign: 1},
+  ];
+  if(XK.VBOGeometry&&XK.Mesh&&XK.PhongMaterial){
+    faces.forEach(function(f){
+      try{
+        // Geometría de quad (dos triángulos)
+        var vs,is=[0,1,2,0,2,3];
+        var hw=f.xs,hh=f.ys;
+        if(f.axis==='x'){vs=[0,-hh,-hw, 0,-hh,hw, 0,hh,hw, 0,hh,-hw];}
+        else if(f.axis==='y'){vs=[-hw,0,-hh, hw,0,-hh, hw,0,hh, -hw,0,hh];}
+        else{vs=[-hw,-hh,0, hw,-hh,0, hw,hh,0, -hw,hh,0];}
+        var geo=new XK.VBOGeometry(xscene,{
+          primitive:'triangles',
+          positions:vs,
+          indices:is,
+          normals:f.axis==='x'?[f.sign,0,0,f.sign,0,0,f.sign,0,0,f.sign,0,0]:
+                  f.axis==='y'?[0,f.sign,0,0,f.sign,0,0,f.sign,0,0,f.sign,0]:
+                               [0,0,f.sign,0,0,f.sign,0,0,f.sign,0,0,f.sign]
+        });
+        var mat=new XK.PhongMaterial(xscene,{
+          diffuse:[0.3,0.6,1],alpha:0.08,backfaces:true
+        });
+        var mesh=new XK.Mesh(xscene,{
+          id:'sb_face_'+f.id,geometry:geo,material:mat,
+          position:f.pos,pickable:true,collidable:false,clippable:false
+        });
+        mesh._sbFace=f.id;mesh._sbAxis=f.axis;mesh._sbSign=f.sign;
+        _sb.meshFaces.push(mesh);
+      }catch(e){console.warn('[SB] face mesh error:',e);}
+    });
+  }
+}
+
+function sbUpdate(){
+  var b=_sb.box;
+  // Mover planos
+  if(_sb.planes.xmin)_sb.planes.xmin.pos=[b.xmin,0,0];
+  if(_sb.planes.xmax)_sb.planes.xmax.pos=[b.xmax,0,0];
+  if(_sb.planes.ymin)_sb.planes.ymin.pos=[0,b.ymin,0];
+  if(_sb.planes.ymax)_sb.planes.ymax.pos=[0,b.ymax,0];
+  if(_sb.planes.zmin)_sb.planes.zmin.pos=[0,0,b.zmin];
+  if(_sb.planes.zmax)_sb.planes.zmax.pos=[0,0,b.zmax];
+  // Redibujar mesh
+  _sbCreateMesh();
+}
+
+// ── Drag sobre caras de la caja ─────────────────────────────────────────
+function _sbStartDrag(faceId,canvasPos){
+  var axis=faceId.charAt(0); // x, y, z
+  var sign=faceId.endsWith('max')?1:-1;
+  _sb.drag={active:true,face:faceId,startPos:canvasPos.slice(),startVal:_sb.box[faceId],axis:axis,sign:sign};
+}
+
+function _sbMoveDrag(canvasPos){
+  if(!_sb.drag.active)return;
+  var d=_sb.drag;
+  var dx=canvasPos[0]-d.startPos[0];
+  var dy=canvasPos[1]-d.startPos[1];
+  // Sensibilidad: pixels → metros según tamaño del modelo
+  var aabb=xscene.aabb;
+  var modelSpan=Math.max(aabb[3]-aabb[0],aabb[4]-aabb[1],aabb[5]-aabb[2])||1;
+  var sens=modelSpan/600; // 600px = recorrer el modelo completo
+  // Eje de movimiento: X→drag horizontal, Y→drag vertical invertido, Z→drag horizontal
+  var delta;
+  if(d.axis==='y') delta=-dy*sens;
+  else delta=dx*sens;
+  var newVal=d.startVal+delta;
+  // Clamp: no pasar del AABB ni cruzar la cara opuesta con margen mínimo
+  var minBound=d.axis==='x'?aabb[0]:(d.axis==='y'?aabb[1]:aabb[2]);
+  var maxBound=d.axis==='x'?aabb[3]:(d.axis==='y'?aabb[4]:aabb[5]);
+  var gap=0.1*(maxBound-minBound); // 10% mínimo entre caras
+  if(d.face.endsWith('min')){
+    var opposite=_sb.box[d.axis+'max'];
+    newVal=Math.max(minBound,Math.min(opposite-gap,newVal));
+  } else {
+    var opposite=_sb.box[d.axis+'min'];
+    newVal=Math.max(opposite+gap,Math.min(maxBound,newVal));
+  }
+  _sb.box[d.face]=newVal;
+  sbUpdate();
+}
+
+function _sbEndDrag(){_sb.drag.active=false;}
+
+// Hook en el pick/drag del canvas del viewer
+function _sbInitCanvasEvents(){
+  var cv=el('cv');if(!cv)return;
+  var dragging=false,dragFace=null,lastPos=null;
+  cv.addEventListener('mousedown',function(e){
+    if(!_sb.active)return;
+    var canvasPos=[e.offsetX,e.offsetY];
+    var hit=xv.scene.pick({canvasPos:canvasPos});
+    if(!hit||!hit.entity)return;
+    var eid=hit.entity.id;
+    if(eid&&eid.startsWith('sb_face_')){
+      var faceId=eid.replace('sb_face_','');
+      _sbStartDrag(faceId,canvasPos);
+      dragging=true;dragFace=faceId;lastPos=canvasPos;
+      e.stopPropagation();e.preventDefault();
+    }
+  },{capture:true});
+  cv.addEventListener('mousemove',function(e){
+    if(!dragging||!_sb.drag.active)return;
+    _sbMoveDrag([e.offsetX,e.offsetY]);
+    e.stopPropagation();
+  },{capture:true});
+  cv.addEventListener('mouseup',function(e){
+    if(dragging){_sbEndDrag();dragging=false;dragFace=null;e.stopPropagation();}
+  },{capture:true});
 }
 
 function sbReset(){
-  ['xmin','xmax','ymin','ymax','zmin','zmax'].forEach(function(k){
-    var sl=el('sb-'+k);if(sl)sl.value=k.endsWith('max')?100:0;
-  });
+  if(!xscene)return;
+  var aabb=xscene.aabb;
+  _sb.box={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
   sbUpdate();
 }
 
@@ -2619,24 +2733,9 @@ on('ms-clr','click',function(){
   });
   updateMsBar();
 });
-on('bn-secbox','click',function(){if(_sbActive)sbClose();else sbOpen();});
+on('bn-secbox','click',function(){if(_sb.active)sbClose();else sbOpen();});
 on('secbox-off','click',sbClose);
 on('sb-reset','click',sbReset);
-['xmin','xmax','ymin','ymax','zmin','zmax'].forEach(function(k){
-  var sl=el('sb-'+k);
-  if(sl)sl.addEventListener('input',function(){
-    // Evitar que min supere max en mismo eje
-    var axis=k.slice(0,1);
-    var slMin=el('sb-'+axis+'min'),slMax=el('sb-'+axis+'max');
-    if(slMin&&slMax){
-      if(parseInt(slMin.value)>parseInt(slMax.value)){
-        if(k.endsWith('min'))slMin.value=slMax.value;
-        else slMax.value=slMin.value;
-      }
-    }
-    sbUpdate();
-  });
-});
 on('bn-storeys','click',function(){
   var p=el('storeys-panel');if(!p)return;
   var open=(p.style.display==='block');
