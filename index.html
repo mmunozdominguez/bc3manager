@@ -2193,32 +2193,41 @@ function initSectionPlugin(){
   xSectionPlugin=new XK.SectionPlanesPlugin(xv,{overviewCanvasId:null,overviewVisible:false});
 }
 
-// Detecta el eje horizontal dominante del edificio analizando AABBs de muros
-// Devuelve ángulo en radianes (rotación Y del modelo respecto a X world)
 function _sbDetectBuildingAngle(){
-  if(!xscene||!xscene.metaScene)return 0;
-  var bins=new Array(36).fill(0); // 0..175° en pasos de 5°
-  Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
-    if(mo.type!=='IfcWall'&&mo.type!=='IfcWallStandardCase')return;
-    var o=xscene.objects[mo.id];
+  if(!xscene)return 0;
+  var objs=xscene.objects;
+  var bins=new Array(180).fill(0);
+  var count=0;
+  Object.keys(objs).forEach(function(id){
+    var o=objs[id];
     if(!o||!o.aabb)return;
-    var dx=o.aabb[3]-o.aabb[0];
-    var dz=o.aabb[5]-o.aabb[2];
-    if(Math.max(dx,dz)<0.5)return; // muro muy pequeño, ignorar
-    if(dx<0.01&&dz<0.01)return;
-    var ang=Math.atan2(dz,dx); // ángulo de elongación en plano XZ
-    if(ang<0)ang+=Math.PI;
-    // Normalizar a 0..PI (muros perpendiculares son equivalentes)
-    if(ang>=Math.PI)ang-=Math.PI;
-    var bin=Math.round(ang/(Math.PI/36))%36;
-    var len=Math.sqrt(dx*dx+dz*dz);
-    bins[bin]+=len; // ponderar por longitud del muro
+    var a=o.aabb;
+    var dx=a[3]-a[0],dz=a[5]-a[2];
+    if(Math.max(dx,dz)<1.0)return; // solo elementos >1m
+    var ang=Math.atan2(dz,dx)*180/Math.PI;
+    if(ang<0)ang+=180;
+    if(ang>=180)ang-=180;
+    bins[Math.round(ang)%180]+=Math.sqrt(dx*dx+dz*dz);
+    count++;
   });
-  // Encontrar el bin dominante
+  if(count<10){
+    // Fallback: usar ángulo del AABB global del modelo
+    var a=xscene.aabb;
+    return Math.atan2(a[5]-a[2],a[3]-a[0]);
+  }
+  // Suavizar con ventana de ±5° y encontrar pico
+  var smooth=new Array(180).fill(0);
+  for(var i=0;i<180;i++){
+    for(var d=-5;d<=5;d++) smooth[i]+=bins[(i+d+180)%180];
+  }
   var maxBin=0,maxVal=0;
-  bins.forEach(function(v,i){if(v>maxVal){maxVal=v;maxBin=i;}});
-  if(maxVal<0.001)return 0; // sin muros, usar ejes world
-  return maxBin*(Math.PI/36);
+  smooth.forEach(function(v,i){if(v>maxVal){maxVal=v;maxBin=i;}});
+  // Centroide del pico ±5°
+  var sw=0,sa=0;
+  for(var d=-5;d<=5;d++){var b=(maxBin+d+180)%180;sw+=smooth[b];sa+=smooth[b]*b;}
+  var angle=(sa/sw)*Math.PI/180;
+  console.log('[SB] eje dominante: '+Math.round(angle*180/Math.PI)+'° ('+count+' objetos)');
+  return angle;
 }
 
 // Rota un vector [x,z] por ángulo θ en plano XZ
