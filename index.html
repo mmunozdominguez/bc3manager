@@ -692,7 +692,6 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <span style="font-size:11px;font-weight:700;color:#374151;">Caja de sección</span>
             <div style="display:flex;gap:5px;align-items:center;">
-              <button id="sb-save" class="btn p" style="font-size:10px;padding:2px 8px;height:auto;" title="Guardar posición">💾</button>
               <button id="sb-hide" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Ocultar</button>
               <button id="sb-reset" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Reset</button>
               <button id="secbox-off" style="border:none;background:none;cursor:pointer;color:#9ca3af;padding:0;line-height:1;font-size:18px;">×</button>
@@ -708,23 +707,12 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
               <span style="font-size:9px;color:#9ca3af;white-space:nowrap;">Cara opuesta</span>
             </div>
           </div>
-          <!-- Rotación -->
+          <!-- Rotación Y -->
           <div style="border-top:1px solid #f3f4f6;padding-top:8px;">
-            <div style="font-size:10px;font-weight:600;color:#374151;margin-bottom:6px;">Rotación</div>
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:#e74c3c;width:14px;">X</span>
-              <input type="range" id="sb-rot-x" min="0" max="360" value="0" step="1" style="flex:1;accent-color:#e74c3c;height:3px;">
-              <span style="font-size:10px;color:#6b7280;width:30px;text-align:right;" id="sb-rot-x-val">0°</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:#27ae60;width:14px;">Y</span>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;font-weight:600;color:#374151;">Rotación</span>
               <input type="range" id="sb-rot-y" min="0" max="360" value="0" step="1" style="flex:1;accent-color:#27ae60;height:3px;">
               <span style="font-size:10px;color:#6b7280;width:30px;text-align:right;" id="sb-rot-y-val">0°</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:10px;font-weight:700;color:#2980b9;width:14px;">Z</span>
-              <input type="range" id="sb-rot-z" min="0" max="360" value="0" step="1" style="flex:1;accent-color:#2980b9;height:3px;">
-              <span style="font-size:10px;color:#6b7280;width:30px;text-align:right;" id="sb-rot-z-val">0°</span>
             </div>
           </div>
         </div>
@@ -2270,7 +2258,7 @@ function _vNorm(v){var l=Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])||1;return[v[0]
 function _sbGetCorners(){
   var b=_sb.box;
   var rot=_sb.rot||{x:0,y:0,z:0};
-  var m=_sbRotMat(rot.x*Math.PI/180,rot.y*Math.PI/180,rot.z*Math.PI/180);
+  var m=_sbRotMat(0,rot.y*Math.PI/180,0); // solo rotación Y
   var cx=(b.xmin+b.xmax)/2,cy=(b.ymin+b.ymax)/2,cz=(b.zmin+b.zmax)/2;
   var hx=(b.xmax-b.xmin)/2,hy=(b.ymax-b.ymin)/2,hz=(b.zmax-b.zmin)/2;
   var pts=[[-hx,-hy,-hz],[hx,-hy,-hz],[hx,-hy,hz],[-hx,-hy,hz],
@@ -2475,12 +2463,9 @@ function sbReset(){
 
 function _sbSyncRotSliders(){
   var rot=_sb.rot||{x:0,y:0,z:0};
-  ['x','y','z'].forEach(function(ax){
-    var sl=el('sb-rot-'+ax);
-    var vl=el('sb-rot-'+ax+'-val');
-    if(sl)sl.value=rot[ax]||0;
-    if(vl)vl.textContent=(rot[ax]||0)+'°';
-  });
+  var sl=el('sb-rot-y');var vl=el('sb-rot-y-val');
+  if(sl)sl.value=rot.y||0;
+  if(vl)vl.textContent=(rot.y||0)+'°';
 }
 
 function _sbRotate(axis,deg){
@@ -2904,20 +2889,17 @@ on('ms-clr','click',function(){
   });
   updateMsBar();
 });
-on('bn-secbox','click',function(){if(_sb.active)sbClose();else sbOpen();});
-on('secbox-off','click',sbClose);
-on('sb-reset','click',sbReset);
-on('sb-save','click',_sbSavePos);
+on('bn-secbox','click',function(){if(_sb.active){_sbSavePos();sbClose();}else sbOpen();});
+on('secbox-off','click',function(){_sbSavePos();sbClose();});
+on('sb-reset','click',function(){sbReset();_sbSavePos();});
 on('sb-hide','click',function(){
   var hiding=this.textContent.trim()==='Ocultar caja';
   if(_sb.meshWire)_sb.meshWire.visible=!hiding;
   _sb.meshFaces.forEach(function(m){m.visible=!hiding;m.pickable=!hiding;});
   this.textContent=hiding?'Mostrar caja':'Ocultar caja';
 });
-['x','y','z'].forEach(function(ax){
-  var sl=el('sb-rot-'+ax);
-  if(sl)sl.addEventListener('input',function(){_sbRotate(ax,this.value);});
-});
+var _sbRotSlY=el('sb-rot-y');
+if(_sbRotSlY)_sbRotSlY.addEventListener('input',function(){_sbRotate('y',this.value);});
 var _sbSl=el('sb-face-slider');
 if(_sbSl)_sbSl.addEventListener('input',function(){_sbSliderChange(parseInt(this.value));});
 on('bn-storeys','click',function(){
