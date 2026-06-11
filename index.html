@@ -1585,6 +1585,13 @@ async function initXeokit(){
       });
     }
     xscene=xv.scene;
+    // Material fantasma: gris claro, 10% opacidad
+    xscene.xrayMaterial.fillColor=[0.7,0.7,0.7];
+    xscene.xrayMaterial.fillAlpha=0.08;
+    xscene.xrayMaterial.edgeColor=[0.5,0.5,0.5];
+    xscene.xrayMaterial.edgeAlpha=0.15;
+    xscene.xrayMaterial.fill=true;
+    xscene.xrayMaterial.edges=true;
     xv.cameraControl.navMode='orbit';
     xv.cameraControl.followPointer=true;
     xv.cameraControl.doublePickFlyTo=true;
@@ -1884,7 +1891,22 @@ function clrHL(){
   vsHl=[];
 }
 
-function showAll(){if(!xv||!xscene)return;xscene.setObjectsVisible(xscene.objectIds,true);}
+function showAll(){
+  if(!xv||!xscene)return;
+  xscene.setObjectsVisible(xscene.objectIds,true);
+  xscene.setObjectsXRayed(xscene.objectIds,false);
+}
+
+// Aisla los IDs visibles y pone el resto en modo fantasma
+function isoGhost(visibleIds){
+  if(!xv||!xscene||!visibleIds||!visibleIds.length)return;
+  var visSet=new Set(visibleIds);
+  xscene.objectIds.forEach(function(id){
+    var o=xscene.objects[id];if(!o)return;
+    if(visSet.has(id)){o.xrayed=false;o.visible=true;}
+    else{o.visible=true;o.xrayed=true;}
+  });
+}
 
 function fitModel(){if(xv&&xModel)xv.cameraFlight.flyTo(xModel);}
 
@@ -2601,15 +2623,13 @@ on('bn-ghost','click',toggleGhost);
 on('bn-iso','click',function(){
   if(!xv||!xscene)return;
   if(this.classList.contains('a')){
-    // Desaislar: mostrar todo
+    xscene.setObjectsXRayed(xscene.objectIds,false);
     xscene.setObjectsVisible(xscene.objectIds,true);
     typeVisibility={};
     this.classList.remove('a');
     buildTypesPanel();
   } else if(vsHl.length>0){
-    // Aislar selección actual
-    xscene.setObjectsVisible(xscene.objectIds,false);
-    vsHl.forEach(function(g){var o=xscene.objects[g];if(o)o.visible=true;});
+    isoGhost(vsHl);
     this.classList.add('a');
   }
 });
@@ -2623,8 +2643,7 @@ on('ms-iso','click',function(){
   if(!selMs.size)return;
   hlMulti();
   if(xv&&xscene&&vsHl.length>0){
-    xscene.setObjectsVisible(xscene.objectIds,false);
-    vsHl.forEach(function(g){var o=xscene.objects[g];if(o)o.visible=true;});
+    isoGhost(vsHl);
     el('bn-iso').classList.add('a');
   }
 });
@@ -2772,8 +2791,7 @@ function setCatsVisible(visible){
 }
 function isolateCategory(type,entities){
   if(!xscene)return;
-  xscene.setObjectsVisible(xscene.objectIds,false);
-  (entities||[]).forEach(function(id){var obj=xscene.objects[id];if(obj)obj.visible=true;});
+  isoGhost(entities||[]);
   typeVisibility={};typeVisibility[type]=true;
   if(entities&&entities.length>0)
     xv.cameraFlight.flyTo({objectIds:entities.slice(0,200),fitFactor:0.6,duration:0.5});
