@@ -692,6 +692,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <span style="font-size:11px;font-weight:700;color:#374151;">Caja de sección</span>
             <div style="display:flex;gap:6px;align-items:center;">
+              <button id="sb-hide" class="btn" style="font-size:10px;padding:2px 8px;height:auto;" title="Ocultar panel para interactuar con el modelo">Ocultar</button>
               <button id="sb-reset" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Reset</button>
               <button id="secbox-off" style="border:none;background:none;cursor:pointer;color:#9ca3af;padding:0;line-height:1;font-size:18px;">×</button>
             </div>
@@ -706,6 +707,8 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
             </div>
           </div>
         </div>
+        <!-- Botón flotante para recuperar panel cuando está oculto -->
+        <button id="sb-show" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:4px 12px;font-size:11px;font-weight:600;color:#374151;cursor:pointer;z-index:30;box-shadow:0 2px 8px rgba(0,0,0,.12);">Caja de sección ▲</button>
         <!-- Plantas -->
         <div id="storeys-panel" style="display:none;position:absolute;top:44px;right:8px;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:0;z-index:30;min-width:200px;max-height:360px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15);">
           <div style="padding:10px 12px 6px;border-bottom:1px solid #eee;font-size:11px;font-weight:700;color:#374151;">Plantas</div>
@@ -2195,8 +2198,10 @@ function sbOpen(){
   if(!xv||!xscene)return;
   initSectionPlugin();if(!xSectionPlugin)return;
   if(_sb.active)sbClose();
-  var aabb=xscene.aabb;
-  _sb.box={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
+  var aabb=xModel?xModel.aabb:xscene.aabb;
+  var initBox={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
+  _sb.box=Object.assign({},initBox);
+  _sb.initBox=initBox; // guardar para reset
   _sbCreatePlanes();
   _sbCreateMesh();
   _sb.active=true;
@@ -2215,6 +2220,7 @@ function sbClose(){
   _sb.meshFaces=[];
   _sb.active=false;
   el('secbox-panel').style.display='none';
+  el('sb-show').style.display='none';
   el('bn-secbox').classList.remove('a');
 }
 
@@ -2371,7 +2377,7 @@ function _sbSliderChange(pct){
     newVal=valSel + t*(valOpp-valSel+margin);
   }
   _sb.box[faceId]=newVal;
-  // Actualizar plano sin redibujar toda la malla (más rápido)
+  // Mover el plano de sección
   var plane=_sb.planes[faceId];
   if(plane){
     var p=plane.pos;
@@ -2379,6 +2385,8 @@ function _sbSliderChange(pct){
     else if(axis==='y') plane.pos=[p[0],newVal,p[2]];
     else plane.pos=[p[0],p[1],newVal];
   }
+  // Redibujar la caja para que la cara se mueva visualmente
+  _sbCreateMesh();
 }
 
 function _sbInitCanvasEvents(){
@@ -2409,11 +2417,12 @@ function _sbInitCanvasEvents(){
 }
 
 function sbReset(){
-  if(!xscene)return;
-  var aabb=xscene.aabb;
-  _sb.box={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
+  if(!_sb.initBox)return;
+  _sb.box=Object.assign({},_sb.initBox);
   _sbSelFace=null;_sbHoverFace=null;
   var sl=el('sb-face-slider');if(sl){sl.value=0;sl.dataset.faceId='';}
+  el('sb-face-hint').style.display='block';
+  el('sb-face-ctrl').style.display='none';
   sbUpdate();
 }
 
@@ -2815,6 +2824,14 @@ on('ms-clr','click',function(){
 on('bn-secbox','click',function(){if(_sb.active)sbClose();else sbOpen();});
 on('secbox-off','click',sbClose);
 on('sb-reset','click',sbReset);
+on('sb-hide','click',function(){
+  el('secbox-panel').style.display='none';
+  el('sb-show').style.display='block';
+});
+on('sb-show','click',function(){
+  el('secbox-panel').style.display='block';
+  el('sb-show').style.display='none';
+});
 var _sbSl=el('sb-face-slider');
 if(_sbSl)_sbSl.addEventListener('input',function(){_sbSliderChange(parseInt(this.value));});
 on('bn-storeys','click',function(){
