@@ -1231,6 +1231,7 @@ function renderTree(){
     var cb=document.createElement('input');
     cb.type='checkbox';cb.className='tn-cb';
     cb.title='Añadir a selección múltiple';
+    cb.style.cssText='flex-shrink:0!important;width:14px!important;height:14px!important;min-width:14px;min-height:14px;margin-right:4px;cursor:pointer;accent-color:var(--acc);';
     cb.addEventListener('click',function(e){e.stopPropagation();});
     cb.addEventListener('change',function(e){
       e.stopPropagation();
