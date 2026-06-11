@@ -2287,9 +2287,6 @@ function _sbRotMat(rx,ry,rz){
 function _mat4V(m,x,y,z){
   return[m[0]*x+m[4]*y+m[8]*z+m[12],m[1]*x+m[5]*y+m[9]*z+m[13],m[2]*x+m[6]*y+m[10]*z+m[14]];
 }
-function _vSub(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
-function _vCross(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
-function _vNorm(v){var l=Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])||1;return[v[0]/l,v[1]/l,v[2]/l];}
 
 // Devuelve las 8 esquinas de la caja rotada en espacio mundo
 function _sbGetCorners(){
@@ -2306,23 +2303,22 @@ function _sbGetCorners(){
   });
 }
 
-// Normal de una cara calculada desde las esquinas rotadas
-function _sbFaceNormal(c,faceId){
-  var faceVerts={
-    xmin:[0,3,4],xmax:[1,2,5],
-    ymin:[0,1,3],ymax:[4,5,7],
-    zmin:[0,1,4],zmax:[2,3,6]
+// Normal de cada cara: eje local rotado por la matriz de rotación de la caja
+function _sbFaceNormal(faceId){
+  var rot=_sb.rot||{x:0,y:0,z:0};
+  var m=_sbRotMat(0,rot.y*Math.PI/180,0);
+  // Normales locales de cada cara (apuntan HACIA FUERA del interior de la caja)
+  var localNormals={
+    xmin:[-1,0,0], xmax:[1,0,0],
+    ymin:[0,-1,0], ymax:[0,1,0],
+    zmin:[0,0,-1], zmax:[0,0,1]
   };
-  var vi=faceVerts[faceId];
-  if(!vi)return[0,1,0];
-  var n=_vNorm(_vCross(_vSub(c[vi[1]],c[vi[0]]),_vSub(c[vi[2]],c[vi[0]])));
-  // Asegurar que la normal apunta hacia el interior (hacia el centro de la caja)
-  var cx=(c[0][0]+c[6][0])/2,cy=(c[0][1]+c[6][1])/2,cz=(c[0][2]+c[6][2])/2;
-  var fc=c[vi[0]];
-  var toCenter=[cx-fc[0],cy-fc[1],cz-fc[2]];
-  var dot=n[0]*toCenter[0]+n[1]*toCenter[1]+n[2]*toCenter[2];
-  if(dot<0)n=[-n[0],-n[1],-n[2]];
-  return n;
+  var ln=localNormals[faceId]||[0,1,0];
+  // Rotar la normal local al espacio mundo
+  var wn=_mat4V(m,ln[0],ln[1],ln[2]);
+  // dir para SectionPlane: apunta hacia el INTERIOR (lo que queda visible)
+  // → invertir la normal exterior
+  return[-wn[0],-wn[1],-wn[2]];
 }
 
 function _sbFaceCenter(c,ids){
@@ -2341,8 +2337,8 @@ function _sbCreatePlanes(){
   Object.keys(faceDefs).forEach(function(k){
     if(_sb.planes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sb.planes[k]=null;
     var pos=_sbFaceCenter(c,faceDefs[k]);
-    var n=_sbFaceNormal(c,k);
-    _sb.planes[k]=xSectionPlugin.createSectionPlane({id:'sb_'+k,pos:pos,dir:n});
+    var dir=_sbFaceNormal(k);
+    _sb.planes[k]=xSectionPlugin.createSectionPlane({id:'sb_'+k,pos:pos,dir:dir});
   });
 }
 
@@ -2369,7 +2365,7 @@ function _sbCreateMesh(){
   fd.forEach(function(f){
     try{
       var vs=[].concat(c[f.vi[0]],c[f.vi[1]],c[f.vi[2]],c[f.vi[3]]);
-      var n=_sbFaceNormal(c,f.id);
+      var n=_sbFaceNormal(f.id);
       var ns=[].concat(n,n,n,n);
       var g=new XK.VBOGeometry(xscene,{primitive:'triangles',positions:vs,indices:[0,1,2,0,2,3],normals:ns});
       var m2=new XK.PhongMaterial(xscene,{diffuse:[0.3,0.6,1],alpha:0.08,backfaces:true});
