@@ -688,13 +688,23 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <div id="pg" style="position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0%;transition:width .3s;display:none;z-index:20;"></div>
         <!-- Sección -->
         <!-- Caja de sección -->
-        <div id="secbox-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:8px 12px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:180px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div id="secbox-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:280px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <span style="font-size:11px;font-weight:700;color:#374151;">Caja de sección</span>
-            <button id="sb-reset" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Reset</button>
-            <button id="secbox-off" style="border:none;background:none;cursor:pointer;color:#9ca3af;padding:0;line-height:1;font-size:16px;">×</button>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button id="sb-reset" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Reset</button>
+              <button id="secbox-off" style="border:none;background:none;cursor:pointer;color:#9ca3af;padding:0;line-height:1;font-size:18px;">×</button>
+            </div>
           </div>
-          <div style="font-size:10px;color:#9ca3af;margin-top:4px;">Arrastra las caras de la caja para seccionar</div>
+          <div id="sb-face-hint" style="font-size:10px;color:#9ca3af;margin-bottom:6px;">Haz clic en una cara de la caja para seleccionarla</div>
+          <div id="sb-face-ctrl" style="display:none;">
+            <div style="font-size:10px;font-weight:600;color:#374151;margin-bottom:4px;" id="sb-face-label">Cara</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:9px;color:#9ca3af;white-space:nowrap;">Pos. actual</span>
+              <input type="range" id="sb-face-slider" min="0" max="100" value="0" style="flex:1;accent-color:#6c63ff;">
+              <span style="font-size:9px;color:#9ca3af;white-space:nowrap;">Cara opuesta</span>
+            </div>
+          </div>
         </div>
         <!-- Plantas -->
         <div id="storeys-panel" style="display:none;position:absolute;top:44px;right:8px;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:0;z-index:30;min-width:200px;max-height:360px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15);">
@@ -1741,7 +1751,7 @@ async function loadXkt(xktBuffer, metaJson){
       dtxEnabled: true,
       excludeUnclassifiedObjects: false,
       objectDefaults: {
-        'IfcSpace':          { visible: false },
+        'IfcSpace':          { visible: false, opacity: 0 },
         // Ventanas → semitransparentes
         'IfcWindow':         { opacity: 0.4 },
         // Barandillas y pasamanos
@@ -1893,7 +1903,7 @@ function _hideIfcSpaces(){
     Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
       if(mo.type==='IfcSpace'){
         var o=xscene.objects[mo.id];
-        if(o){o.visible=false;o.pickable=false;_ifcSpaceIds.add(mo.id);}
+        if(o){o.visible=false;o.opacity=0;o.pickable=false;_ifcSpaceIds.add(mo.id);}
       }
     });
   }
@@ -1914,7 +1924,7 @@ function showAll(){
   xscene.setObjectsPickable(xscene.objectIds,true);
   // Mantener IfcSpace ocultos
   _ifcSpaceIds.forEach(function(id){
-    var o=xscene.objects[id];if(o){o.visible=false;o.pickable=false;}
+    var o=xscene.objects[id];if(o){o.visible=false;o.opacity=0;o.pickable=false;}
   });
 }
 
@@ -2286,79 +2296,115 @@ function _sbCreateMesh(){
 
 function sbUpdate(){
   var b=_sb.box;
-  // Mover planos
   if(_sb.planes.xmin)_sb.planes.xmin.pos=[b.xmin,0,0];
   if(_sb.planes.xmax)_sb.planes.xmax.pos=[b.xmax,0,0];
   if(_sb.planes.ymin)_sb.planes.ymin.pos=[0,b.ymin,0];
   if(_sb.planes.ymax)_sb.planes.ymax.pos=[0,b.ymax,0];
   if(_sb.planes.zmin)_sb.planes.zmin.pos=[0,0,b.zmin];
   if(_sb.planes.zmax)_sb.planes.zmax.pos=[0,0,b.zmax];
-  // Redibujar mesh
   _sbCreateMesh();
 }
 
-// ── Drag sobre caras de la caja ─────────────────────────────────────────
-function _sbStartDrag(faceId,canvasPos){
+// ── Interacción con la caja ───────────────────────────────────────────────
+var _sbHoverFace=null; // cara en hover
+var _sbSelFace=null;   // cara seleccionada actualmente
+
+function _sbSetFaceHighlight(faceId, on){
+  _sb.meshFaces.forEach(function(m){
+    if(m.id==='sb_face_'+faceId){
+      m.material.diffuse = on ? [1,0.6,0.1] : [0.3,0.6,1];
+      m.material.alpha   = on ? 0.35 : 0.08;
+    }
+  });
+}
+
+function _sbSelectFace(faceId){
+  // Deseleccionar anterior
+  if(_sbSelFace && _sbSelFace!==faceId) _sbSetFaceHighlight(_sbSelFace,false);
+  _sbSelFace=faceId;
+  _sbSetFaceHighlight(faceId,true);
+
   var axis=faceId.charAt(0); // x, y, z
-  var sign=faceId.endsWith('max')?1:-1;
-  _sb.drag={active:true,face:faceId,startPos:canvasPos.slice(),startVal:_sb.box[faceId],axis:axis,sign:sign};
-}
+  var isMin=faceId.endsWith('min');
+  var b=_sb.box;
 
-function _sbMoveDrag(canvasPos){
-  if(!_sb.drag.active)return;
-  var d=_sb.drag;
-  var dx=canvasPos[0]-d.startPos[0];
-  var dy=canvasPos[1]-d.startPos[1];
-  // Sensibilidad: pixels → metros según tamaño del modelo
-  var aabb=xscene.aabb;
-  var modelSpan=Math.max(aabb[3]-aabb[0],aabb[4]-aabb[1],aabb[5]-aabb[2])||1;
-  var sens=modelSpan/600; // 600px = recorrer el modelo completo
-  // Eje de movimiento: X→drag horizontal, Y→drag vertical invertido, Z→drag horizontal
-  var delta;
-  if(d.axis==='y') delta=-dy*sens;
-  else delta=dx*sens;
-  var newVal=d.startVal+delta;
-  // Clamp: no pasar del AABB ni cruzar la cara opuesta con margen mínimo
-  var minBound=d.axis==='x'?aabb[0]:(d.axis==='y'?aabb[1]:aabb[2]);
-  var maxBound=d.axis==='x'?aabb[3]:(d.axis==='y'?aabb[4]:aabb[5]);
-  var gap=0.1*(maxBound-minBound); // 10% mínimo entre caras
-  if(d.face.endsWith('min')){
-    var opposite=_sb.box[d.axis+'max'];
-    newVal=Math.max(minBound,Math.min(opposite-gap,newVal));
-  } else {
-    var opposite=_sb.box[d.axis+'min'];
-    newVal=Math.max(opposite+gap,Math.min(maxBound,newVal));
+  // Cara seleccionada y cara opuesta
+  var valSel  = b[faceId];
+  var valOpp  = isMin ? b[axis+'max'] : b[axis+'min'];
+  var span    = Math.abs(valOpp - valSel); // distancia entre las dos caras
+
+  // El slider: 0% = posición actual de la cara, 100% = posición de la cara opuesta
+  // El plano se mueve desde valSel hacia valOpp
+  var sl=el('sb-face-slider');
+  var lbl=el('sb-face-label');
+  var axisNames={x:'X (derecha/izquierda)',y:'Y (arriba/abajo)',z:'Z (frente/fondo)'};
+  if(lbl) lbl.textContent=(isMin?'Cara −':'Cara +')+axisNames[axis];
+  if(sl){
+    sl.value=0;
+    sl.dataset.faceId=faceId;
+    sl.dataset.valSel=valSel;
+    sl.dataset.valOpp=valOpp;
+    sl.dataset.axis=axis;
   }
-  _sb.box[d.face]=newVal;
-  sbUpdate();
+  el('secbox-panel').style.display='block';
+  el('sb-face-hint').style.display='none';
+  el('sb-face-ctrl').style.display='block';
 }
 
-function _sbEndDrag(){_sb.drag.active=false;}
+function _sbSliderChange(pct){
+  var sl=el('sb-face-slider');if(!sl)return;
+  var faceId=sl.dataset.faceId;if(!faceId)return;
+  var valSel=parseFloat(sl.dataset.valSel);
+  var valOpp=parseFloat(sl.dataset.valOpp);
+  var axis=sl.dataset.axis;
+  var isMin=faceId.endsWith('min');
 
-// Hook en el pick/drag del canvas del viewer
+  // t=0 → posición original, t=1 → posición cara opuesta (con margen 5%)
+  var t=pct/100;
+  var margin=Math.abs(valOpp-valSel)*0.05;
+  var newVal;
+  if(isMin){
+    // cara min se mueve hacia max (aumenta)
+    newVal=valSel + t*(valOpp-valSel-margin);
+  } else {
+    // cara max se mueve hacia min (disminuye)
+    newVal=valSel + t*(valOpp-valSel+margin);
+  }
+  _sb.box[faceId]=newVal;
+  // Actualizar plano sin redibujar toda la malla (más rápido)
+  var plane=_sb.planes[faceId];
+  if(plane){
+    var p=plane.pos;
+    if(axis==='x') plane.pos=[newVal,p[1],p[2]];
+    else if(axis==='y') plane.pos=[p[0],newVal,p[2]];
+    else plane.pos=[p[0],p[1],newVal];
+  }
+}
+
 function _sbInitCanvasEvents(){
   var cv=el('cv');if(!cv)return;
-  var dragging=false,dragFace=null,lastPos=null;
-  cv.addEventListener('mousedown',function(e){
-    if(!_sb.active)return;
-    var canvasPos=[e.offsetX,e.offsetY];
-    var hit=xv.scene.pick({canvasPos:canvasPos});
-    if(!hit||!hit.entity)return;
-    var eid=hit.entity.id;
-    if(eid&&eid.startsWith('sb_face_')){
-      var faceId=eid.replace('sb_face_','');
-      _sbStartDrag(faceId,canvasPos);
-      dragging=true;dragFace=faceId;lastPos=canvasPos;
-      e.stopPropagation();e.preventDefault();
-    }
-  },{capture:true});
+
   cv.addEventListener('mousemove',function(e){
-    if(!dragging||!_sb.drag.active)return;
-    _sbMoveDrag([e.offsetX,e.offsetY]);
+    if(!_sb.active)return;
+    var hit=xv.scene.pick({canvasPos:[e.offsetX,e.offsetY]});
+    var faceId=hit&&hit.entity&&hit.entity.id&&hit.entity.id.startsWith('sb_face_')
+               ?hit.entity.id.replace('sb_face_',''):null;
+    // Hover: iluminar solo si no está seleccionada
+    if(faceId!==_sbHoverFace){
+      if(_sbHoverFace&&_sbHoverFace!==_sbSelFace) _sbSetFaceHighlight(_sbHoverFace,false);
+      if(faceId&&faceId!==_sbSelFace) _sbSetFaceHighlight(faceId,true);
+      _sbHoverFace=faceId;
+      cv.style.cursor=faceId?'pointer':'';
+    }
+  });
+
+  cv.addEventListener('click',function(e){
+    if(!_sb.active)return;
+    var hit=xv.scene.pick({canvasPos:[e.offsetX,e.offsetY]});
+    if(!hit||!hit.entity||!hit.entity.id||!hit.entity.id.startsWith('sb_face_'))return;
+    var faceId=hit.entity.id.replace('sb_face_','');
+    _sbSelectFace(faceId);
     e.stopPropagation();
-  },{capture:true});
-  cv.addEventListener('mouseup',function(e){
-    if(dragging){_sbEndDrag();dragging=false;dragFace=null;e.stopPropagation();}
   },{capture:true});
 }
 
@@ -2366,6 +2412,8 @@ function sbReset(){
   if(!xscene)return;
   var aabb=xscene.aabb;
   _sb.box={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
+  _sbSelFace=null;_sbHoverFace=null;
+  var sl=el('sb-face-slider');if(sl){sl.value=0;sl.dataset.faceId='';}
   sbUpdate();
 }
 
@@ -2767,6 +2815,8 @@ on('ms-clr','click',function(){
 on('bn-secbox','click',function(){if(_sb.active)sbClose();else sbOpen();});
 on('secbox-off','click',sbClose);
 on('sb-reset','click',sbReset);
+var _sbSl=el('sb-face-slider');
+if(_sbSl)_sbSl.addEventListener('input',function(){_sbSliderChange(parseInt(this.value));});
 on('bn-storeys','click',function(){
   var p=el('storeys-panel');if(!p)return;
   var open=(p.style.display==='block');
