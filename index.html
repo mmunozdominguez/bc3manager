@@ -95,7 +95,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .vcol.collapsed .col-meta{display:none;}
 #col1{flex:0 0 300px;border-right:1px solid var(--bd);}
 #col2{flex:0 0 240px;border-right:1px solid var(--bd);}
-#col3{flex:1;background:#f0eff8;display:flex;flex-direction:column;}
+#col3{flex:1;background:#f0eff8;display:flex;flex-direction:column;position:relative;}
 /* Cabecera de columna */
 .col-header{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;min-height:34px;}
 .col-header>span:first-of-type{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted2);white-space:nowrap;}
@@ -423,11 +423,17 @@ html.dark #dz{color:var(--muted);}
 html.dark .slice-panel-inner,
 html.dark #slice-panel,
 html.dark #storeys-panel,
-html.dark #types-panel{
+html.dark #types-panel,
+html.dark #secbox-panel{
   background:var(--panel)!important;
   border-color:var(--bd)!important;
   color:var(--text)!important;
 }
+html.dark #secbox-panel .sb-label{color:var(--text)!important;}
+html.dark #secbox-panel .sb-muted{color:var(--muted)!important;}
+html.dark #secbox-panel .sb-divider{border-color:var(--bd)!important;}
+html.dark #secbox-panel .btn{background:var(--panel2);border-color:var(--bd);color:var(--text);}
+html.dark #secbox-panel .btn.p{background:var(--acc);border-color:var(--acc);color:#fff;}
 html.dark #types-panel label,
 html.dark #types-list div{color:var(--text)!important;}
 html.dark #hc{background:rgba(26,29,39,.95)!important;color:var(--text)!important;border-color:var(--bd)!important;}
@@ -688,31 +694,62 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <div id="pg" style="position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0%;transition:width .3s;display:none;z-index:20;"></div>
         <!-- Sección -->
         <!-- Caja de sección -->
-        <div id="secbox-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:300px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span style="font-size:11px;font-weight:700;color:#374151;">Caja de sección</span>
-            <div style="display:flex;gap:5px;align-items:center;">
-              <button id="sb-hide" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Ocultar</button>
-              <button id="sb-reset" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Reset</button>
-              <button id="secbox-off" style="border:none;background:none;cursor:pointer;color:#9ca3af;padding:0;line-height:1;font-size:18px;">×</button>
-            </div>
+        <div id="secbox-panel" style="display:none;position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,.97);border-top:1px solid rgba(0,0,0,.12);padding:12px 20px 14px;z-index:30;box-shadow:0 -4px 20px rgba(0,0,0,.1);">
+          <!-- Header -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" class="sb-label" style="flex-shrink:0;opacity:.7"><path d="M10 2L2 6v8l8 4 8-4V6L10 2z"/><path d="M2 6l8 4m0 0l8-4m-8 4v8"/></svg>
+            <span class="sb-label" style="font-size:12px;font-weight:700;flex:1;">Caja de sección</span>
+            <!-- Ocultar caja -->
+            <button id="sb-hide" class="btn" title="Ocultar caja para seleccionar elementos" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;height:auto;">
+              <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 10s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="3"/><line x1="3" y1="3" x2="17" y2="17"/></svg>
+              Ocultar
+            </button>
+            <!-- Guardar orientación -->
+            <button id="sb-save" class="btn p" title="Guardar orientación" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;height:auto;">
+              <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 17H5a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v7a2 2 0 01-2 2z"/><path d="M13 17v-6H7v6M7 3v4h6"/></svg>
+              Guardar
+            </button>
+            <!-- Reset -->
+            <button id="sb-reset" class="btn" title="Resetear caja" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;height:auto;">
+              <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4v5h5M16 16v-5h-5"/><path d="M4.93 9A8 8 0 1115 15.07"/></svg>
+              Reset
+            </button>
+            <!-- Cerrar -->
+            <button id="secbox-off" title="Cerrar" style="border:none;background:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;border-radius:4px;" class="sb-muted">
+              <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/></svg>
+            </button>
           </div>
-          <!-- Traslación de cara -->
-          <div id="sb-face-hint" style="font-size:10px;color:#9ca3af;margin-bottom:6px;">Clic en una cara para trasladarla</div>
-          <div id="sb-face-ctrl" style="display:none;margin-bottom:8px;">
-            <div style="font-size:10px;font-weight:600;color:#374151;margin-bottom:4px;" id="sb-face-label">Cara</div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:9px;color:#9ca3af;white-space:nowrap;">Pos. actual</span>
-              <input type="range" id="sb-face-slider" min="0" max="100" value="0" style="flex:1;accent-color:#6c63ff;">
-              <span style="font-size:9px;color:#9ca3af;white-space:nowrap;">Cara opuesta</span>
+          <!-- Controles en fila -->
+          <div style="display:flex;align-items:flex-start;gap:24px;">
+            <!-- Traslación de cara -->
+            <div style="flex:1;min-width:180px;">
+              <div class="sb-label" style="font-size:10px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+                <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3v14M3 10h14"/></svg>
+                Cara seleccionada
+              </div>
+              <div id="sb-face-hint" class="sb-muted" style="font-size:10px;">Clic en una cara de la caja para moverla</div>
+              <div id="sb-face-ctrl" style="display:none;">
+                <div class="sb-label" style="font-size:10px;font-weight:600;margin-bottom:5px;" id="sb-face-label"></div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span class="sb-muted" style="font-size:9px;white-space:nowrap;">Pos. actual</span>
+                  <input type="range" id="sb-face-slider" min="0" max="100" value="0" style="flex:1;accent-color:#6c63ff;">
+                  <span class="sb-muted" style="font-size:9px;white-space:nowrap;">Cara opuesta</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <!-- Rotación Y -->
-          <div style="border-top:1px solid #f3f4f6;padding-top:8px;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:10px;font-weight:600;color:#374151;">Rotación</span>
-              <input type="range" id="sb-rot-y" min="0" max="360" value="0" step="1" style="flex:1;accent-color:#27ae60;height:3px;">
-              <span style="font-size:10px;color:#6b7280;width:30px;text-align:right;" id="sb-rot-y-val">0°</span>
+            <!-- Separador -->
+            <div class="sb-divider" style="width:1px;background:rgba(0,0,0,.1);align-self:stretch;flex-shrink:0;"></div>
+            <!-- Rotación Y -->
+            <div style="flex:1;min-width:180px;">
+              <div class="sb-label" style="font-size:10px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:5px;">
+                <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14.5 3.5A7 7 0 106 16.5"/><polyline points="14 1 14 4 17 4"/></svg>
+                Rotación (eje vertical)
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="sb-muted" style="font-size:9px;">0°</span>
+                <input type="range" id="sb-rot-y" min="0" max="360" value="0" step="1" style="flex:1;accent-color:#27ae60;">
+                <span class="sb-label" style="font-size:10px;font-weight:600;width:32px;text-align:right;" id="sb-rot-y-val">0°</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2892,6 +2929,7 @@ on('ms-clr','click',function(){
 on('bn-secbox','click',function(){if(_sb.active){_sbSavePos();sbClose();}else sbOpen();});
 on('secbox-off','click',function(){_sbSavePos();sbClose();});
 on('sb-reset','click',function(){sbReset();_sbSavePos();});
+on('sb-save','click',function(){_sbSavePos();});
 on('sb-hide','click',function(){
   var hiding=this.textContent.trim()==='Ocultar caja';
   if(_sb.meshWire)_sb.meshWire.visible=!hiding;
