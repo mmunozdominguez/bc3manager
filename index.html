@@ -666,8 +666,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
           <button class="t3" id="bn-ghost" title="Modo fantasma / XRay" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></button>
           <button class="t3" id="bn-iso" title="Aislar selección" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9" stroke-dasharray="3 2"/></svg></button>
           <button class="t3" id="bn-clr" title="Limpiar todo" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-          <button class="t3" id="bn-slice" title="Sección horizontal (Z)" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="12" x2="21" y2="12"/></svg></button>
-          <button class="t3" id="bn-slice-elem" title="Sección paralela al elemento seleccionado" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="12" y1="3" x2="12" y2="21"/><path d="M8 7l4-4 4 4"/></svg></button>
+          <button class="t3" id="bn-secbox" title="Caja de sección" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></button>
           <button class="t3" id="bn-storeys" title="Plantas del edificio" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10" width="18" height="3" rx="1"/><rect x="3" y="16" width="18" height="3" rx="1"/></svg></button>
           <button class="t3" id="bn-measure" title="Medir distancias" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 8"/><line x1="5" y1="13" x2="9" y2="13"/><line x1="17" y1="7" x2="21" y2="11"/><line x1="21" y1="7" x2="17" y2="11"/></svg></button>
           <button class="t3 a" id="bn-types" title="Categorías" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></button>
@@ -688,18 +687,32 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         </div>
         <div id="pg" style="position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0%;transition:width .3s;display:none;z-index:20;"></div>
         <!-- Sección -->
-        <div id="slice-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:260px;">
+        <!-- Caja de sección -->
+        <div id="secbox-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:240px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <span style="font-size:11px;font-weight:700;color:#374151;" id="slice-title">Sección horizontal</span>
-            <button id="slice-off" style="border:none;background:none;cursor:pointer;font-size:13px;color:#9ca3af;padding:0;" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <span style="font-size:11px;font-weight:700;color:#374151;">Caja de sección</span>
+            <button id="secbox-off" style="border:none;background:none;cursor:pointer;color:#9ca3af;padding:0;line-height:1;font-size:16px;">×</button>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:10px;color:#9ca3af;">▼</span>
-            <input type="range" id="slice-slider" min="0" max="100" value="70" style="flex:1;accent-color:#6c63ff;">
-            <span style="font-size:10px;color:#9ca3af;">▲</span>
+          <!-- Eje X -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:10px;font-weight:700;color:#e74c3c;width:14px;">X</span>
+            <input type="range" id="sb-xmin" min="0" max="100" value="0"   style="flex:1;accent-color:#e74c3c;height:3px;">
+            <input type="range" id="sb-xmax" min="0" max="100" value="100" style="flex:1;accent-color:#e74c3c;height:3px;">
           </div>
-          <div style="text-align:center;margin-top:6px;">
-            <span style="font-size:10px;color:#6b7280;" id="slice-val">70%</span>
+          <!-- Eje Y -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:10px;font-weight:700;color:#27ae60;width:14px;">Y</span>
+            <input type="range" id="sb-ymin" min="0" max="100" value="0"   style="flex:1;accent-color:#27ae60;height:3px;">
+            <input type="range" id="sb-ymax" min="0" max="100" value="100" style="flex:1;accent-color:#27ae60;height:3px;">
+          </div>
+          <!-- Eje Z -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:10px;font-weight:700;color:#2980b9;width:14px;">Z</span>
+            <input type="range" id="sb-zmin" min="0" max="100" value="0"   style="flex:1;accent-color:#2980b9;height:3px;">
+            <input type="range" id="sb-zmax" min="0" max="100" value="100" style="flex:1;accent-color:#2980b9;height:3px;">
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button id="sb-reset" class="btn" style="flex:1;font-size:10px;padding:3px 0;height:auto;">Reset</button>
           </div>
         </div>
         <!-- Plantas -->
@@ -1587,7 +1600,7 @@ async function initXeokit(){
     xscene=xv.scene;
     // Material fantasma: gris claro, 10% opacidad
     xscene.xrayMaterial.fillColor=[0.7,0.7,0.7];
-    xscene.xrayMaterial.fillAlpha=0.3;
+    xscene.xrayMaterial.fillAlpha=0.2;
     xscene.xrayMaterial.edgeColor=[0.5,0.5,0.5];
     xscene.xrayMaterial.edgeAlpha=0.15;
     xscene.xrayMaterial.fill=true;
@@ -1603,10 +1616,6 @@ async function initXeokit(){
     // ── Pick handler: mouse + touch ────────────────────────────────
     function handlePick(canvasPos){
       if(!xv||!xscene)return;
-      // Modo sección por cara: interceptar clic
-      if(typeof _sectionPickMode!=='undefined'&&_sectionPickMode){
-        applySectionFromPick(canvasPos);return;
-      }
       var hit=xv.scene.pick({canvasPos:canvasPos});
       if(!hit||!hit.entity)return;
       var entityId=hit.entity.id;
@@ -1750,8 +1759,7 @@ async function loadXkt(xktBuffer, metaJson){
       dtxEnabled: true,
       excludeUnclassifiedObjects: false,
       objectDefaults: {
-        // IfcSpace: habitaciones → transparentes
-        'IfcSpace':          { opacity: 0.1 },
+        'IfcSpace':          { visible: false },
         // Ventanas → semitransparentes
         'IfcWindow':         { opacity: 0.4 },
         // Barandillas y pasamanos
@@ -2107,13 +2115,14 @@ async function applyMetaFile(file){
 
       // Apply objectDefaults (spaces transparent etc)
       var OBJ_DEFAULTS={
-        'IfcSpace':0.05,'IfcWindow':0.4,'IfcPlate':0.3,
+        'IfcSpace':-1,'IfcWindow':0.4,'IfcPlate':0.3,
         'IfcRailing':0.7,'IfcOpeningElement':0
       };
       (metaJson.metaObjects||metaJson.objects||[]).forEach(function(o){
         var op=OBJ_DEFAULTS[o.type];
         if(op!==undefined){
           var obj=xscene.objects[o.id];
+          if(obj){if(op===-1)obj.visible=false;else obj.opacity=op;}
           if(obj){
             if(op===0)obj.visible=false;
             else obj.opacity=op;
@@ -2137,122 +2146,77 @@ async function applyMetaFile(file){
 
 // ── SECCIÓN, PLANTAS Y MEDICIÓN ─────────────────────────────────────────
 var xSection=null, xSectionPlugin=null, xMeasurePlugin=null;
-var _sliceDir=[0,-1,0], _sliceMin=0, _sliceMax=1;
-var _sectionPickMode=false;
+// ── CAJA DE SECCIÓN ──────────────────────────────────────────────────────
+var _sbPlanes={xmin:null,xmax:null,ymin:null,ymax:null,zmin:null,zmax:null};
+var _sbActive=false;
 
 function initSectionPlugin(){
-  if(xSectionPlugin) return;
+  if(xSectionPlugin)return;
   var XK=window._XK;
-  if(!XK||!XK.SectionPlanesPlugin) return;
+  if(!XK||!XK.SectionPlanesPlugin)return;
   xSectionPlugin=new XK.SectionPlanesPlugin(xv,{overviewCanvasId:null,overviewVisible:false});
 }
 
-function toggleSlice(){
-  if(!xv||!xscene) return;
+function sbOpen(){
+  if(!xv||!xscene)return;
   initSectionPlugin();
-  if(!xSectionPlugin) return;
-  var panel=el('slice-panel');
-  if(xSection){
-    xSectionPlugin.destroySectionPlane('sec1');
-    xSection=null;
-    panel.style.display='none';
-    el('bn-slice').classList.remove('a');
-    el('bn-slice-elem').classList.remove('a');
-  } else {
-    _sliceDir=[0,-1,0];
-    var aabb=xscene.aabb;
-    var cx=(aabb[0]+aabb[3])/2, cz=(aabb[2]+aabb[5])/2;
-    var y=aabb[1]+(aabb[4]-aabb[1])*0.7;
-    _sliceMin=aabb[1]; _sliceMax=aabb[4];
-    xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[cx,y,cz],dir:[0,-1,0]});
-    el('slice-slider').value=70;
-    el('slice-val').textContent='70%';
-    if(el('slice-title'))el('slice-title').textContent='Sección horizontal';
-    panel.style.display='block';
-    el('bn-slice').classList.add('a');
-    el('bn-slice-elem').classList.remove('a');
-  }
-}
-
-function sectionByElement(){
-  if(!xv||!xscene) return;
-  initSectionPlugin();
-  if(!xSectionPlugin) return;
-  if(_sectionPickMode){
-    _sectionPickMode=false;
-    el('bn-slice-elem').classList.remove('a');
-    st3('',''); return;
-  }
-  _sectionPickMode=true;
-  el('bn-slice-elem').classList.add('a');
-  st3('Haz clic en la cara del elemento para crear la sección','sp');
-}
-
-function applySectionFromPick(canvasPos){
-  _sectionPickMode=false;
-  el('bn-slice-elem').classList.remove('a');
-  var hit=xv.scene.pick({canvasPos:canvasPos,pickSurface:true});
-  if(!hit||!hit.entity){st3('No se detectó superficie','');return;}
-  var n=hit.worldNormal;
-  if(!n||(n[0]===0&&n[1]===0&&n[2]===0)){applySectionFromAABB(hit.entity);return;}
-  var len=Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
-  if(len<0.0001){applySectionFromAABB(hit.entity);return;}
-  var dir=[n[0]/len,n[1]/len,n[2]/len];
-  _sliceDir=dir;
-  var pos=hit.worldPos||[(hit.entity.aabb[0]+hit.entity.aabb[3])/2,
-    (hit.entity.aabb[1]+hit.entity.aabb[4])/2,(hit.entity.aabb[2]+hit.entity.aabb[5])/2];
-  var maabb=xscene.aabb;
-  var corners=[[maabb[0],maabb[1],maabb[2]],[maabb[3],maabb[1],maabb[2]],
-    [maabb[0],maabb[4],maabb[2]],[maabb[3],maabb[4],maabb[2]],
-    [maabb[0],maabb[1],maabb[5]],[maabb[3],maabb[1],maabb[5]],
-    [maabb[0],maabb[4],maabb[5]],[maabb[3],maabb[4],maabb[5]]];
-  var projs=corners.map(function(v){return v[0]*dir[0]+v[1]*dir[1]+v[2]*dir[2];});
-  _sliceMin=Math.min.apply(null,projs);
-  _sliceMax=Math.max.apply(null,projs);
-  var curProj=pos[0]*dir[0]+pos[1]*dir[1]+pos[2]*dir[2];
-  var pct=Math.round(Math.max(0,Math.min(100,(curProj-_sliceMin)/(_sliceMax-_sliceMin)*100)));
-  if(xSection)xSectionPlugin.destroySectionPlane('sec1');
-  xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:pos,dir:dir});
-  el('slice-slider').value=pct;
-  el('slice-val').textContent=pct+'%';
-  var dirName=Math.abs(dir[1])>0.7?'horizontal':'vertical';
-  if(el('slice-title'))el('slice-title').textContent='Sección '+dirName;
-  el('slice-panel').style.display='block';
-  el('bn-slice').classList.remove('a');
-  st3('Plano paralelo a la cara · slider para mover','ok');
-}
-
-function applySectionFromAABB(obj){
-  if(!obj||!obj.aabb) return;
-  var aabb=obj.aabb;
-  var sx=aabb[3]-aabb[0],sy=aabb[4]-aabb[1],sz=aabb[5]-aabb[2];
-  var dir;
-  if(sy<=sx&&sy<=sz)dir=[0,-1,0];
-  else if(sx<=sy&&sx<=sz)dir=[-1,0,0];
-  else dir=[0,0,-1];
-  _sliceDir=dir;
-  var cx=(aabb[0]+aabb[3])/2,cy=(aabb[1]+aabb[4])/2,cz=(aabb[2]+aabb[5])/2;
-  var maabb=xscene.aabb;
-  var axis=Math.abs(dir[0])>0.5?0:(Math.abs(dir[1])>0.5?1:2);
-  _sliceMin=[maabb[0],maabb[1],maabb[2]][axis];
-  _sliceMax=[maabb[3],maabb[4],maabb[5]][axis];
-  var pct=Math.round(Math.max(0,Math.min(100,([cx,cy,cz][axis]-_sliceMin)/(_sliceMax-_sliceMin)*100)));
-  if(xSection)xSectionPlugin.destroySectionPlane('sec1');
-  xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[cx,cy,cz],dir:dir});
-  el('slice-slider').value=pct;
-  el('slice-val').textContent=pct+'%';
-  el('slice-panel').style.display='block';
-}
-
-function updateSlice(pct){
-  if(!xSection||!xscene) return;
-  var t=pct/100,dir=_sliceDir;
+  if(!xSectionPlugin)return;
   var aabb=xscene.aabb;
-  var cx=(aabb[0]+aabb[3])/2,cy=(aabb[1]+aabb[4])/2,cz=(aabb[2]+aabb[5])/2;
-  var d=_sliceMin+(_sliceMax-_sliceMin)*t;
-  var dot=cx*dir[0]+cy*dir[1]+cz*dir[2];
-  xSection.pos=[cx+dir[0]*(d-dot),cy+dir[1]*(d-dot),cz+dir[2]*(d-dot)];
-  el('slice-val').textContent=pct+'%';
+  var minX=aabb[0],maxX=aabb[3],minY=aabb[1],maxY=aabb[4],minZ=aabb[2],maxZ=aabb[5];
+  // Destruir planos anteriores
+  Object.keys(_sbPlanes).forEach(function(k){
+    if(_sbPlanes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sbPlanes[k]=null;
+  });
+  // Crear 6 planos con margen mínimo
+  _sbPlanes.xmin=xSectionPlugin.createSectionPlane({id:'sb_xmin',pos:[minX,0,0],dir:[1,0,0]});
+  _sbPlanes.xmax=xSectionPlugin.createSectionPlane({id:'sb_xmax',pos:[maxX,0,0],dir:[-1,0,0]});
+  _sbPlanes.ymin=xSectionPlugin.createSectionPlane({id:'sb_ymin',pos:[0,minY,0],dir:[0,1,0]});
+  _sbPlanes.ymax=xSectionPlugin.createSectionPlane({id:'sb_ymax',pos:[0,maxY,0],dir:[0,-1,0]});
+  _sbPlanes.zmin=xSectionPlugin.createSectionPlane({id:'sb_zmin',pos:[0,0,minZ],dir:[0,0,1]});
+  _sbPlanes.zmax=xSectionPlugin.createSectionPlane({id:'sb_zmax',pos:[0,0,maxZ],dir:[0,0,-1]});
+  // Reset sliders
+  ['xmin','xmax','ymin','ymax','zmin','zmax'].forEach(function(k){
+    var sl=el('sb-'+k);if(sl)sl.value=k.endsWith('max')?100:0;
+  });
+  _sbActive=true;
+  el('secbox-panel').style.display='block';
+  el('bn-secbox').classList.add('a');
+}
+
+function sbClose(){
+  Object.keys(_sbPlanes).forEach(function(k){
+    if(_sbPlanes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sbPlanes[k]=null;
+  });
+  _sbActive=false;
+  el('secbox-panel').style.display='none';
+  el('bn-secbox').classList.remove('a');
+}
+
+function sbUpdate(){
+  if(!xscene||!xSectionPlugin)return;
+  var aabb=xscene.aabb;
+  function lerp(a,b,t){return a+(b-a)*t;}
+  var vals={
+    xmin:lerp(aabb[0],aabb[3],(el('sb-xmin').value)/100),
+    xmax:lerp(aabb[0],aabb[3],(el('sb-xmax').value)/100),
+    ymin:lerp(aabb[1],aabb[4],(el('sb-ymin').value)/100),
+    ymax:lerp(aabb[1],aabb[4],(el('sb-ymax').value)/100),
+    zmin:lerp(aabb[2],aabb[5],(el('sb-zmin').value)/100),
+    zmax:lerp(aabb[2],aabb[5],(el('sb-zmax').value)/100),
+  };
+  if(_sbPlanes.xmin)_sbPlanes.xmin.pos=[vals.xmin,0,0];
+  if(_sbPlanes.xmax)_sbPlanes.xmax.pos=[vals.xmax,0,0];
+  if(_sbPlanes.ymin)_sbPlanes.ymin.pos=[0,vals.ymin,0];
+  if(_sbPlanes.ymax)_sbPlanes.ymax.pos=[0,vals.ymax,0];
+  if(_sbPlanes.zmin)_sbPlanes.zmin.pos=[0,0,vals.zmin];
+  if(_sbPlanes.zmax)_sbPlanes.zmax.pos=[0,0,vals.zmax];
+}
+
+function sbReset(){
+  ['xmin','xmax','ymin','ymax','zmin','zmax'].forEach(function(k){
+    var sl=el('sb-'+k);if(sl)sl.value=k.endsWith('max')?100:0;
+  });
+  sbUpdate();
 }
 
 function buildStoreysPanel(){
@@ -2276,7 +2240,7 @@ function buildStoreysPanel(){
   allRow.textContent='Todas las plantas';
   allRow.addEventListener('click',function(){
     showAll();
-    if(xSection&&xSectionPlugin){xSectionPlugin.destroySectionPlane('sec1');xSection=null;el('bn-slice').classList.remove('a');el('slice-panel').style.display='none';}
+    if(xSection&&xSectionPlugin){sbClose();}
     if(xModel)xv.cameraFlight.flyTo(xModel,{duration:0.5});
   });
   list.appendChild(allRow);
@@ -2286,15 +2250,11 @@ function buildStoreysPanel(){
     row.innerHTML='<span style="flex:1">'+s.name+'</span>';
     row.addEventListener('click',function(){
       initSectionPlugin();
-      if(xSection)xSectionPlugin.destroySectionPlane('sec1');
+      sbOpen();
       var aabb=xscene.aabb,pct=(s.pct||50)/100;
-      var y=aabb[1]+(aabb[4]-aabb[1])*(pct+0.08);
-      _sliceDir=[0,-1,0];_sliceMin=aabb[1];_sliceMax=aabb[4];
-      xSection=xSectionPlugin.createSectionPlane({id:'sec1',pos:[(aabb[0]+aabb[3])/2,y,(aabb[2]+aabb[5])/2],dir:[0,-1,0]});
       var sp=Math.round((pct+0.08)*100);
-      el('slice-slider').value=sp;el('slice-val').textContent=sp+'%';
+      var slYmax=el('sb-ymax');if(slYmax){slYmax.value=Math.min(100,sp);sbUpdate();}
       if(el('slice-title'))el('slice-title').textContent='Planta: '+s.name;
-      el('slice-panel').style.display='block';el('bn-slice').classList.add('a');
     });
     list.appendChild(row);
   });
@@ -2654,8 +2614,24 @@ on('ms-clr','click',function(){
   });
   updateMsBar();
 });
-on('bn-slice','click',toggleSlice);
-on('bn-slice-elem','click',sectionByElement);
+on('bn-secbox','click',function(){if(_sbActive)sbClose();else sbOpen();});
+on('secbox-off','click',sbClose);
+on('sb-reset','click',sbReset);
+['xmin','xmax','ymin','ymax','zmin','zmax'].forEach(function(k){
+  var sl=el('sb-'+k);
+  if(sl)sl.addEventListener('input',function(){
+    // Evitar que min supere max en mismo eje
+    var axis=k.slice(0,1);
+    var slMin=el('sb-'+axis+'min'),slMax=el('sb-'+axis+'max');
+    if(slMin&&slMax){
+      if(parseInt(slMin.value)>parseInt(slMax.value)){
+        if(k.endsWith('min'))slMin.value=slMax.value;
+        else slMax.value=slMin.value;
+      }
+    }
+    sbUpdate();
+  });
+});
 on('bn-storeys','click',function(){
   var p=el('storeys-panel');if(!p)return;
   var open=(p.style.display==='block');
@@ -2663,14 +2639,6 @@ on('bn-storeys','click',function(){
   else{p.style.display='none';this.classList.remove('a');}
 });
 on('bn-measure','click',toggleMeasure);
-on('slice-off','click',function(){
-  if(xSection&&xSectionPlugin){xSectionPlugin.destroySectionPlane('sec1');xSection=null;}
-  el('slice-panel').style.display='none';
-  el('bn-slice').classList.remove('a');
-  el('bn-slice-elem').classList.remove('a');
-});
-var _slEl=el('slice-slider');
-if(_slEl)_slEl.addEventListener('input',function(){updateSlice(parseInt(this.value));});
 on('bn-types','click',function(){
   var p=el('types-panel');if(!p)return;
   var isOpen=(p.style.display==='flex'||p.style.display==='block');
@@ -2708,13 +2676,13 @@ on('bn-can-archivos','click',function(){hideM('m-archivos');});
 
 
 // ── FILTROS POR CATEGORÍA ─────────────────────────────────────────────────
-var IFC_LABELS={'IfcSpace':'Espacios/Habitaciones','IfcWall':'Muros','IfcWallStandardCase':'Muros',
+var IFC_LABELS={'IfcWall':'Muros','IfcWallStandardCase':'Muros',
   'IfcSlab':'Forjados','IfcColumn':'Pilares','IfcBeam':'Vigas','IfcDoor':'Puertas',
   'IfcWindow':'Ventanas','IfcRoof':'Cubiertas','IfcCovering':'Revestimientos',
   'IfcStair':'Escaleras','IfcRailing':'Barandillas','IfcFurniture':'Mobiliario',
   'IfcPlate':'Placas','IfcMember':'Estructura','IfcFooting':'Cimentación',
   'IfcBuildingElementProxy':'Varios','IfcOpeningElement':'Huecos'};
-var IFC_ORDER=['IfcSpace','IfcWall','IfcWallStandardCase','IfcSlab','IfcColumn','IfcBeam',
+var IFC_ORDER=['IfcWall','IfcWallStandardCase','IfcSlab','IfcColumn','IfcBeam',
   'IfcRoof','IfcStair','IfcRailing','IfcDoor','IfcWindow','IfcCovering','IfcPlate',
   'IfcMember','IfcFooting','IfcFurniture','IfcBuildingElementProxy','IfcOpeningElement'];
 var typeVisibility={};
@@ -2726,7 +2694,7 @@ function buildTypesPanel(){
   var typeCount={},typeEntities={};
   src.forEach(function(o){
     if(!o.type||o.type==='IfcProject'||o.type==='IfcSite'||o.type==='IfcBuilding'||
-       o.type==='IfcBuildingStorey'||o.id==='root')return;
+       o.type==='IfcBuildingStorey'||o.type==='IfcSpace'||o.id==='root')return;
     typeCount[o.type]=(typeCount[o.type]||0)+1;
     if(!typeEntities[o.type])typeEntities[o.type]=[];
     typeEntities[o.type].push(o.id);
