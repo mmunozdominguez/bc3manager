@@ -436,7 +436,8 @@ html.dark input[type=range]{accent-color:var(--acc);}
 html.dark .col-header{background:var(--panel);}
 html.dark scrollbar-color: var(--bd) var(--panel);
 /* Multi-selección checkboxes */
-.tn-cb{flex-shrink:0!important;width:14px!important;height:14px!important;min-width:14px!important;min-height:14px!important;margin-right:4px;accent-color:var(--acc);cursor:pointer;}
+.tn-cb{flex-shrink:0!important;width:16px!important;height:16px!important;min-width:16px!important;min-height:16px!important;margin-left:4px;margin-right:4px;accent-color:var(--acc);cursor:pointer;}
+.tn .tl{min-width:0;flex:1 1 0%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tn.ms-sel{background:var(--acc-bg);}
 html.dark .tn.ms-sel{background:var(--acc-bg);}
 #ms-bar{display:none;flex-shrink:0;padding:8px 10px;background:var(--acc-bg);border-top:1px solid var(--acc-bd);align-items:center;gap:8px;}
@@ -1222,11 +1223,16 @@ function renderTree(){
     // Children
     var cw=document.createElement('div');cw.className='tc';
     kids.forEach(function(k){cw.appendChild(mkN(k,dep+1));});
-    // Checkbox multi-selección (derecha)
+    // Checkbox — usa el slot de .tbim (flex-shrink:0, margin-right:4px) que siempre fue visible
     var cb=document.createElement('input');
     cb.type='checkbox';cb.className='tn-cb';
-    cb.title='Añadir a selección múltiple';
-    cb.style.cssText='flex-shrink:0;width:16px;height:16px;min-width:16px;min-height:16px;margin-left:auto;margin-right:6px;cursor:pointer;accent-color:var(--acc);';
+    cb.title='Seleccionar';
+    cb.style.cssText='display:block;width:13px;height:13px;flex-shrink:0;margin-right:4px;cursor:pointer;accent-color:var(--acc);';
+    var cbWrap=document.createElement('div');
+    cbWrap.className='tbim';
+    cbWrap.style.cssText='width:auto;height:auto;background:none;border-radius:0;display:flex;align-items:center;';
+    cbWrap.appendChild(cb);
+    row.appendChild(cbWrap);
     cb.addEventListener('click',function(e){e.stopPropagation();});
     cb.addEventListener('change',function(e){
       e.stopPropagation();
@@ -1240,7 +1246,6 @@ function renderTree(){
       updateMsBar();
       updateParentCb(row);
     });
-    row.appendChild(cb);
     // Click
     row.addEventListener('click',function(e){
       e.stopPropagation();
