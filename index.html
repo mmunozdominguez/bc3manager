@@ -1360,7 +1360,7 @@ function hlMulti(){
   });
   if(!guids.size)return;
   var found=[];
-  guids.forEach(function(g){var o=xscene.objects[g];if(o){o.selected=true;found.push(g);}});
+  guids.forEach(function(g){var o=xscene.objects[g];if(o)found.push(g);});
   vsHl=found;
   if(!found.length)return;
   var minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
@@ -1587,7 +1587,7 @@ async function initXeokit(){
     xscene=xv.scene;
     // Material fantasma: gris claro, 10% opacidad
     xscene.xrayMaterial.fillColor=[0.7,0.7,0.7];
-    xscene.xrayMaterial.fillAlpha=0.08;
+    xscene.xrayMaterial.fillAlpha=0.3;
     xscene.xrayMaterial.edgeColor=[0.5,0.5,0.5];
     xscene.xrayMaterial.edgeAlpha=0.15;
     xscene.xrayMaterial.fill=true;
@@ -1813,7 +1813,7 @@ function hlPart(code,BC){
     else if(e.ifc22)guids.add(e.ifc22);
   });
   var found=[];
-  guids.forEach(function(g){var o=xscene.objects[g];if(o){o.selected=true;found.push(g);}});
+  guids.forEach(function(g){var o=xscene.objects[g];if(o)found.push(g);});
   vsHl=found;
   if(!found.length)return;
 
@@ -1857,7 +1857,7 @@ function hlPart(code,BC){
 function hlGuids(guids){
   if(!xv||!xscene)return;
   var found=[];
-  guids.forEach(function(g){var o=xscene.objects[g];if(o){o.selected=true;found.push(g);}});
+  guids.forEach(function(g){var o=xscene.objects[g];if(o)found.push(g);});
   vsHl=found;
   if(!found.length)return;
   // Calcular AABB combinado
