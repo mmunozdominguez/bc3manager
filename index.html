@@ -688,22 +688,43 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <div id="pg" style="position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0%;transition:width .3s;display:none;z-index:20;"></div>
         <!-- Sección -->
         <!-- Caja de sección -->
-        <div id="secbox-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:280px;">
+        <div id="secbox-panel" style="display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:10px 14px;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:300px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <span style="font-size:11px;font-weight:700;color:#374151;">Caja de sección</span>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <button id="sb-hide" class="btn" style="font-size:10px;padding:2px 8px;height:auto;" title="Oculta la caja para seleccionar elementos dentro">Ocultar caja</button>
+            <div style="display:flex;gap:5px;align-items:center;">
+              <button id="sb-save" class="btn p" style="font-size:10px;padding:2px 8px;height:auto;" title="Guardar posición">💾</button>
+              <button id="sb-hide" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Ocultar</button>
               <button id="sb-reset" class="btn" style="font-size:10px;padding:2px 8px;height:auto;">Reset</button>
               <button id="secbox-off" style="border:none;background:none;cursor:pointer;color:#9ca3af;padding:0;line-height:1;font-size:18px;">×</button>
             </div>
           </div>
-          <div id="sb-face-hint" style="font-size:10px;color:#9ca3af;margin-bottom:6px;">Haz clic en una cara de la caja para seleccionarla</div>
-          <div id="sb-face-ctrl" style="display:none;">
+          <!-- Traslación de cara -->
+          <div id="sb-face-hint" style="font-size:10px;color:#9ca3af;margin-bottom:6px;">Clic en una cara para trasladarla</div>
+          <div id="sb-face-ctrl" style="display:none;margin-bottom:8px;">
             <div style="font-size:10px;font-weight:600;color:#374151;margin-bottom:4px;" id="sb-face-label">Cara</div>
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-size:9px;color:#9ca3af;white-space:nowrap;">Pos. actual</span>
               <input type="range" id="sb-face-slider" min="0" max="100" value="0" style="flex:1;accent-color:#6c63ff;">
               <span style="font-size:9px;color:#9ca3af;white-space:nowrap;">Cara opuesta</span>
+            </div>
+          </div>
+          <!-- Rotación -->
+          <div style="border-top:1px solid #f3f4f6;padding-top:8px;">
+            <div style="font-size:10px;font-weight:600;color:#374151;margin-bottom:6px;">Rotación</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:700;color:#e74c3c;width:14px;">X</span>
+              <input type="range" id="sb-rot-x" min="0" max="360" value="0" step="1" style="flex:1;accent-color:#e74c3c;height:3px;">
+              <span style="font-size:10px;color:#6b7280;width:30px;text-align:right;" id="sb-rot-x-val">0°</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:700;color:#27ae60;width:14px;">Y</span>
+              <input type="range" id="sb-rot-y" min="0" max="360" value="0" step="1" style="flex:1;accent-color:#27ae60;height:3px;">
+              <span style="font-size:10px;color:#6b7280;width:30px;text-align:right;" id="sb-rot-y-val">0°</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;font-weight:700;color:#2980b9;width:14px;">Z</span>
+              <input type="range" id="sb-rot-z" min="0" max="360" value="0" step="1" style="flex:1;accent-color:#2980b9;height:3px;">
+              <span style="font-size:10px;color:#6b7280;width:30px;text-align:right;" id="sb-rot-z-val">0°</span>
             </div>
           </div>
         </div>
@@ -2181,8 +2202,8 @@ var _sb={
   active:false,
   planes:{xmin:null,xmax:null,ymin:null,ymax:null,zmin:null,zmax:null},
   meshWire:null, meshFaces:[],
-  // Caja actual en coordenadas mundo
   box:{xmin:0,xmax:1,ymin:0,ymax:1,zmin:0,zmax:1},
+  rot:{x:0,y:0,z:0},
   drag:{active:false,face:null,startPos:null,startVal:0,axis:null,sign:0}
 };
 
@@ -2193,67 +2214,23 @@ function initSectionPlugin(){
   xSectionPlugin=new XK.SectionPlanesPlugin(xv,{overviewCanvasId:null,overviewVisible:false});
 }
 
-function _sbDetectBuildingAngle(){
-  if(!xscene)return 0;
-  var pts=[];
-  Object.keys(xscene.objects).forEach(function(id){
-    var o=xscene.objects[id];if(!o||!o.aabb)return;
-    var a=o.aabb;
-    // Las 4 esquinas en XZ
-    pts.push([a[0],a[2]]);pts.push([a[3],a[2]]);
-    pts.push([a[0],a[5]]);pts.push([a[3],a[5]]);
-  });
-  if(pts.length<4)return 0;
-  var bestAngle=0,bestArea=Infinity;
-  for(var deg=0;deg<90;deg+=0.5){
-    var t=deg*Math.PI/180,cosT=Math.cos(t),sinT=Math.sin(t);
-    var uMin=Infinity,uMax=-Infinity,vMin=Infinity,vMax=-Infinity;
-    for(var i=0;i<pts.length;i++){
-      var u=pts[i][0]*cosT+pts[i][1]*sinT;
-      var v=-pts[i][0]*sinT+pts[i][1]*cosT;
-      if(u<uMin)uMin=u;if(u>uMax)uMax=u;
-      if(v<vMin)vMin=v;if(v>vMax)vMax=v;
-    }
-    var area=(uMax-uMin)*(vMax-vMin);
-    if(area<bestArea){bestArea=area;bestAngle=deg;}
-  }
-  console.log('[SB] OBB angulo:',bestAngle,'°');
-  return bestAngle*Math.PI/180;
-}
-
-// Rota un vector [x,z] por ángulo θ en plano XZ
-function _rotXZ(x,z,t){return[x*Math.cos(t)-z*Math.sin(t),x*Math.sin(t)+z*Math.cos(t)];}
-
 function sbOpen(){
   if(!xv||!xscene)return;
   initSectionPlugin();if(!xSectionPlugin)return;
   if(_sb.active)sbClose();
-
-  var angle=_sbDetectBuildingAngle();
-  _sb.angle=angle;
   var aabb=xModel?xModel.aabb:xscene.aabb;
-  var uAxis,vAxis,initBox;
-
-  if(Math.abs(angle)<0.01){
-    // Sin rotación — usar AABB directamente, sin proyección
-    uAxis=[1,0]; vAxis=[0,1];
-    initBox={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
+  var initBox={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
+  _sb.rot={x:0,y:0,z:0};
+  // Cargar posición guardada si existe
+  var saved=_sbLoadPos();
+  if(saved){
+    _sb.box=saved.box;
+    _sb.rot=saved.rot||{x:0,y:0,z:0};
   } else {
-    uAxis=[Math.cos(angle),Math.sin(angle)];
-    vAxis=[-Math.sin(angle),Math.cos(angle)];
-    var corners=[[aabb[0],aabb[2]],[aabb[3],aabb[2]],[aabb[0],aabb[5]],[aabb[3],aabb[5]]];
-    var uProj=corners.map(function(c){return c[0]*uAxis[0]+c[1]*uAxis[1];});
-    var vProj=corners.map(function(c){return c[0]*vAxis[0]+c[1]*vAxis[1];});
-    initBox={
-      xmin:Math.min.apply(null,uProj),xmax:Math.max.apply(null,uProj),
-      ymin:aabb[1],ymax:aabb[4],
-      zmin:Math.min.apply(null,vProj),zmax:Math.max.apply(null,vProj)
-    };
+    _sb.box=Object.assign({},initBox);
   }
-  _sb.uAxis=uAxis; _sb.vAxis=vAxis;
-  _sb.box=Object.assign({},initBox);
   _sb.initBox=Object.assign({},initBox);
-
+  _sbSyncRotSliders();
   _sbCreatePlanes();
   _sbCreateMesh();
   _sb.active=true;
@@ -2275,95 +2252,114 @@ function sbClose(){
   el('bn-secbox').classList.remove('a');
 }
 
-function _sbCreatePlanes(){
-  var b=_sb.box;
-  var uA=_sb.uAxis||[1,0];
-  var vA=_sb.vAxis||[0,1];
-  // Centro de la caja en mundo
-  var uc=(b.xmin+b.xmax)/2, vc=(b.zmin+b.zmax)/2;
-  var cx=uc*uA[0]+vc*vA[0], cz=uc*uA[1]+vc*vA[1];
-  var cy=(b.ymin+b.ymax)/2;
+// Matriz de rotación Euler XYZ (grados)
+function _sbRotMat(rx,ry,rz){
+  var cx=Math.cos(rx),sx=Math.sin(rx);
+  var cy=Math.cos(ry),sy=Math.sin(ry);
+  var cz=Math.cos(rz),sz=Math.sin(rz);
+  return[cy*cz,cy*sz,-sy,0,sx*sy*cz-cx*sz,sx*sy*sz+cx*cz,sx*cy,0,cx*sy*cz+sx*sz,cx*sy*sz-sx*cz,cx*cy,0,0,0,0,1];
+}
+function _mat4V(m,x,y,z){
+  return[m[0]*x+m[4]*y+m[8]*z+m[12],m[1]*x+m[5]*y+m[9]*z+m[13],m[2]*x+m[6]*y+m[10]*z+m[14]];
+}
+function _vSub(a,b){return[a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+function _vCross(a,b){return[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
+function _vNorm(v){var l=Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])||1;return[v[0]/l,v[1]/l,v[2]/l];}
 
-  // Posición de cada plano: centro + desplazamiento en el eje correspondiente
-  var defs={
-    xmin:{pos:[cx+(b.xmin-uc)*uA[0],cy,cz+(b.xmin-uc)*uA[1]], dir:[ uA[0],0, uA[1]]},
-    xmax:{pos:[cx+(b.xmax-uc)*uA[0],cy,cz+(b.xmax-uc)*uA[1]], dir:[-uA[0],0,-uA[1]]},
-    ymin:{pos:[cx,b.ymin,cz],                                   dir:[0, 1,0]},
-    ymax:{pos:[cx,b.ymax,cz],                                   dir:[0,-1,0]},
-    zmin:{pos:[cx+(b.zmin-vc)*vA[0],cy,cz+(b.zmin-vc)*vA[1]], dir:[ vA[0],0, vA[1]]},
-    zmax:{pos:[cx+(b.zmax-vc)*vA[0],cy,cz+(b.zmax-vc)*vA[1]], dir:[-vA[0],0,-vA[1]]}
+// Devuelve las 8 esquinas de la caja rotada en espacio mundo
+function _sbGetCorners(){
+  var b=_sb.box;
+  var rot=_sb.rot||{x:0,y:0,z:0};
+  var m=_sbRotMat(rot.x*Math.PI/180,rot.y*Math.PI/180,rot.z*Math.PI/180);
+  var cx=(b.xmin+b.xmax)/2,cy=(b.ymin+b.ymax)/2,cz=(b.zmin+b.zmax)/2;
+  var hx=(b.xmax-b.xmin)/2,hy=(b.ymax-b.ymin)/2,hz=(b.zmax-b.zmin)/2;
+  var pts=[[-hx,-hy,-hz],[hx,-hy,-hz],[hx,-hy,hz],[-hx,-hy,hz],
+           [-hx, hy,-hz],[hx, hy,-hz],[hx, hy,hz],[-hx, hy,hz]];
+  return pts.map(function(p){
+    var r=_mat4V(m,p[0],p[1],p[2]);
+    return[r[0]+cx,r[1]+cy,r[2]+cz];
+  });
+}
+
+// Normal de una cara calculada desde las esquinas rotadas
+function _sbFaceNormal(c,faceId){
+  var faceVerts={
+    xmin:[0,3,4],xmax:[1,2,5],
+    ymin:[0,1,3],ymax:[4,5,7],
+    zmin:[0,1,4],zmax:[2,3,6]
   };
-  Object.keys(defs).forEach(function(k){
+  var vi=faceVerts[faceId];
+  if(!vi)return[0,1,0];
+  var n=_vNorm(_vCross(_vSub(c[vi[1]],c[vi[0]]),_vSub(c[vi[2]],c[vi[0]])));
+  // Asegurar que la normal apunta hacia el interior (hacia el centro de la caja)
+  var cx=(c[0][0]+c[6][0])/2,cy=(c[0][1]+c[6][1])/2,cz=(c[0][2]+c[6][2])/2;
+  var fc=c[vi[0]];
+  var toCenter=[cx-fc[0],cy-fc[1],cz-fc[2]];
+  var dot=n[0]*toCenter[0]+n[1]*toCenter[1]+n[2]*toCenter[2];
+  if(dot<0)n=[-n[0],-n[1],-n[2]];
+  return n;
+}
+
+function _sbFaceCenter(c,ids){
+  var s=[0,0,0];
+  ids.forEach(function(i){s[0]+=c[i][0];s[1]+=c[i][1];s[2]+=c[i][2];});
+  return[s[0]/ids.length,s[1]/ids.length,s[2]/ids.length];
+}
+
+function _sbCreatePlanes(){
+  var c=_sbGetCorners();
+  var faceDefs={
+    xmin:[0,3,7,4], xmax:[1,2,6,5],
+    ymin:[0,1,2,3], ymax:[4,5,6,7],
+    zmin:[0,1,5,4], zmax:[3,2,6,7]
+  };
+  Object.keys(faceDefs).forEach(function(k){
     if(_sb.planes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sb.planes[k]=null;
-    _sb.planes[k]=xSectionPlugin.createSectionPlane({id:'sb_'+k,pos:defs[k].pos,dir:defs[k].dir});
+    var pos=_sbFaceCenter(c,faceDefs[k]);
+    var n=_sbFaceNormal(c,k);
+    _sb.planes[k]=xSectionPlugin.createSectionPlane({id:'sb_'+k,pos:pos,dir:n});
   });
 }
 
 function _sbCreateMesh(){
   var XK=window._XK;if(!XK)return;
-  var b=_sb.box;
-  var uA=_sb.uAxis||[1,0];
-  var vA=_sb.vAxis||[0,1];
-
-  // Destruir meshes anteriores
   if(_sb.meshWire){try{_sb.meshWire.destroy();}catch(e){}}_sb.meshWire=null;
   _sb.meshFaces.forEach(function(m){try{m.destroy();}catch(e){}});_sb.meshFaces=[];
-
-  // Las 8 esquinas de la caja en espacio mundo
-  // u=xmin/xmax (eje U del edificio), v=zmin/zmax (eje V), y=ymin/ymax
-  function corner(u,y,v){
-    return [u*uA[0]+v*vA[0], y, u*uA[1]+v*vA[1]];
-  }
-  var c={
-    a:corner(b.xmin,b.ymin,b.zmin), b:corner(b.xmax,b.ymin,b.zmin),
-    c:corner(b.xmax,b.ymin,b.zmax), d:corner(b.xmin,b.ymin,b.zmax),
-    e:corner(b.xmin,b.ymax,b.zmin), f:corner(b.xmax,b.ymax,b.zmin),
-    g:corner(b.xmax,b.ymax,b.zmax), h:corner(b.xmin,b.ymax,b.zmax)
-  };
-
-  // Caja alámbrica: 12 aristas como líneas
-  if(XK.VBOGeometry&&XK.Mesh&&XK.PhongMaterial){
+  var c=_sbGetCorners();
+  if(!(XK.VBOGeometry&&XK.Mesh&&XK.PhongMaterial))return;
+  // Wireframe
+  try{
+    var verts=[].concat(c[0],c[1],c[2],c[3],c[4],c[5],c[6],c[7]);
+    var edges=[0,1,1,2,2,3,3,0,4,5,5,6,6,7,7,4,0,4,1,5,2,6,3,7];
+    var wg=new XK.VBOGeometry(xscene,{primitive:'lines',positions:verts,indices:edges});
+    var wm=new XK.PhongMaterial(xscene,{emissive:[0.2,0.6,1],lineWidth:2});
+    _sb.meshWire=new XK.Mesh(xscene,{id:'sb_wire',geometry:wg,material:wm,pickable:false,collidable:false,clippable:false});
+  }catch(e){console.warn('[SB] wire:',e);}
+  // 6 caras pickables
+  var fd=[
+    {id:'xmin',vi:[0,3,7,4]},{id:'xmax',vi:[1,2,6,5]},
+    {id:'ymin',vi:[0,1,2,3]},{id:'ymax',vi:[4,7,6,5]},
+    {id:'zmin',vi:[0,1,5,4]},{id:'zmax',vi:[3,2,6,7]}
+  ];
+  fd.forEach(function(f){
     try{
-      // Posiciones de las 8 esquinas flat
-      var verts=[].concat(c.a,c.b,c.c,c.d,c.e,c.f,c.g,c.h);
-      // 12 aristas: índices de pares
-      var edges=[0,1,1,2,2,3,3,0, 4,5,5,6,6,7,7,4, 0,4,1,5,2,6,3,7];
-      var wireGeo=new XK.VBOGeometry(xscene,{primitive:'lines',positions:verts,indices:edges});
-      var wireMat=new XK.PhongMaterial(xscene,{emissive:[0.2,0.6,1],lineWidth:2});
-      _sb.meshWire=new XK.Mesh(xscene,{
-        id:'sb_wire',geometry:wireGeo,material:wireMat,
-        pickable:false,collidable:false,clippable:false
-      });
-    }catch(e){console.warn('[SB] wire error:',e);}
-  }
-
-  // 6 caras transparentes pickables — vértices directamente en mundo
-  if(XK.VBOGeometry&&XK.Mesh&&XK.PhongMaterial){
-    var faceDefs=[
-      {id:'xmin',vs:[].concat(c.a,c.d,c.h,c.e), n:[-uA[0],0,-uA[1]]},
-      {id:'xmax',vs:[].concat(c.b,c.f,c.g,c.c), n:[ uA[0],0, uA[1]]},
-      {id:'ymin',vs:[].concat(c.a,c.b,c.c,c.d), n:[0,-1,0]},
-      {id:'ymax',vs:[].concat(c.e,c.h,c.g,c.f), n:[0, 1,0]},
-      {id:'zmin',vs:[].concat(c.a,c.e,c.f,c.b), n:[-vA[0],0,-vA[1]]},
-      {id:'zmax',vs:[].concat(c.d,c.c,c.g,c.h), n:[ vA[0],0, vA[1]]}
-    ];
-    faceDefs.forEach(function(f){
-      try{
-        var ns=[];for(var i=0;i<4;i++)ns=ns.concat(f.n);
-        var geo=new XK.VBOGeometry(xscene,{primitive:'triangles',positions:f.vs,indices:[0,1,2,0,2,3],normals:ns});
-        var mat=new XK.PhongMaterial(xscene,{diffuse:[0.3,0.6,1],alpha:0.08,backfaces:true});
-        var mesh=new XK.Mesh(xscene,{id:'sb_face_'+f.id,geometry:geo,material:mat,pickable:true,collidable:false,clippable:false});
-        mesh._sbFace=f.id; mesh._sbAxis=f.id.charAt(0); mesh._sbSign=f.id.endsWith('max')?1:-1;
-        _sb.meshFaces.push(mesh);
-      }catch(e){console.warn('[SB] face error:',e);}
-    });
-  }
+      var vs=[].concat(c[f.vi[0]],c[f.vi[1]],c[f.vi[2]],c[f.vi[3]]);
+      var n=_sbFaceNormal(c,f.id);
+      var ns=[].concat(n,n,n,n);
+      var g=new XK.VBOGeometry(xscene,{primitive:'triangles',positions:vs,indices:[0,1,2,0,2,3],normals:ns});
+      var m2=new XK.PhongMaterial(xscene,{diffuse:[0.3,0.6,1],alpha:0.08,backfaces:true});
+      var mesh=new XK.Mesh(xscene,{id:'sb_face_'+f.id,geometry:g,material:m2,pickable:true,collidable:false,clippable:false});
+      mesh._sbFace=f.id;mesh._sbAxis=f.id.charAt(0);mesh._sbSign=f.id.endsWith('max')?1:-1;
+      _sb.meshFaces.push(mesh);
+    }catch(e){console.warn('[SB] face:',e);}
+  });
 }
 
 function sbUpdate(){
-  _sbCreatePlanes(); // recrea planos con ejes rotados actualizados
+  _sbCreatePlanes();
   _sbCreateMesh();
 }
+
 
 // ── Interacción con la caja ───────────────────────────────────────────────
 var _sbHoverFace=null; // cara en hover
@@ -2465,15 +2461,52 @@ function _sbInitCanvasEvents(){
 function sbReset(){
   if(!_sb.initBox)return;
   _sb.box=Object.assign({},_sb.initBox);
+  _sb.rot={x:0,y:0,z:0};
   _sbSelFace=null;_sbHoverFace=null;
   var sl=el('sb-face-slider');if(sl){sl.value=0;sl.dataset.faceId='';}
   el('sb-face-hint').style.display='block';
   el('sb-face-ctrl').style.display='none';
-  // Restaurar visibilidad de la caja si estaba oculta
   if(_sb.meshWire)_sb.meshWire.visible=true;
   _sb.meshFaces.forEach(function(m){m.visible=true;m.pickable=true;});
   var btnH=el('sb-hide');if(btnH)btnH.textContent='Ocultar caja';
+  _sbSyncRotSliders();
   sbUpdate();
+}
+
+function _sbSyncRotSliders(){
+  var rot=_sb.rot||{x:0,y:0,z:0};
+  ['x','y','z'].forEach(function(ax){
+    var sl=el('sb-rot-'+ax);
+    var vl=el('sb-rot-'+ax+'-val');
+    if(sl)sl.value=rot[ax]||0;
+    if(vl)vl.textContent=(rot[ax]||0)+'°';
+  });
+}
+
+function _sbRotate(axis,deg){
+  if(!_sb.rot)_sb.rot={x:0,y:0,z:0};
+  _sb.rot[axis]=parseInt(deg);
+  var vl=el('sb-rot-'+axis+'-val');
+  if(vl)vl.textContent=deg+'°';
+  sbUpdate();
+}
+
+// Persistencia — guarda en localStorage por versión
+function _sbSaveKey(){return'sb_pos_'+(curVR||'default');}
+
+function _sbSavePos(){
+  try{
+    var data=JSON.stringify({box:_sb.box,rot:_sb.rot});
+    localStorage.setItem(_sbSaveKey(),data);
+    st3('Posición de caja guardada','ok');
+  }catch(e){st3('Error al guardar','');}
+}
+
+function _sbLoadPos(){
+  try{
+    var s=localStorage.getItem(_sbSaveKey());
+    return s?JSON.parse(s):null;
+  }catch(e){return null;}
 }
 
 function buildStoreysPanel(){
@@ -2874,11 +2907,16 @@ on('ms-clr','click',function(){
 on('bn-secbox','click',function(){if(_sb.active)sbClose();else sbOpen();});
 on('secbox-off','click',sbClose);
 on('sb-reset','click',sbReset);
+on('sb-save','click',_sbSavePos);
 on('sb-hide','click',function(){
   var hiding=this.textContent.trim()==='Ocultar caja';
   if(_sb.meshWire)_sb.meshWire.visible=!hiding;
   _sb.meshFaces.forEach(function(m){m.visible=!hiding;m.pickable=!hiding;});
   this.textContent=hiding?'Mostrar caja':'Ocultar caja';
+});
+['x','y','z'].forEach(function(ax){
+  var sl=el('sb-rot-'+ax);
+  if(sl)sl.addEventListener('input',function(){_sbRotate(ax,this.value);});
 });
 var _sbSl=el('sb-face-slider');
 if(_sbSl)_sbSl.addEventListener('input',function(){_sbSliderChange(parseInt(this.value));});
