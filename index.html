@@ -1217,21 +1217,16 @@ function renderTree(){
     var showCode=BC._showCodes&&code&&!(c.desc||'').toLowerCase().startsWith(code.toLowerCase());
     lbl.textContent=(showCode?(code+' | '):'')+( c.desc||code);
     lbl.title=code+': '+(c.desc||'');
-    // Precio
-    var ta=document.createElement('div');ta.className='ta';
-    if(!hk&&c.pr)ta.textContent=fmt(c.pr)+'€';
-    // BIM dot
-    if(hb){var bd=document.createElement('div');bd.className='tbim';}
+    // Precio y BIM dot eliminados — reemplazados por checkbox de selección múltiple
     row.appendChild(tog);row.appendChild(badge);row.appendChild(lbl);
-    row.appendChild(ta);if(hb)row.appendChild(bd);
     // Children
     var cw=document.createElement('div');cw.className='tc';
     kids.forEach(function(k){cw.appendChild(mkN(k,dep+1));});
-    // Checkbox multi-selección
+    // Checkbox multi-selección (derecha)
     var cb=document.createElement('input');
     cb.type='checkbox';cb.className='tn-cb';
     cb.title='Añadir a selección múltiple';
-    cb.style.cssText='flex-shrink:0!important;width:14px!important;height:14px!important;min-width:14px;min-height:14px;margin-right:4px;cursor:pointer;accent-color:var(--acc);';
+    cb.style.cssText='flex-shrink:0;width:16px;height:16px;min-width:16px;min-height:16px;margin-left:auto;margin-right:6px;cursor:pointer;accent-color:var(--acc);';
     cb.addEventListener('click',function(e){e.stopPropagation();});
     cb.addEventListener('change',function(e){
       e.stopPropagation();
@@ -1245,7 +1240,7 @@ function renderTree(){
       updateMsBar();
       updateParentCb(row);
     });
-    row.insertBefore(cb,tog);
+    row.appendChild(cb);
     // Click
     row.addEventListener('click',function(e){
       e.stopPropagation();
