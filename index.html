@@ -2195,12 +2195,13 @@ function initSectionPlugin(){
 
 function _sbDetectBuildingAngle(){
   if(!xscene)return 0;
-  // OBB mínimo: buscar el ángulo en [0,90°] que minimiza el área del bounding box
   var pts=[];
   Object.keys(xscene.objects).forEach(function(id){
     var o=xscene.objects[id];if(!o||!o.aabb)return;
     var a=o.aabb;
-    pts.push([a[0],a[2]]);pts.push([a[3],a[5]]);
+    // Las 4 esquinas en XZ
+    pts.push([a[0],a[2]]);pts.push([a[3],a[2]]);
+    pts.push([a[0],a[5]]);pts.push([a[3],a[5]]);
   });
   if(pts.length<4)return 0;
   var bestAngle=0,bestArea=Infinity;
@@ -2228,32 +2229,30 @@ function sbOpen(){
   initSectionPlugin();if(!xSectionPlugin)return;
   if(_sb.active)sbClose();
 
-  // Detectar orientación del edificio
   var angle=_sbDetectBuildingAngle();
-  _sb.angle=angle; // guardar para rebuild
-
+  _sb.angle=angle;
   var aabb=xModel?xModel.aabb:xscene.aabb;
+  var uAxis,vAxis,initBox;
 
-  // Proyectar todas las esquinas del AABB sobre los ejes rotados para obtener límites reales
-  var corners=[
-    [aabb[0],aabb[2]],[aabb[3],aabb[2]],
-    [aabb[0],aabb[5]],[aabb[3],aabb[5]]
-  ];
-  var u0=_rotXZ(1,0,-angle), u1=_rotXZ(0,1,-angle); // ejes del edificio en world
-  var uAxis=[Math.cos(angle),Math.sin(angle)];   // eje U del edificio (en XZ)
-  var vAxis=[-Math.sin(angle),Math.cos(angle)];  // eje V perpendicular
-  var uProj=corners.map(function(c){return c[0]*uAxis[0]+c[1]*uAxis[1];});
-  var vProj=corners.map(function(c){return c[0]*vAxis[0]+c[1]*vAxis[1];});
-  var umin=Math.min.apply(null,uProj),umax=Math.max.apply(null,uProj);
-  var vmin=Math.min.apply(null,vProj),vmax=Math.max.apply(null,vProj);
-
-  _sb.box={
-    xmin:umin,xmax:umax, // eje U (eje dominante)
-    ymin:aabb[1],ymax:aabb[4], // eje Y siempre vertical
-    zmin:vmin,zmax:vmax  // eje V (perpendicular)
-  };
-  _sb.uAxis=uAxis; _sb.vAxis=vAxis; // guardar ejes para transform pos/dir
-  _sb.initBox=Object.assign({},_sb.box);
+  if(Math.abs(angle)<0.01){
+    // Sin rotación — usar AABB directamente, sin proyección
+    uAxis=[1,0]; vAxis=[0,1];
+    initBox={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
+  } else {
+    uAxis=[Math.cos(angle),Math.sin(angle)];
+    vAxis=[-Math.sin(angle),Math.cos(angle)];
+    var corners=[[aabb[0],aabb[2]],[aabb[3],aabb[2]],[aabb[0],aabb[5]],[aabb[3],aabb[5]]];
+    var uProj=corners.map(function(c){return c[0]*uAxis[0]+c[1]*uAxis[1];});
+    var vProj=corners.map(function(c){return c[0]*vAxis[0]+c[1]*vAxis[1];});
+    initBox={
+      xmin:Math.min.apply(null,uProj),xmax:Math.max.apply(null,uProj),
+      ymin:aabb[1],ymax:aabb[4],
+      zmin:Math.min.apply(null,vProj),zmax:Math.max.apply(null,vProj)
+    };
+  }
+  _sb.uAxis=uAxis; _sb.vAxis=vAxis;
+  _sb.box=Object.assign({},initBox);
+  _sb.initBox=Object.assign({},initBox);
 
   _sbCreatePlanes();
   _sbCreateMesh();
