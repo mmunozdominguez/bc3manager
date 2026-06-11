@@ -1903,6 +1903,7 @@ function showAll(){
   if(!xv||!xscene)return;
   xscene.setObjectsVisible(xscene.objectIds,true);
   xscene.setObjectsXRayed(xscene.objectIds,false);
+  xscene.setObjectsPickable(xscene.objectIds,true);
 }
 
 // Aisla los IDs visibles y pone el resto en modo fantasma
@@ -1911,8 +1912,8 @@ function isoGhost(visibleIds){
   var visSet=new Set(visibleIds);
   xscene.objectIds.forEach(function(id){
     var o=xscene.objects[id];if(!o)return;
-    if(visSet.has(id)){o.xrayed=false;o.visible=true;}
-    else{o.visible=true;o.xrayed=true;}
+    if(visSet.has(id)){o.xrayed=false;o.visible=true;o.pickable=true;}
+    else{o.visible=true;o.xrayed=true;o.pickable=false;}
   });
 }
 
@@ -1922,7 +1923,11 @@ function toggleGhost(){
   if(!xv||!xscene)return;
   vsGhost=!vsGhost;
   xscene.setObjectsXRayed(xscene.objectIds,vsGhost);
-  if(vsGhost&&vsHl.length>0)xscene.setObjectsXRayed(vsHl,false);
+  xscene.setObjectsPickable(xscene.objectIds,!vsGhost);
+  if(vsGhost&&vsHl.length>0){
+    xscene.setObjectsXRayed(vsHl,false);
+    xscene.setObjectsPickable(vsHl,true);
+  }
   el('bn-ghost').classList.toggle('a',vsGhost);
 }
 
