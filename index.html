@@ -1786,6 +1786,8 @@ async function loadXkt(xktBuffer, metaJson){
       xv.scene.canvas.resolutionScale=1;
       setTimeout(function(){xv.cameraFlight.flyTo(xModel);},100);
       if(selP&&curBC)hlPart(selP,curBC);
+      // Ocultar IfcSpace siempre tras cargar
+      _hideIfcSpaces();
     });
     xModel.on('error',function(e){
       st3('Error cargando modelo: '+e,'');
@@ -1881,11 +1883,39 @@ function clrHL(){
   vsHl=[];
 }
 
+var _ifcSpaceIds=new Set();
+
+function _hideIfcSpaces(){
+  if(!xscene)return;
+  _ifcSpaceIds.clear();
+  typeVisibility['IfcSpace']=false;
+  if(xscene.metaScene){
+    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
+      if(mo.type==='IfcSpace'){
+        var o=xscene.objects[mo.id];
+        if(o){o.visible=false;o.pickable=false;_ifcSpaceIds.add(mo.id);}
+      }
+    });
+  }
+  if(_ifcSpaceIds.size===0&&xscene.objects){
+    Object.keys(xscene.objects).forEach(function(id){
+      if(id.toLowerCase().includes('ifcspace')){
+        var o=xscene.objects[id];
+        if(o){o.visible=false;o.pickable=false;_ifcSpaceIds.add(id);}
+      }
+    });
+  }
+}
+
 function showAll(){
   if(!xv||!xscene)return;
   xscene.setObjectsVisible(xscene.objectIds,true);
   xscene.setObjectsXRayed(xscene.objectIds,false);
   xscene.setObjectsPickable(xscene.objectIds,true);
+  // Mantener IfcSpace ocultos
+  _ifcSpaceIds.forEach(function(id){
+    var o=xscene.objects[id];if(o){o.visible=false;o.pickable=false;}
+  });
 }
 
 // Aisla los IDs visibles y pone el resto en modo fantasma
@@ -2100,22 +2130,23 @@ async function applyMetaFile(file){
         }
       });
 
-      // Apply objectDefaults (spaces transparent etc)
+      // Apply objectDefaults
       var OBJ_DEFAULTS={
-        'IfcSpace':-1,'IfcWindow':0.4,'IfcPlate':0.3,
+        'IfcWindow':0.4,'IfcPlate':0.3,
         'IfcRailing':0.7,'IfcOpeningElement':0
       };
       (metaJson.metaObjects||metaJson.objects||[]).forEach(function(o){
         var op=OBJ_DEFAULTS[o.type];
         if(op!==undefined){
           var obj=xscene.objects[o.id];
-          if(obj){if(op===-1)obj.visible=false;else obj.opacity=op;}
           if(obj){
             if(op===0)obj.visible=false;
             else obj.opacity=op;
           }
         }
       });
+      // Ocultar IfcSpace siempre (metadatos ya cargados, ahora es fiable)
+      _hideIfcSpaces();
 
       st3('Metadatos aplicados: '+n+' elementos','ok');
       // Rebuild categories panel if open
@@ -2780,13 +2811,13 @@ on('bn-can-archivos','click',function(){hideM('m-archivos');});
 
 
 // ── FILTROS POR CATEGORÍA ─────────────────────────────────────────────────
-var IFC_LABELS={'IfcWall':'Muros','IfcWallStandardCase':'Muros',
+var IFC_LABELS={'IfcSpace':'Habitaciones/Espacios','IfcWall':'Muros','IfcWallStandardCase':'Muros',
   'IfcSlab':'Forjados','IfcColumn':'Pilares','IfcBeam':'Vigas','IfcDoor':'Puertas',
   'IfcWindow':'Ventanas','IfcRoof':'Cubiertas','IfcCovering':'Revestimientos',
   'IfcStair':'Escaleras','IfcRailing':'Barandillas','IfcFurniture':'Mobiliario',
   'IfcPlate':'Placas','IfcMember':'Estructura','IfcFooting':'Cimentación',
   'IfcBuildingElementProxy':'Varios','IfcOpeningElement':'Huecos'};
-var IFC_ORDER=['IfcWall','IfcWallStandardCase','IfcSlab','IfcColumn','IfcBeam',
+var IFC_ORDER=['IfcSpace','IfcWall','IfcWallStandardCase','IfcSlab','IfcColumn','IfcBeam',
   'IfcRoof','IfcStair','IfcRailing','IfcDoor','IfcWindow','IfcCovering','IfcPlate',
   'IfcMember','IfcFooting','IfcFurniture','IfcBuildingElementProxy','IfcOpeningElement'];
 var typeVisibility={};
@@ -2798,7 +2829,7 @@ function buildTypesPanel(){
   var typeCount={},typeEntities={};
   src.forEach(function(o){
     if(!o.type||o.type==='IfcProject'||o.type==='IfcSite'||o.type==='IfcBuilding'||
-       o.type==='IfcBuildingStorey'||o.type==='IfcSpace'||o.id==='root')return;
+       o.type==='IfcBuildingStorey'||o.id==='root')return;
     typeCount[o.type]=(typeCount[o.type]||0)+1;
     if(!typeEntities[o.type])typeEntities[o.type]=[];
     typeEntities[o.type].push(o.id);
