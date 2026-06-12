@@ -543,7 +543,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v1.4</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v1.5</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2011,19 +2011,26 @@ function _hideIfcSpaces(){
   }
 }
 
+// Safari (macOS e iOS) compone las líneas con más densidad → factor corrector
+var _isSafari=(function(){
+  var ua=navigator.userAgent;
+  var ios=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var safariMac=/^((?!chrome|crios|fxios|android|edg).)*safari/i.test(ua);
+  return ios||safariMac;
+})();
 function _updateXrayTheme(){
   if(!window.xv||!window.xv.scene)return;
   var xm=window.xv.scene.xrayMaterial;
   // Solo aristas en todas las plataformas (el relleno translúcido falla en WebKit)
-  // Gris neutro adaptado al tema
   xm.fill=false;
   xm.edges=true;
+  var f=_isSafari?0.5:1; // mitad de alpha en Safari para igualar percepción
   if(window._dark){
     xm.edgeColor=[0.72,0.74,0.77];
-    xm.edgeAlpha=0.25;
+    xm.edgeAlpha=0.25*f;
   } else {
     xm.edgeColor=[0.45,0.46,0.48];
-    xm.edgeAlpha=0.28;
+    xm.edgeAlpha=0.28*f;
   }
 }
 function showAll(){
