@@ -438,6 +438,10 @@ html.dark .sbp-muted{color:rgba(255,255,255,.45);}
 html.dark .sbp-ico{color:rgba(255,255,255,.7);}
 html.dark .sbp-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.8);}
 html.dark .sbp-btn:hover{background:rgba(255,255,255,.15);}
+.sbp-range{-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:var(--acc);outline:none;}
+.sbp-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;}
+.sbp-range::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;}
+.sbp-range::-moz-range-track{height:5px;border-radius:3px;background:var(--acc);}
 html.dark #cats-panel,
 html.dark #views-panel,
 html.dark #secbox-panel{
@@ -539,7 +543,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v20</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v21</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -733,7 +737,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
             <div style="display:flex;align-items:center;gap:10px;">
               <span class="sbp-muted" style="font-size:10px;font-weight:600;white-space:nowrap;">Cara</span>
               <span class="sbp-title" style="font-size:11px;font-weight:700;white-space:nowrap;min-width:34px;" id="sb-face-label">—</span>
-              <input type="range" id="sb-face-slider" min="0" max="100" value="0" style="flex:1;accent-color:#6c63ff;height:4px;cursor:pointer;">
+              <input type="range" id="sb-face-slider" class="sbp-range" min="0" max="100" value="0" style="flex:1;cursor:pointer;">
               <span class="sbp-muted" style="font-size:10px;white-space:nowrap;" id="sb-align-hint"></span>
             </div>
           </div>
