@@ -521,7 +521,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v7</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v8</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1430,7 +1430,7 @@ function hlMulti(){
   });
   if(!guids.size)return;
   var found=[];
-  guids.forEach(function(g){var o=xscene.objects[g];if(o)found.push(g);});
+  guids.forEach(function(g){var o=xscene.objects[g];if(o){o.selected=true;found.push(g);}});
   vsHl=found;
   if(!found.length)return;
   var minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
@@ -1883,7 +1883,7 @@ function hlPart(code,BC){
     else if(e.ifc22)guids.add(e.ifc22);
   });
   var found=[];
-  guids.forEach(function(g){var o=xscene.objects[g];if(o)found.push(g);});
+  guids.forEach(function(g){var o=xscene.objects[g];if(o){o.selected=true;found.push(g);}});
   vsHl=found;
   if(!found.length)return;
 
@@ -1927,7 +1927,7 @@ function hlPart(code,BC){
 function hlGuids(guids){
   if(!xv||!xscene)return;
   var found=[];
-  guids.forEach(function(g){var o=xscene.objects[g];if(o)found.push(g);});
+  guids.forEach(function(g){var o=xscene.objects[g];if(o){o.selected=true;found.push(g);}});
   vsHl=found;
   if(!found.length)return;
   // Calcular AABB combinado
@@ -1999,6 +1999,8 @@ function showAll(){
 // Aisla los IDs visibles y pone el resto en modo fantasma
 function isoGhost(visibleIds){
   if(!xv||!xscene||!visibleIds||!visibleIds.length)return;
+  // Al aislar, quitar el verde de selección — los aislados se ven con su color
+  xscene.setObjectsSelected(xscene.selectedObjectIds,false);
   var visSet=new Set(visibleIds);
   xscene.objectIds.forEach(function(id){
     var o=xscene.objects[id];if(!o)return;
@@ -3253,7 +3255,7 @@ function dbG_all(store, cb){
 (function(){
   var isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
   var ind=el('dev-ind');
-  if(ind)ind.textContent=(isTouch?'📲':'💻')+' v1';
+  if(ind)ind.textContent=(isTouch?'📲 ':'💻 ')+ind.textContent;
 
   // ── Dark mode ──────────────────────────────────────────────────────
   var _dark = localStorage.getItem('bc3m-dark')==='1';
