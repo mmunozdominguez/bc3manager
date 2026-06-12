@@ -171,14 +171,26 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 #dc{flex:1;overflow-y:auto;padding:10px 10px;}
 /* Responsive: portrait → visor debajo */
 @media (orientation:portrait),(max-width:700px){
-  #vb-body{flex-direction:column;}
-  .col-div{flex:0 0 5px;cursor:row-resize;}
-  .col-div::after{width:24px;height:3px;}
-  #col1,#col2{flex:0 0 auto;max-height:35vh;border-right:none;border-bottom:1px solid var(--bd);}
-  #col2{max-height:30vh;}
-  #col3{flex:1;min-height:200px;}
-  .vcol.collapsed{flex:0 0 28px!important;min-width:0!important;max-width:none!important;max-height:28px!important;}
-  .vcol.collapsed .col-header{writing-mode:horizontal-tb;padding:4px 10px;}
+  /* Fila superior: presupuesto + detalle lado a lado · Fila inferior: visor a todo el ancho */
+  #vb-body{flex-direction:row;flex-wrap:wrap;}
+  .col-div{display:none;}
+  #col1,#col2{flex:1 1 0;min-width:0;height:44%;max-height:none;border-bottom:1px solid var(--bd);}
+  #col1{border-right:1px solid var(--bd);}
+  #col2{border-right:none;}
+  #col3{flex:1 1 100%;width:100%;height:56%;min-height:0;}
+  /* Columna superior colapsada → barra vertical estrecha, la otra ocupa el ancho */
+  #col1.collapsed,#col2.collapsed{flex:0 0 32px!important;min-width:32px!important;max-width:32px!important;height:44%;max-height:none!important;}
+  /* Visor colapsado → barra horizontal, columnas toman toda la altura */
+  #col3.collapsed{flex:1 1 100%!important;height:36px!important;min-height:36px!important;max-height:36px!important;min-width:0!important;max-width:none!important;}
+  #col3.collapsed .col-header{writing-mode:horizontal-tb;padding:4px 10px;}
+  #vb-body:has(#col3.collapsed) #col1,
+  #vb-body:has(#col3.collapsed) #col2{height:calc(100% - 36px);}
+  /* Ambas columnas colapsadas → barras horizontales arriba, visor casi a pantalla completa */
+  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col1,
+  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col2{height:36px;flex:1 1 0!important;min-width:0!important;max-width:none!important;}
+  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col1 .col-header,
+  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col2 .col-header{writing-mode:horizontal-tb;padding:4px 10px;}
+  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col3{height:calc(100% - 36px);}
 }
 /* Header/status del visor */
 #sm-wrap{display:flex;align-items:center;gap:4px;flex:1;justify-content:flex-end;}
@@ -316,10 +328,6 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 /* Visor en móvil: cols apiladas, visor prioritario */
 @media (max-width:600px){
-  #vb-body{flex-direction:column;}
-  #col1,#col2{max-height:30vh;flex:0 0 30vh;border-right:none;border-bottom:1px solid var(--bd);}
-  #col3{flex:1;min-height:220px;}
-  .col-div{cursor:row-resize;}
   /* Botones más grandes para touch */
   .t3{width:38px!important;height:38px!important;}
   /* Info card más pequeña */
@@ -327,10 +335,7 @@ button,input,select,textarea{-webkit-appearance:none;}
 }
 
 /* Tablet portrait */
-@media (min-width:601px) and (max-width:900px) and (orientation:portrait){
-  #col1{flex:0 0 260px;}
-  #col2{flex:0 0 200px;}
-}
+
 
 /* Tablet landscape: layout horizontal normal pero más compacto */
 @media (min-width:601px) and (max-width:1100px) and (orientation:landscape){
@@ -523,7 +528,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v14</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -683,8 +688,8 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
           </div>
         </div>
         <canvas id="cv"></canvas>
-        <div id="hc" style="display:none;position:absolute;bottom:36px;left:8px;max-width:240px;background:rgba(255,255,255,.93);color:#374151;border-radius:6px;padding:6px 9px;font-size:10px;z-index:30;pointer-events:none;border:1px solid rgba(0,0,0,.1);box-shadow:0 2px 6px rgba(0,0,0,.1);">
-          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;" id="hct">—</div>
+        <div id="hc" style="display:none;position:absolute;bottom:36px;left:8px;max-width:420px;background:rgba(255,255,255,.93);color:#374151;border-radius:6px;padding:6px 9px;font-size:10px;z-index:30;pointer-events:none;border:1px solid rgba(0,0,0,.1);box-shadow:0 2px 6px rgba(0,0,0,.1);">
+          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px;" id="hct">—</div>
           <div id="hcp" style="color:#6b7280;font-size:9px;margin-top:1px;"></div>
         </div>
         <div id="pg" style="position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0%;transition:width .3s;display:none;z-index:20;"></div>
@@ -2069,23 +2074,17 @@ function toggleGhost(){
   el('bn-ghost').classList.toggle('a',vsGhost);
 }
 
-function showHC(name,partida,esp){
+function showHC(name,partida){
   var hc=el('hc');if(!hc)return;
-  // Nombre del elemento + medición con unidad
-  var qty='';
-  if(partida&&esp&&curBC&&curBC.m&&curBC.m[partida]){
-    var ms=curBC.m[partida],m=null;
-    for(var i=0;i<ms.length;i++){
-      var t=ms[i].txt||'';
-      if(t===esp||(t&&esp&&(t.indexOf(esp)===0||esp.indexOf(t)===0))){m=ms[i];break;}
-    }
-    if(m){
-      var parc=m.parc!=null?m.parc:(m.nd&&m.a?m.nd*m.a:m.a||0);
-      var ud=(curBC.c[partida]||{}).ud||'';
-      if(parc)qty=fmt(parc,2)+(ud?' '+ud:'');
-    }
+  var txt=name||'—';
+  if(partida&&curBC&&curBC.c[partida]){
+    var con=curBC.c[partida];
+    var ms=curBC.m[partida]||[];
+    var mt=ms.reduce(function(s,m){var p=m.parc!=null?m.parc:(m.nd&&m.a?m.nd*m.a:m.a||0);return s+p;},0);
+    txt=partida+' '+(con.desc||'');
+    if(mt)txt+=' - '+fmt(mt,3)+(con.ud?' '+con.ud:'');
   }
-  el('hct').textContent=(name||'—')+(qty?' · '+qty:'');
+  el('hct').textContent=txt;
   if(el('hcp'))el('hcp').textContent='';
   hc.style.display='block';
   clearTimeout(hc._t);hc._t=setTimeout(function(){hc.style.display='none';},4000);
@@ -2347,6 +2346,8 @@ function sbOpen(){
 }
 
 function sbClose(){
+  if(_sb.active&&_sb.box&&_sb.cur){try{_sbSavePos();}catch(e){}}
+  var cv0=el('cv');if(cv0)cv0.style.cursor='';
   Object.keys(_sb.planes).forEach(function(k){
     if(_sb.planes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sb.planes[k]=null;
   });
@@ -2470,6 +2471,7 @@ function _sbSetFaceHighlight(faceId,on){
 }
 
 function _sbSelectFace(faceId){
+  if(!_sb.box||!_sb.cur)return;
   if(_sbSelFace&&_sbSelFace!==faceId)_sbSetFaceHighlight(_sbSelFace,false);
   _sbSelFace=faceId;
   _sbSetFaceHighlight(faceId,true);
@@ -2488,6 +2490,7 @@ function _sbSelectFace(faceId){
 }
 
 function _sbSliderChange(pct){
+  if(!_sb.box||!_sb.cur)return;
   var sl=el('sb-face-slider');if(!sl)return;
   var faceId=sl.dataset.faceId;if(!faceId)return;
   var b=_sb.box,c=_sb.cur,o=_SB_OPP[faceId];
@@ -2500,6 +2503,9 @@ function _sbSliderChange(pct){
 // Devuelve true si el evento fue consumido por la caja
 function _sbHandleCanvasTap(canvasPos){
   if(!_sb.active)return false;
+  try{return _sbHandleCanvasTapInner(canvasPos);}catch(e){console.warn('[SB] tap:',e);return false;}
+}
+function _sbHandleCanvasTapInner(canvasPos){
   // Modo alinear: pick de superficie sobre el modelo
   if(_sbAlignMode){
     var hitS=xv.scene.pick({canvasPos:canvasPos,pickSurface:true});
@@ -2536,8 +2542,10 @@ function _sbInitCanvasEvents(){
   var cv=el('cv');if(!cv)return;
   cv.addEventListener('mousemove',function(e){
     if(!_sb.active)return;
+    // Solo hacer pick si la caja está visible (es la operación más cara)
+    if(!_sb.meshFaces.length||!_sb.meshFaces[0].visible)return;
     var now=Date.now();
-    if(now-_sbPickT<70)return; // throttle pick
+    if(now-_sbPickT<100)return; // throttle pick
     _sbPickT=now;
     var hit=xv.scene.pick({canvasPos:[e.offsetX,e.offsetY]});
     var faceId=hit&&hit.entity&&hit.entity.id&&hit.entity.id.startsWith('sb_face_')
@@ -2626,7 +2634,7 @@ function buildStoreysPanel(){
   allRow.textContent='Todas las plantas';
   allRow.addEventListener('click',function(){
     showAll();
-    if(xSection&&xSectionPlugin){sbClose();}
+    if(_sb.active)sbClose();
     if(xModel)xv.cameraFlight.flyTo(xModel,{duration:0.5});
   });
   list.appendChild(allRow);
@@ -2637,6 +2645,7 @@ function buildStoreysPanel(){
     row.addEventListener('click',function(){
       initSectionPlugin();
       if(!_sb.active)sbOpen();
+      if(!_sb.box||!_sb.cur)return;
       // Cortar por encima de la planta: mover cara ymax
       var b=_sb.box,pct=(s.pct||50)/100;
       _sb.cur.ymax=b.ymin+(b.ymax-b.ymin)*Math.min(1,pct+0.08);
