@@ -719,8 +719,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
                   <svg viewBox="0 0 20 20" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3v14M3 10h14"/></svg>
                   Traslación de cara
                 </div>
-                <div id="sb-face-hint" style="font-size:11px;color:rgba(255,255,255,.35);padding:6px 0;">Clic en una cara de la caja para moverla</div>
-                <div id="sb-face-ctrl" style="display:none;">
+                <div id="sb-face-ctrl" style="display:block;">
                   <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.9);margin-bottom:6px;" id="sb-face-label"></div>
                   <div style="display:flex;align-items:center;gap:8px;">
                     <span style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap;">Pos. actual</span>
@@ -2254,6 +2253,8 @@ function sbOpen(){
   _sb.active=true;
   el('secbox-panel').style.display='block';
   el('bn-secbox').classList.add('a');
+  // Pre-seleccionar cara ymax para que el slider esté siempre visible al abrir
+  setTimeout(function(){_sbSelectFace('ymax');},50);
 }
 
 function sbClose(){
@@ -2389,68 +2390,41 @@ function _sbSetFaceHighlight(faceId, on){
 }
 
 function _sbSelectFace(faceId){
-  // Deseleccionar anterior
-  if(_sbSelFace && _sbSelFace!==faceId) _sbSetFaceHighlight(_sbSelFace,false);
+  if(_sbSelFace&&_sbSelFace!==faceId)_sbSetFaceHighlight(_sbSelFace,false);
   _sbSelFace=faceId;
   _sbSetFaceHighlight(faceId,true);
-
-  var axis=faceId.charAt(0); // x, y, z
-  var isMin=faceId.endsWith('min');
-  var b=_sb.box;
-
-  // Cara seleccionada y cara opuesta
-  var valSel  = b[faceId];
-  var valOpp  = isMin ? b[axis+'max'] : b[axis+'min'];
-  var span    = Math.abs(valOpp - valSel); // distancia entre las dos caras
-
-  // El slider: 0% = posición actual de la cara, 100% = posición de la cara opuesta
-  // El plano se mueve desde valSel hacia valOpp
-  var sl=el('sb-face-slider');
+  var axis=faceId.charAt(0);
+  var oppFace={xmin:'xmax',xmax:'xmin',ymin:'ymax',ymax:'ymin',zmin:'zmax',zmax:'zmin'};
+  var axisNames={x:'X — izquierda/derecha',y:'Y — abajo/arriba',z:'Z — fondo/frente'};
   var lbl=el('sb-face-label');
-  var axisNames={x:'X (derecha/izquierda)',y:'Y (arriba/abajo)',z:'Z (frente/fondo)'};
-  if(lbl) lbl.textContent=(isMin?'Cara −':'Cara +')+axisNames[axis];
+  if(lbl)lbl.textContent=axisNames[axis];
+  // Posición inicial del plano y distancia hasta la cara opuesta (espacio mundo)
+  var c=_sbGetCorners();
+  var faceVIdx={xmin:[0,3,7,4],xmax:[1,2,6,5],ymin:[0,1,2,3],ymax:[4,5,6,7],zmin:[0,1,5,4],zmax:[3,2,6,7]};
+  var p0=_sbFaceCenter(c,faceVIdx[faceId]);
+  var pOpp=_sbFaceCenter(c,faceVIdx[oppFace[faceId]]);
+  var span=Math.sqrt(Math.pow(pOpp[0]-p0[0],2)+Math.pow(pOpp[1]-p0[1],2)+Math.pow(pOpp[2]-p0[2],2));
+  var sl=el('sb-face-slider');
   if(sl){
     sl.value=0;
     sl.dataset.faceId=faceId;
-    sl.dataset.valSel=valSel;
-    sl.dataset.valOpp=valOpp;
-    sl.dataset.axis=axis;
+    sl.dataset.p0x=p0[0]; sl.dataset.p0y=p0[1]; sl.dataset.p0z=p0[2];
+    sl.dataset.span=span;
   }
   el('secbox-panel').style.display='block';
-  el('sb-face-hint').style.display='none';
-  el('sb-face-ctrl').style.display='block';
 }
 
 function _sbSliderChange(pct){
   var sl=el('sb-face-slider');if(!sl)return;
   var faceId=sl.dataset.faceId;if(!faceId)return;
-  var valSel=parseFloat(sl.dataset.valSel);
-  var valOpp=parseFloat(sl.dataset.valOpp);
-  var isMin=faceId.endsWith('min');
-
-  // t=0 → posición original de la cara, t=1 → cara opuesta (margen 2%)
-  var t=pct/100;
-  var margin=Math.abs(valOpp-valSel)*0.02;
-  var newVal=isMin
-    ? valSel + t*(valOpp-valSel-margin)
-    : valSel + t*(valOpp-valSel+margin);
-
-  // Mover SOLO el plano de sección — la caja visual no cambia
-  var plane=_sb.planes[faceId];
-  if(!plane)return;
-  var n=_sbFaceNormal(faceId); // normal rotada de esa cara
-  // La normal del plano apunta hacia dentro — para desplazar la cara
-  // necesitamos mover la posición en la dirección OPUESTA (hacia fuera)
-  // Calculamos el centro actual de la cara desde las esquinas
-  var c=_sbGetCorners();
-  var faceVIdx={xmin:[0,3,7,4],xmax:[1,2,6,5],ymin:[0,1,2,3],ymax:[4,5,6,7],zmin:[0,1,5,4],zmax:[3,2,6,7]};
-  var basePos=_sbFaceCenter(c,faceVIdx[faceId]);
-  // Desplazamiento = fracción del span en la dirección de la normal exterior
-  var span=Math.abs(valOpp-valSel);
-  var disp=isMin ? (newVal-valSel) : (valSel-newVal); // distancia desde pos original
-  // Dirección de movimiento: hacia el interior de la caja (inversa de la normal exterior)
-  // normal exterior = -n (n apunta hacia dentro para el plano de sección)
-  plane.pos=[basePos[0]-n[0]*disp, basePos[1]-n[1]*disp, basePos[2]-n[2]*disp];
+  var plane=_sb.planes[faceId];if(!plane)return;
+  var p0=[parseFloat(sl.dataset.p0x),parseFloat(sl.dataset.p0y),parseFloat(sl.dataset.p0z)];
+  var span=parseFloat(sl.dataset.span);
+  // Normal hacia el interior — es la dirección del SectionPlane
+  var n=_sbFaceNormal(faceId);
+  // t=0: plano en posición original | t=0.95: plano casi en cara opuesta
+  var t=(pct/100)*0.95;
+  plane.pos=[p0[0]+n[0]*span*t, p0[1]+n[1]*span*t, p0[2]+n[2]*span*t];
 }
 
 function _sbInitCanvasEvents(){
@@ -2486,13 +2460,14 @@ function sbReset(){
   _sb.rot={x:0,y:0,z:0};
   _sbSelFace=null;_sbHoverFace=null;
   var sl=el('sb-face-slider');if(sl){sl.value=0;sl.dataset.faceId='';}
-  el('sb-face-hint').style.display='block';
-  el('sb-face-ctrl').style.display='none';
+
+
   if(_sb.meshWire)_sb.meshWire.visible=true;
   _sb.meshFaces.forEach(function(m){m.visible=true;m.pickable=true;});
   var btnH=el('sb-hide');if(btnH)btnH.textContent='Ocultar caja';
   _sbSyncRotSliders();
   sbUpdate();
+  setTimeout(function(){_sbSelectFace('ymax');},50);
 }
 
 function _sbSyncRotSliders(){
