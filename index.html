@@ -521,7 +521,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v6</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v7</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -664,6 +664,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <span>Modelo 3D</span>
         <div class="vtoolbar" style="display:flex;gap:3px;align-items:center;flex:1;justify-content:flex-end;padding-right:4px;flex-wrap:wrap;">
           <button class="t3" id="bn-fit" title="Encuadrar todo" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+          <button class="t3" id="bn-pcolor" title="Colorear por partidas" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="13.5" r="2.5"/><circle cx="8.5" cy="17.5" r="2.5"/><circle cx="6.5" cy="9.5" r="2.5"/></svg></button>
           <button class="t3" id="bn-ghost" title="Modo fantasma / XRay" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></button>
           <button class="t3" id="bn-iso" title="Aislar selección" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9" stroke-dasharray="3 2"/></svg></button>
           <button class="t3" id="bn-clr" title="Limpiar todo" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -1059,6 +1060,7 @@ function loadProj(id){
 function openVer(vid){
   curVR=vid;
   curBC=null; selP=null; selMs.clear();
+  vsPColor=false; var bpc=el('bn-pcolor'); if(bpc)bpc.classList.remove('a');
   // Reset 3D
   if(xModel){try{xModel.destroy();}catch(e){}xModel=null;}
   g2asm={}; asm2g={}; vsHl=[];
@@ -1203,6 +1205,35 @@ function pT(BC,s){
   if(txt)BC.t[code]=txt;
 }
 
+// ── COLORES POR PARTIDA ──────────────────────────────────────────────────
+var PART_PALETTE=[
+  [0.90,0.30,0.25],[0.20,0.55,0.90],[0.30,0.75,0.40],[0.95,0.65,0.15],
+  [0.60,0.35,0.85],[0.10,0.75,0.75],[0.95,0.45,0.65],[0.55,0.65,0.20],
+  [0.90,0.50,0.30],[0.35,0.45,0.85],[0.25,0.70,0.55],[0.85,0.75,0.25],
+  [0.75,0.30,0.55],[0.30,0.65,0.85],[0.65,0.80,0.35],[0.90,0.35,0.40],
+  [0.45,0.55,0.95],[0.20,0.80,0.60],[0.95,0.55,0.20],[0.70,0.45,0.75],
+  [0.40,0.75,0.80],[0.85,0.60,0.45],[0.50,0.70,0.30],[0.80,0.40,0.70]
+];
+function partColorIdx(code,BC){
+  if(!BC._partColorMap){
+    BC._partColorMap={};
+    var i=0;
+    Object.keys(BC.g).sort().forEach(function(p){
+      if((BC.g[p]||[]).length>0){BC._partColorMap[p]=i%PART_PALETTE.length;i++;}
+    });
+  }
+  return BC._partColorMap[code];
+}
+function partColor(code,BC){
+  var idx=partColorIdx(code,BC);
+  return idx===undefined?null:PART_PALETTE[idx];
+}
+function partColorHex(code,BC){
+  var c=partColor(code,BC);
+  if(!c)return null;
+  return '#'+c.map(function(v){return('0'+Math.round(v*255).toString(16)).slice(-2);}).join('');
+}
+
 function renderTree(){
   if(!curBC)return;
   var BC=curBC;
@@ -1249,8 +1280,18 @@ function renderTree(){
     var showCode=BC._showCodes&&code&&!(c.desc||'').toLowerCase().startsWith(code.toLowerCase());
     lbl.textContent=(showCode?(code+' | '):'')+( c.desc||code);
     lbl.title=code+': '+(c.desc||'');
-    // Precio y BIM dot eliminados — reemplazados por checkbox de selección múltiple
     row.appendChild(tog);row.appendChild(badge);row.appendChild(lbl);
+    // Dot de color de partida (solo partidas con vínculos BIM)
+    if(hb&&!hk){
+      var hex=partColorHex(code,BC);
+      if(hex){
+        var dot=document.createElement('div');
+        dot.className='tn-pcolor';
+        dot.style.cssText='flex-shrink:0;width:8px;height:8px;border-radius:2px;margin-right:5px;background:'+hex+';';
+        dot.title='Color de partida';
+        row.appendChild(dot);
+      }
+    }
     // Children
     var cw=document.createElement('div');cw.className='tc';
     kids.forEach(function(k){cw.appendChild(mkN(k,dep+1));});
@@ -1967,6 +2008,35 @@ function isoGhost(visibleIds){
 }
 
 function fitModel(){if(xv&&xModel)xv.cameraFlight.flyTo(xModel);}
+
+// ── COLOREAR POR PARTIDAS EN EL VISOR ────────────────────────────────────
+var vsPColor=false;
+
+function togglePartColors(){
+  if(!xv||!xscene||!curBC)return;
+  vsPColor=!vsPColor;
+  if(vsPColor){
+    Object.keys(curBC.g).forEach(function(code){
+      var col=partColor(code,curBC);
+      if(!col)return;
+      (curBC.g[code]||[]).forEach(function(e){
+        var guids=[];
+        if(e.type==='asm')guids=asm2g[e.asmCode]||[];
+        else if(e.ifc22)guids=[e.ifc22];
+        guids.forEach(function(g){
+          var o=xscene.objects[g];
+          if(o)o.colorize=col;
+        });
+      });
+    });
+  } else {
+    xscene.objectIds.forEach(function(id){
+      var o=xscene.objects[id];
+      if(o&&o.colorize)o.colorize=null;
+    });
+  }
+  el('bn-pcolor').classList.toggle('a',vsPColor);
+}
 
 function toggleGhost(){
   if(!xv||!xscene)return;
@@ -2833,6 +2903,7 @@ on('fbc3r','change',function(){
 
 // Visor — botones 3D
 on('bn-fit','click',fitModel);
+on('bn-pcolor','click',togglePartColors);
 on('bn-ghost','click',toggleGhost);
 on('bn-iso','click',function(){
   if(!xv||!xscene)return;
