@@ -336,7 +336,6 @@ button,input,select,textarea{-webkit-appearance:none;}
 
 /* Tablet portrait */
 
-
 /* Tablet landscape: layout horizontal normal pero más compacto */
 @media (min-width:601px) and (max-width:1100px) and (orientation:landscape){
   #col1{flex:0 0 240px;}
@@ -355,7 +354,6 @@ button,input,select,textarea{-webkit-appearance:none;}
   .col-meta{display:none;}
   .vbg{display:none;}
 }
-
 
 /* ── Tarjetas de obras ─────────────────────────────────────────── */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:12px;}
@@ -528,7 +526,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v17</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -731,7 +729,6 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <div id="side-panel" style="display:none;position:absolute;top:44px;right:8px;bottom:8px;width:236px;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;z-index:29;flex-direction:column;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.15);">
           <div style="display:flex;border-bottom:1px solid #eee;">
             <button class="sp-tab a" id="sp-tab-cats" data-tab="cats" title="Categorías" style="flex:1;padding:9px 0;border:none;background:none;cursor:pointer;color:var(--acc);border-bottom:2px solid var(--acc);"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></button>
-            <button class="sp-tab" id="sp-tab-storeys" data-tab="storeys" title="Plantas" style="flex:1;padding:9px 0;border:none;background:none;cursor:pointer;color:#9ca3af;border-bottom:2px solid transparent;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10" width="18" height="3" rx="1"/><rect x="3" y="16" width="18" height="3" rx="1"/></svg></button>
             <button class="sp-tab" id="sp-tab-views" data-tab="views" title="Vistas guardadas" style="flex:1;padding:9px 0;border:none;background:none;cursor:pointer;color:#9ca3af;border-bottom:2px solid transparent;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h2l2-3h6l2 3h2a1 1 0 011 1v11a1 1 0 01-1 1H5a1 1 0 01-1-1V8a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
           </div>
           <div id="sp-cats" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
@@ -740,9 +737,6 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
               <button onclick="setCatsVisible(false)" style="font-size:9px;padding:2px 8px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;color:#374151;">Nada</button>
             </div>
             <div id="types-list" style="flex:1;overflow-y:auto;padding:6px 0;"></div>
-          </div>
-          <div id="sp-storeys" style="flex:1;display:none;overflow-y:auto;">
-            <div id="storeys-list" style="padding:4px 0;"></div>
           </div>
           <div id="sp-views" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
             <div style="padding:8px 10px;border-bottom:1px solid #eee;">
@@ -807,7 +801,6 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 </div>
 
 <!-- ══ BUSCADOR ══════════════════════════════════════════════════════════ -->
-
 
 <!-- ══ MODALES ══════════════════════════════════════════════════════════ -->
 
@@ -2311,7 +2304,6 @@ async function applyMetaFile(file){
 }
 
 
-
 // ── SECCIÓN, PLANTAS Y MEDICIÓN ─────────────────────────────────────────
 var xSection=null, xSectionPlugin=null;
 // ── CAJA DE SECCIÓN FÍSICA (optimizada: geometría creada 1 vez) ──────────
@@ -2627,48 +2619,6 @@ function _sbLoadPos(){
   }catch(e){return null;}
 }
 
-function buildStoreysPanel(){
-  if(!xv||!xscene) return;
-  var list=el('storeys-list');if(!list)return;
-  var storeys=[];
-  var src=_metaJson?(_metaJson.objects||_metaJson.metaObjects||[]):[];
-  if(xscene.metaScene)
-    Object.values(xscene.metaScene.metaObjects||{}).forEach(function(mo){
-      if(mo.type==='IfcBuildingStorey')storeys.push({id:mo.id,name:mo.name||'Planta'});
-    });
-  if(!storeys.length)
-    src.forEach(function(o){if(o.type==='IfcBuildingStorey')storeys.push({id:o.id,name:o.name||'Planta'});});
-  if(!storeys.length){
-    var aabb=xscene.aabb,h=aabb[4]-aabb[1],nF=Math.max(1,Math.round(h/3));
-    for(var i=0;i<nF;i++)storeys.push({id:'floor_'+i,name:'Planta '+(i===0?'Baja':i),pct:Math.round((i+0.5)/nF*100)});
-  }
-  list.innerHTML='';
-  var allRow=document.createElement('div');
-  allRow.style.cssText='padding:8px 12px;cursor:pointer;font-size:11px;font-weight:600;color:#374151;border-bottom:1px solid #f3f4f6;';
-  allRow.textContent='Todas las plantas';
-  allRow.addEventListener('click',function(){
-    showAll();
-    if(_sb.active)sbClose();
-    if(xModel)xv.cameraFlight.flyTo(xModel,{duration:0.5});
-  });
-  list.appendChild(allRow);
-  storeys.forEach(function(s){
-    var row=document.createElement('div');
-    row.style.cssText='padding:7px 12px;cursor:pointer;font-size:11px;color:#374151;display:flex;align-items:center;';
-    row.innerHTML='<span style="flex:1">'+s.name+'</span>';
-    row.addEventListener('click',function(){
-      initSectionPlugin();
-      if(!_sb.active)sbOpen();
-      if(!_sb.box||!_sb.cur)return;
-      // Cortar por encima de la planta: mover cara ymax
-      var b=_sb.box,pct=(s.pct||50)/100;
-      _sb.cur.ymax=b.ymin+(b.ymax-b.ymin)*Math.min(1,pct+0.08);
-      _sbApply();
-      _sbSelectFace('ymax');
-    });
-    list.appendChild(row);
-  });
-}
 
 // ── COLUMNAS REDIMENSIONABLES + TOUCH ────────────────────────────────────
 (function(){
@@ -2845,7 +2795,6 @@ function buildStoreysPanel(){
 
 })();
 
-
 // ── EVENTOS ───────────────────────────────────────────────────────────────
 // Navegación
 on('bh2','click',loadHome);
@@ -2962,13 +2911,10 @@ on('bn-ghost','click',toggleGhost);
 on('bn-iso','click',function(){
   if(!xv||!xscene)return;
   if(this.classList.contains('a')){
-    xscene.setObjectsVisible(xscene.objectIds,true);
-    typeVisibility={};
+    showAll();
     this.classList.remove('a');
-    buildTypesPanel();
   } else if(vsHl.length>0){
-    xscene.setObjectsVisible(xscene.objectIds,false);
-    vsHl.forEach(function(g){var o=xscene.objects[g];if(o)o.visible=true;});
+    isoGhost(vsHl);
     this.classList.add('a');
   }
 });
@@ -3025,7 +2971,7 @@ on('bn-side','click',function(){
   var open=(p.style.display==='flex');
   if(!open){
     p.style.display='flex';
-    buildTypesPanel();buildStoreysPanel();buildViewsPanel();
+    buildTypesPanel();buildViewsPanel();
     this.classList.add('a');
   } else {
     p.style.display='none';
@@ -3042,7 +2988,6 @@ document.querySelectorAll('.sp-tab').forEach(function(t){
       x.classList.toggle('a',act);
     });
     el('sp-cats').style.display=tab==='cats'?'flex':'none';
-    el('sp-storeys').style.display=tab==='storeys'?'block':'none';
     el('sp-views').style.display=tab==='views'?'flex':'none';
     if(tab==='views')buildViewsPanel();
   });
@@ -3107,7 +3052,6 @@ on('bn-can-archivos','click',function(){hideM('m-archivos');});
 ['fxkt','fmeta','fbc3r'].forEach(function(id){
   on(id,'change',function(){hideM('m-archivos');});
 });
-
 
 // ── FILTROS POR CATEGORÍA ─────────────────────────────────────────────────
 var IFC_LABELS={'IfcSpace':'Habitaciones/Espacios','IfcWall':'Muros','IfcWallStandardCase':'Muros',
@@ -3200,7 +3144,6 @@ function isolateCategory(type,entities){
   buildTypesPanel();el('bn-iso').classList.add('a');
 }
 
-
 // ── BACKUP COMPLETO ───────────────────────────────────────────────────────
 async function exportBackup(){
   try{
@@ -3284,7 +3227,6 @@ async function exportBackup(){
   }
 }
 
-
 async function restoreBackup(file){
   if(!confirm('¿Restaurar copia de seguridad?\nSe añadirán los datos al contenido actual.'))return;
   try{
@@ -3345,7 +3287,6 @@ async function restoreBackup(file){
     console.error(e);
   }
 }
-
 
 // Helper: read all records from a store
 function dbG_all(store, cb){
