@@ -526,7 +526,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v18</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v19</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -642,8 +642,8 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
       <!-- Barra multi-selección -->
       <div id="ms-bar">
         <span id="ms-cnt" style="font-size:11px;font-weight:600;color:var(--acc);flex:1;">0 partidas</span>
-        <button id="ms-iso" class="btn p" style="font-size:11px;padding:4px 10px;height:auto;">Aislar en visor</button>
-        <button id="ms-clr" class="btn" style="font-size:11px;padding:4px 8px;height:auto;" title="Limpiar selección">✕</button>
+        <button id="ms-iso" class="btn p" style="font-size:11px;padding:4px 12px;display:flex;align-items:center;justify-content:center;">Aislar en visor</button>
+        <button id="ms-clr" class="btn" style="font-size:13px;padding:0;width:32px;display:flex;align-items:center;justify-content:center;" title="Limpiar selección">✕</button>
       </div>
     </div>
     <div class="col-div" id="div12" data-cols="col1,col2"></div>
@@ -2925,6 +2925,28 @@ on('bn-clr','click',function(){
   el('bn-iso').classList.remove('a');
   typeVisibility={};
   if(el('side-panel')&&el('side-panel').style.display!=='none')buildTypesPanel();
+});
+on('ms-iso','click',function(){
+  if(!curBC||!selMs.size)return;
+  hlMulti();
+  if(vsHl.length){
+    isoGhost(vsHl);
+    var bi=el('bn-iso');if(bi)bi.classList.add('a');
+  }
+});
+on('ms-clr','click',function(){
+  selMs.clear();
+  document.querySelectorAll('.tn-cb').forEach(function(cb){
+    cb.dataset.checked='0';
+    cb.style.background='#fff';
+    cb.style.borderColor='#aaa';
+    cb.innerHTML='';
+  });
+  updateMsBar();
+  // Si había aislamiento activo desde la multi-selección, restaurar
+  var bi=el('bn-iso');
+  if(bi&&bi.classList.contains('a')){showAll();bi.classList.remove('a');}
+  clrHL();
 });
 on('bn-secbox','click',function(){if(_sb.active)sbClose();else sbOpen();});
 on('secbox-off','click',function(){sbClose();});
