@@ -521,7 +521,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v5</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v6</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1636,6 +1636,8 @@ async function initXeokit(){
       var hit=xv.scene.pick({canvasPos:canvasPos});
       if(!hit||!hit.entity)return;
       var entityId=hit.entity.id;
+      // Ignorar meshes de la caja de sección (los gestiona _sbInitCanvasEvents)
+      if(entityId&&(entityId.indexOf('sb_face_')===0||entityId==='sb_wire'))return;
 
       xscene.setObjectsSelected(xscene.selectedObjectIds,false);
       hit.entity.selected=true;
@@ -2356,10 +2358,12 @@ var sbUpdate=_sbApply; // compatibilidad
 
 function _sbSetFaceHighlight(faceId,on){
   _sb.meshFaces.forEach(function(m){
+    // Limpiar selected nativo de xeokit si quedó marcado
+    if(m.selected)m.selected=false;
     if(on&&m.id!=='sb_face_'+faceId){m.material.diffuse=[0.3,0.6,1];m.material.alpha=0.08;}
     if(m.id==='sb_face_'+faceId){
-      m.material.diffuse=on?[1,0.6,0.1]:[0.3,0.6,1];
-      m.material.alpha=on?0.35:0.08;
+      m.material.diffuse=on?[0.16,0.45,0.94]:[0.3,0.6,1]; // azul interfaz
+      m.material.alpha=on?0.3:0.08;
     }
   });
 }
