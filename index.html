@@ -241,7 +241,7 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .pr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;font-size:11px;}
 .pr:last-child{margin-bottom:0;padding-top:4px;border-top:1px solid var(--bd);font-weight:600;}
 .prl{color:var(--muted);}
-.prv{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+.prv{font-family:inherit;font-weight:600;font-size:12px;font-variant-numeric:tabular-nums;letter-spacing:.01em;}
 .prv.a{color:var(--acc);}
 .ec{padding:6px 8px;border-radius:5px;background:var(--panel2);border:1px solid var(--bd);cursor:pointer;margin-bottom:4px;transition:all .1s;}
 .ec:hover{background:var(--acc-bg);border-color:var(--acc-bd);}
@@ -422,15 +422,17 @@ html.dark #p3d{background:#0f1117;}
 html.dark #dz{color:var(--muted);}
 html.dark .slice-panel-inner,
 html.dark #slice-panel,
-html.dark #storeys-panel,
-html.dark #types-panel,
+html.dark #side-panel,
 html.dark #secbox-panel{
   background:var(--panel)!important;
   border-color:var(--bd)!important;
   color:var(--text)!important;
 }
-html.dark #types-panel label,
+html.dark #side-panel label,
 html.dark #types-list div{color:var(--text)!important;}
+html.dark #side-panel .sp-tab{background:none;}
+html.dark #views-list div{color:var(--text)!important;}
+html.dark #sp-cats>div:first-child,html.dark #sp-views>div:first-child,html.dark #side-panel>div:first-child{border-color:var(--bd)!important;}
 html.dark #hc{background:rgba(26,29,39,.95)!important;color:var(--text)!important;border-color:var(--bd)!important;}
 html.dark .ver-card .chip.xkt{background:#1e1030;color:#c4b5fd;border-color:#4c1d95;}
 html.dark input[type=range]{accent-color:var(--acc);}
@@ -521,7 +523,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v12</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v13</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -669,9 +671,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
           <button class="t3" id="bn-iso" title="Aislar selección" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9" stroke-dasharray="3 2"/></svg></button>
           <button class="t3" id="bn-clr" title="Limpiar todo" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           <button class="t3" id="bn-secbox" title="Caja de sección" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></button>
-          <button class="t3" id="bn-storeys" title="Plantas del edificio" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10" width="18" height="3" rx="1"/><rect x="3" y="16" width="18" height="3" rx="1"/></svg></button>
-          <button class="t3" id="bn-measure" title="Medir distancias" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 8"/><line x1="5" y1="13" x2="9" y2="13"/><line x1="17" y1="7" x2="21" y2="11"/><line x1="21" y1="7" x2="17" y2="11"/></svg></button>
-          <button class="t3 a" id="bn-types" title="Categorías" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></button>
+          <button class="t3" id="bn-side" title="Panel del visor" style="padding:7px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="15" y1="4" x2="15" y2="20"/></svg></button>
         </div>
         <button class="col-tog" id="tog-col3" title="Colapsar">‹</button>
       </div>
@@ -723,20 +723,28 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         </div>
         <!-- fin secbox-panel -->
         <!-- Plantas -->
-        <div id="storeys-panel" style="display:none;position:absolute;top:44px;right:8px;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:0;z-index:30;min-width:200px;max-height:360px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.15);">
-          <div style="padding:10px 12px 6px;border-bottom:1px solid #eee;font-size:11px;font-weight:700;color:#374151;">Plantas</div>
-          <div id="storeys-list" style="padding:4px 0;"></div>
-        </div>
-        <!-- Panel categorías -->
-        <div id="types-panel" style="display:none;position:absolute;top:44px;right:8px;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:0;z-index:30;min-width:210px;max-height:420px;box-shadow:0 4px 16px rgba(0,0,0,.15);overflow:hidden;flex-direction:column;">
-          <div style="padding:10px 12px 6px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:11px;font-weight:700;color:#374151;">Categorías</span>
-            <div style="display:flex;gap:4px;">
-              <button onclick="setCatsVisible(true)" style="font-size:9px;padding:2px 6px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;color:#374151;">Todo</button>
-              <button onclick="setCatsVisible(false)" style="font-size:9px;padding:2px 6px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;color:#374151;">Nada</button>
-            </div>
+        <div id="side-panel" style="display:none;position:absolute;top:44px;right:8px;bottom:8px;width:236px;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.12);border-radius:10px;z-index:29;flex-direction:column;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.15);">
+          <div style="display:flex;border-bottom:1px solid #eee;">
+            <button class="sp-tab a" id="sp-tab-cats" data-tab="cats" title="Categorías" style="flex:1;padding:9px 0;border:none;background:none;cursor:pointer;color:var(--acc);border-bottom:2px solid var(--acc);"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></button>
+            <button class="sp-tab" id="sp-tab-storeys" data-tab="storeys" title="Plantas" style="flex:1;padding:9px 0;border:none;background:none;cursor:pointer;color:#9ca3af;border-bottom:2px solid transparent;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10" width="18" height="3" rx="1"/><rect x="3" y="16" width="18" height="3" rx="1"/></svg></button>
+            <button class="sp-tab" id="sp-tab-views" data-tab="views" title="Vistas guardadas" style="flex:1;padding:9px 0;border:none;background:none;cursor:pointer;color:#9ca3af;border-bottom:2px solid transparent;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h2l2-3h6l2 3h2a1 1 0 011 1v11a1 1 0 01-1 1H5a1 1 0 01-1-1V8a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
           </div>
-          <div id="types-list" style="overflow-y:auto;max-height:360px;padding:6px 0;"></div>
+          <div id="sp-cats" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+            <div style="padding:8px 12px;border-bottom:1px solid #eee;display:flex;justify-content:flex-end;gap:4px;">
+              <button onclick="setCatsVisible(true)" style="font-size:9px;padding:2px 8px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;color:#374151;">Todo</button>
+              <button onclick="setCatsVisible(false)" style="font-size:9px;padding:2px 8px;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;cursor:pointer;color:#374151;">Nada</button>
+            </div>
+            <div id="types-list" style="flex:1;overflow-y:auto;padding:6px 0;"></div>
+          </div>
+          <div id="sp-storeys" style="flex:1;display:none;overflow-y:auto;">
+            <div id="storeys-list" style="padding:4px 0;"></div>
+          </div>
+          <div id="sp-views" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
+            <div style="padding:8px 10px;border-bottom:1px solid #eee;">
+              <button id="sp-view-save" style="width:100%;font-size:11px;padding:6px 0;border:1px solid var(--acc);border-radius:6px;background:none;color:var(--acc);cursor:pointer;font-weight:600;">+ Guardar vista actual</button>
+            </div>
+            <div id="views-list" style="flex:1;overflow-y:auto;padding:4px 0;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1561,10 +1569,10 @@ function rBIM(){
       if(gg.type==='asm'){
         var guids=asm2g[gg.asmCode]||[];
         hlGuids(guids);
-        showHC(gg.esp||gg.asmCode,selP,guids.length+' elementos');
+        showHC(gg.esp||gg.asmCode,selP,gg.esp);
       } else if(gg.ifc22){
         hlGuids([gg.ifc22]);
-        showHC(gg.esp,selP,gg.ifc22);
+        showHC(gg.esp,selP,gg.esp);
       }
     });})(g);
   });
@@ -1574,8 +1582,18 @@ function rMED(){
   var d=el('dc');if(!selP||!curBC){d.innerHTML='<div class="ed"><p>Selecciona una partida</p></div>';return;}
   var ms=curBC.m[selP]||[];
   if(!ms.length){d.innerHTML='<div style="padding:12px;color:var(--muted);font-size:12px;">Sin mediciones</div>';return;}
+  // Recuento de líneas + comparación con elementos BIM
+  var nBim=0;
+  (curBC.g[selP]||[]).forEach(function(e){
+    if(e.type==='asm')nBim+=(asm2g[e.asmCode]||[]).length;
+    else if(e.ifc22)nBim++;
+  });
+  var match=(ms.length===nBim);
   var tot=0;
-  var h='<table class="mt"><thead><tr><th>Descripción</th><th class="nr">N</th><th class="nr">L</th><th class="nr">A</th><th class="nr">H</th><th class="nr">Cant.</th></tr></thead><tbody>';
+  var h='<div style="padding:10px 12px 6px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Líneas de medición ('+ms.length+')'
+    +(nBim?' <span style="color:'+(match?'var(--ok)':'#e67e22')+';font-weight:600;text-transform:none;"> · '+nBim+' elem. en modelo'+(match?'':' ⚠')+'</span>':'')
+    +'</div>';
+  h+='<table class="mt"<thead><tr><th>Descripción</th><th class="nr">N</th><th class="nr">L</th><th class="nr">A</th><th class="nr">H</th><th class="nr">Cant.</th></tr></thead><tbody>';
   ms.forEach(function(m){
     var parc=m.parc!=null?m.parc:(m.nd&&m.a?m.nd*m.a:m.a||0);
     tot+=parc;
@@ -1735,7 +1753,15 @@ async function initXeokit(){
           });
         },50);
       }
-      showHC(name,fp,asmCode||entityId.slice(0,12));
+      var matchEsp=null;
+      if(fp&&curBC){
+        (curBC.g[fp]||[]).some(function(g){
+          if(g.type==='asm'&&asmCode&&(g.asmCode===asmCode||asmCode.indexOf(g.asmCode)===0)){matchEsp=g.esp;return true;}
+          if(g.type==='ifc22'&&g.ifc22===entityId){matchEsp=g.esp;return true;}
+          return false;
+        });
+      }
+      showHC(name,fp,matchEsp);
     }
 
     xv.scene.input.on('mouseclicked',function(coords){handlePick(coords);});
@@ -1845,7 +1871,7 @@ async function loadXkt(xktBuffer, metaJson){
       el('dz').classList.add('h');
       el('cv').style.display='block';
       // Rebuild types panel with actual model data
-      if(el('types-panel')&&el('types-panel').style.display!=='none'){
+      if(el('side-panel')&&el('side-panel').style.display!=='none'){
         buildTypesPanel();
       }
       // Resize canvas to fit parent
@@ -2043,12 +2069,23 @@ function toggleGhost(){
   el('bn-ghost').classList.toggle('a',vsGhost);
 }
 
-function showHC(name,partida,extra){
+function showHC(name,partida,esp){
   var hc=el('hc');if(!hc)return;
-  // Mostrar solo código de partida + descripción corta
-  var desc='';
-  if(partida&&curBC&&curBC.c[partida])desc=curBC.c[partida].desc||'';
-  el('hct').textContent=(partida||name||'—')+(desc?' · '+desc:'');
+  // Nombre del elemento + medición con unidad
+  var qty='';
+  if(partida&&esp&&curBC&&curBC.m&&curBC.m[partida]){
+    var ms=curBC.m[partida],m=null;
+    for(var i=0;i<ms.length;i++){
+      var t=ms[i].txt||'';
+      if(t===esp||(t&&esp&&(t.indexOf(esp)===0||esp.indexOf(t)===0))){m=ms[i];break;}
+    }
+    if(m){
+      var parc=m.parc!=null?m.parc:(m.nd&&m.a?m.nd*m.a:m.a||0);
+      var ud=(curBC.c[partida]||{}).ud||'';
+      if(parc)qty=fmt(parc,2)+(ud?' '+ud:'');
+    }
+  }
+  el('hct').textContent=(name||'—')+(qty?' · '+qty:'');
   if(el('hcp'))el('hcp').textContent='';
   hc.style.display='block';
   clearTimeout(hc._t);hc._t=setTimeout(function(){hc.style.display='none';},4000);
@@ -2250,7 +2287,7 @@ async function applyMetaFile(file){
 
       st3('Metadatos aplicados: '+n+' elementos','ok');
       // Rebuild categories panel if open
-      if(el('types-panel')&&el('types-panel').style.display!=='none')buildTypesPanel();
+      if(el('side-panel')&&el('side-panel').style.display!=='none')buildTypesPanel();
     } else {
       st3('Carga el XKT primero','');
     }
@@ -2263,7 +2300,7 @@ async function applyMetaFile(file){
 
 
 // ── SECCIÓN, PLANTAS Y MEDICIÓN ─────────────────────────────────────────
-var xSection=null, xSectionPlugin=null, xMeasurePlugin=null;
+var xSection=null, xSectionPlugin=null;
 // ── CAJA DE SECCIÓN FÍSICA (optimizada: geometría creada 1 vez) ──────────
 var _sb={
   active:false,
@@ -2610,366 +2647,6 @@ function buildStoreysPanel(){
   });
 }
 
-function toggleMeasure(){
-  if(!xv) return;
-  var XK=window._XK;
-  if(!XK||!XK.DistanceMeasurementsPlugin){st3('Medición no disponible','');return;}
-  var active=el('bn-measure').classList.contains('a');
-  if(active){
-    if(xMeasurePlugin){
-      if(xMeasurePlugin._mouseCtrl)xMeasurePlugin._mouseCtrl.deactivate();
-      if(xMeasurePlugin._touchCtrl)xMeasurePlugin._touchCtrl.deactivate();
-      xMeasurePlugin.clear();
-    }
-    el('bn-measure').classList.remove('a');st3('','');
-  } else {
-    if(!xMeasurePlugin){
-      xMeasurePlugin=new XK.DistanceMeasurementsPlugin(xv);
-      if(XK.DistanceMeasurementsMouseControl){
-        xMeasurePlugin._mouseCtrl=new XK.DistanceMeasurementsMouseControl(xMeasurePlugin,{pointerLens:null});
-        xMeasurePlugin._mouseCtrl.activate();
-      }
-      if(XK.DistanceMeasurementsTouchControl){
-        xMeasurePlugin._touchCtrl=new XK.DistanceMeasurementsTouchControl(xMeasurePlugin,{pointerLens:null});
-        xMeasurePlugin._touchCtrl.activate();
-      }
-    } else {
-      if(xMeasurePlugin._mouseCtrl)xMeasurePlugin._mouseCtrl.activate();
-      if(xMeasurePlugin._touchCtrl)xMeasurePlugin._touchCtrl.activate();
-    }
-    el('bn-measure').classList.add('a');
-    st3('Clic en 2 puntos para medir distancia','');
-  }
-}
-
-// ── COLUMNAS REDIMENSIONABLES + TOUCH ────────────────────────────────────
-(function(){
-
-  var body = document.getElementById('vb-body');
-  if(!body) return;
-
-  // Estado de columnas: 'open' | 'collapsed'
-  var colState = {col1:'open', col2:'open', col3:'open'};
-  var colSizes = {col1:260, col2:220}; // col3 ocupa el resto
-
-  function applyLayout(){
-    var col1=document.getElementById('col1');
-    var col2=document.getElementById('col2');
-    var col3=document.getElementById('col3');
-    var d12=document.getElementById('div12');
-    var d23=document.getElementById('div23');
-    if(!col1||!col2||!col3) return;
-
-    var totalW = body.clientWidth;
-    var divW = 5;
-
-    var c1open = colState.col1==='open';
-    var c2open = colState.col2==='open';
-    var c3open = colState.col3==='open';
-
-    var used = (c1open?0:32) + (c2open?0:32) + (c3open?0:32);
-    var openCols = (c1open?1:0)+(c2open?1:0)+(c3open?1:0);
-    var divCount = 2;
-    var available = totalW - used - divCount*divW;
-
-    if(c1open&&c2open&&c3open){
-      // Tutti aperti - usa colSizes
-      var w1=Math.min(colSizes.col1, available*0.45);
-      var w2=Math.min(colSizes.col2, available*0.35);
-      var w3=Math.max(200, available-w1-w2);
-      col1.style.flex='0 0 '+w1+'px';
-      col2.style.flex='0 0 '+w2+'px';
-      col3.style.flex='1 1 auto';
-    } else if(c1open&&!c2open&&c3open){
-      col1.style.flex='0 0 '+Math.min(colSizes.col1,available*0.4)+'px';
-      col2.style.flex='0 0 32px';
-      col3.style.flex='1 1 auto';
-    } else if(!c1open&&c2open&&c3open){
-      col1.style.flex='0 0 32px';
-      col2.style.flex='0 0 '+Math.min(colSizes.col2,available*0.4)+'px';
-      col3.style.flex='1 1 auto';
-    } else if(c1open&&c2open&&!c3open){
-      col1.style.flex='0 0 '+Math.min(colSizes.col1,available*0.5)+'px';
-      col2.style.flex='1 1 auto';
-      col3.style.flex='0 0 32px';
-    } else if(c1open&&!c2open&&!c3open){
-      col1.style.flex='1 1 auto';
-      col2.style.flex='0 0 32px';
-      col3.style.flex='0 0 32px';
-    } else if(!c1open&&c2open&&!c3open){
-      col1.style.flex='0 0 32px';
-      col2.style.flex='1 1 auto';
-      col3.style.flex='0 0 32px';
-    } else if(!c1open&&!c2open&&c3open){
-      col1.style.flex='0 0 32px';
-      col2.style.flex='0 0 32px';
-      col3.style.flex='1 1 auto';
-    } else {
-      // Todos colapsados - expandir col3
-      col1.style.flex='0 0 32px';
-      col2.style.flex='0 0 32px';
-      col3.style.flex='1 1 auto';
-      colState.col3='open';
-    }
-
-    // Collapsed state
-    [col1,col2,col3].forEach(function(col){
-      var id=col.id;
-      var isOpen=colState[id]==='open';
-      col.classList.toggle('collapsed',!isOpen);
-      var btn=col.querySelector('.col-tog');
-      if(btn){
-        // col3 está a la derecha: flecha apunta izquierda cuando abierta, derecha cuando colapsada
-        // col1/col2 están a la izquierda: flecha apunta derecha cuando abierta, izquierda cuando colapsada — no, al revés
-        // col1: abierta → ‹ cierra hacia izq. Colapsada → › abre hacia der. ✓
-        // col3: abierta → › cierra hacia der. Colapsada → ‹ abre hacia izq.
-        if(id==='col3') btn.textContent=isOpen?'›':'‹';
-        else btn.textContent=isOpen?'‹':'›';
-      }
-    });
-
-    // Notify xeokit of resize
-    if(window.xv && window.xv.scene) {
-      setTimeout(function(){
-        try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
-      },100);
-    }
-  }
-
-  // Toggle códigos en árbol
-  on('bn-showcodes','click',function(e){
-    e.stopPropagation();
-    if(!curBC)return;
-    curBC._showCodes=!curBC._showCodes;
-    el('bn-showcodes').classList.toggle('a', !!curBC._showCodes);
-    renderTree();
-  });
-
-  // Toggle buttons
-  document.querySelectorAll('.col-tog').forEach(function(btn){
-    btn.addEventListener('click',function(e){
-      e.stopPropagation();
-      var col=btn.closest('.vcol');
-      if(!col) return;
-      var id=col.id;
-      colState[id] = colState[id]==='open'?'collapsed':'open';
-      applyLayout();
-    });
-  });
-
-  // ── Resize dividers — mouse ──────────────────────────────────────────
-  document.querySelectorAll('.col-div').forEach(function(div){
-    var cols=(div.dataset.cols||'').split(',');
-    if(cols.length<2) return;
-    var dragging=false, startX=0, sw=0;
-
-    div.addEventListener('mousedown',function(e){
-      if(colState[cols[0]]==='collapsed'||colState[cols[1]]==='collapsed') return;
-      dragging=true; startX=e.clientX;
-      var c1=document.getElementById(cols[0]);
-      sw=c1?c1.offsetWidth:260;
-      document.body.style.cursor='col-resize';
-      document.body.style.userSelect='none';
-      e.preventDefault();
-    });
-
-    document.addEventListener('mousemove',function(e){
-      if(!dragging) return;
-      var delta=e.clientX-startX;
-      var nw=Math.max(160, sw+delta);
-      if(cols[0]==='col1') colSizes.col1=nw;
-      if(cols[0]==='col2') colSizes.col2=nw;
-      applyLayout();
-    });
-
-    document.addEventListener('mouseup',function(){
-      if(dragging){dragging=false;document.body.style.cursor='';document.body.style.userSelect='';}
-    });
-
-    // ── Touch resize ──────────────────────────────────────────────────
-    var touchStartX=0, touchSW=0;
-    div.addEventListener('touchstart',function(e){
-      if(colState[cols[0]]==='collapsed'||colState[cols[1]]==='collapsed') return;
-      touchStartX=e.touches[0].clientX;
-      var c1=document.getElementById(cols[0]);
-      touchSW=c1?c1.offsetWidth:260;
-      e.preventDefault();
-    },{passive:false});
-
-    div.addEventListener('touchmove',function(e){
-      var delta=e.touches[0].clientX-touchStartX;
-      var nw=Math.max(160, touchSW+delta);
-      if(cols[0]==='col1') colSizes.col1=nw;
-      if(cols[0]==='col2') colSizes.col2=nw;
-      applyLayout();
-      e.preventDefault();
-    },{passive:false});
-  });
-
-  // ── Orientation change / resize ────────────────────────────────────
-  window.addEventListener('resize', function(){applyLayout();});
-  window.addEventListener('orientationchange',function(){
-    setTimeout(applyLayout, 300);
-  });
-
-  // Initial layout
-  applyLayout();
-
-})();
-
-
-// ── EVENTOS ───────────────────────────────────────────────────────────────
-// Navegación
-on('bh2','click',loadHome);
-on('bp3','click',function(){if(curPJ)loadProj(curPJ);});
-on('bn-dp','click',function(){
-  if(!confirm('¿Eliminar esta obra y todas sus versiones?'))return;
-  dbA('versions',function(vers){
-    vers.filter(function(v){return v.projectId===curPJ;}).forEach(function(v){
-      dbD('versions',v.id);dbD('bc3data',v.id);dbD('ifcbin',v.id);
-    });
-    dbD('projects',curPJ,function(){loadHome();});
-  });
-});
-
-// Nueva obra
-on('bn-np','click',function(){showM('m-proj');});
-on('bn-canp','click',function(){hideM('m-proj');});
-on('bn-okp','click',function(){
-  var name=(el('i-pn').value||'').trim();
-  if(!name){alert('El nombre es obligatorio');return;}
-  var p={id:'p'+Date.now(),name:name,
-    address:(el('i-pa').value||'').trim(),
-    client:(el('i-pc').value||'').trim(),
-    notes:(el('i-po').value||'').trim(),
-    createdAt:Date.now()};
-  dbP('projects',p,function(){
-    hideM('m-proj');
-    el('i-pn').value='';el('i-pa').value='';el('i-pc').value='';el('i-po').value='';
-    loadProj(p.id);
-  });
-});
-
-// Nueva versión
-on('bn-nv','click',function(){showM('m-ver');});
-on('bn-canv','click',function(){hideM('m-ver');nvF=null;el('bc3z').textContent='📂 Seleccionar .bc3';});
-on('bc3f','change',function(){
-  nvF=this.files[0];
-  if(nvF)el('bc3z').textContent='✓ '+nvF.name;
-});
-on('bn-okv','click',function(){
-  var name=(el('i-vn').value||'').trim();
-  if(!name){alert('El nombre es obligatorio');return;}
-  if(!nvF){alert('Selecciona un archivo BC3');return;}
-  el('bn-okv').disabled=true;el('bn-okv').textContent='Guardando…';
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var bc3=parseBC3(e.target.result);
-    var nP=Object.values(bc3.c).filter(function(c){return !c.ch;}).length;
-    var nB=Object.keys(bc3.g).filter(function(k){return bc3.g[k].length>0;}).length;
-    var vid='v'+Date.now();
-    var ver={id:vid,projectId:curPJ,name:name,
-      status:(el('i-vs').value||'current'),
-      notes:(el('i-vo').value||'').trim(),
-      fileName:nvF.name,nPartidas:nP,nBimLinked:nB,
-      createdAt:Date.now(),hasXkt:false,hasBin:false};
-    function done(){
-      hideM('m-ver');
-      el('i-vn').value='';el('i-vo').value='';
-      el('bc3z').textContent='📂 Seleccionar .bc3';
-      el('bn-okv').disabled=false;el('bn-okv').textContent='Guardar versión';
-      nvF=null;loadProj(curPJ);
-    }
-    function save(){
-      dbP('versions',ver,function(){
-        dbP('bc3data',{vid:vid,bc3:bc3},done);
-      });
-    }
-    // Marcar vigente → cerrar anteriores
-    if(ver.status==='current'){
-      dbA('versions',function(all){
-        all.filter(function(v){return v.projectId===curPJ&&v.status==='current';})
-          .forEach(function(v){v.status='closed';dbP('versions',v);});
-        save();
-      });
-    } else save();
-  };
-  reader.readAsText(nvF,'latin1');
-});
-
-// Visor — XKT upload
-on('fxkt','change',function(){
-  if(!this.files[0]||!curVR){this.value='';return;}
-  loadXktFile(this.files[0], null);
-  this.value='';
-});
-on('fmeta','change',function(){
-  if(!this.files[0]||!curVR){this.value='';return;}
-  applyMetaFile(this.files[0]);
-  this.value='';
-});
-
-// Visor — BC3 reimport
-on('fbc3r','change',function(){
-  if(!this.files[0]||!curVR)return;
-  var f=this.files[0];
-  var rd=new FileReader();
-  rd.onload=function(e){
-    var bc3=parseBC3(e.target.result);
-    curBC=bc3;
-    var nP=Object.values(bc3.c).filter(function(c){return !c.ch;}).length;
-    var nB=Object.keys(bc3.g).filter(function(k){return bc3.g[k].length>0;}).length;
-    dbP('bc3data',{vid:curVR,bc3:bc3});
-    dbG('versions',curVR,function(v){if(v){v.nPartidas=nP;v.nBimLinked=nB;dbP('versions',v);}});
-    renderTree();
-    alert('BC3 reimportado: '+Object.keys(bc3.c).length+' conceptos');
-  };
-  rd.readAsText(f,'latin1');this.value='';
-});
-
-// Visor — botones 3D
-on('bn-fit','click',fitModel);
-on('bn-pcolor','click',togglePartColors);
-on('bn-ghost','click',toggleGhost);
-on('bn-iso','click',function(){
-  if(!xv||!xscene)return;
-  if(this.classList.contains('a')){
-    xscene.setObjectsXRayed(xscene.objectIds,false);
-    xscene.setObjectsVisible(xscene.objectIds,true);
-    typeVisibility={};
-    this.classList.remove('a');
-    buildTypesPanel();
-  } else if(vsHl.length>0){
-    isoGhost(vsHl);
-    this.classList.add('a');
-  }
-});
-on('bn-clr','click',function(){
-  clrHL();showAll();
-  el('bn-iso').classList.remove('a');
-  typeVisibility={};
-  if(el('types-panel')&&el('types-panel').style.display!=='none')buildTypesPanel();
-});
-on('ms-iso','click',function(){
-  if(!selMs.size)return;
-  hlMulti();
-  if(xv&&xscene&&vsHl.length>0){
-    isoGhost(vsHl);
-    el('bn-iso').classList.add('a');
-  }
-});
-on('ms-clr','click',function(){
-  selMs.clear();
-  document.querySelectorAll('.tn-cb').forEach(function(c){
-    c.dataset.checked='0';c.style.background='#fff';c.style.borderColor='#aaa';c.innerHTML='';
-  });
-  updateMsBar();
-});
-on('bn-secbox','click',function(){if(_sb.active){_sbSavePos();sbClose();}else sbOpen();});
-on('secbox-off','click',function(){_sbSavePos();sbClose();});
-on('sb-reset','click',function(){sbReset();_sbSavePos();});
-var _sbAlignMode=false;
-var _sbAlignPrevHidden=false;
 function _sbSetAlignMode(onOff){
   _sbAlignMode=onOff;
   var btn=el('sb-align');
@@ -3006,25 +2683,71 @@ on('sb-hide','click',function(){
 
 var _sbSl=el('sb-face-slider');
 if(_sbSl)_sbSl.addEventListener('input',function(){_sbSliderChange(parseInt(this.value));});
-on('bn-storeys','click',function(){
-  var p=el('storeys-panel');if(!p)return;
-  var open=(p.style.display==='block');
-  if(!open){buildStoreysPanel();p.style.display='block';this.classList.add('a');}
-  else{p.style.display='none';this.classList.remove('a');}
-});
-on('bn-measure','click',toggleMeasure);
-on('bn-types','click',function(){
-  var p=el('types-panel');if(!p)return;
-  var isOpen=(p.style.display==='flex'||p.style.display==='block');
-  if(!isOpen){
+on('bn-side','click',function(){
+  var p=el('side-panel');if(!p)return;
+  var open=(p.style.display==='flex');
+  if(!open){
     p.style.display='flex';
-    buildTypesPanel(); // always rebuild with latest data
+    buildTypesPanel();buildStoreysPanel();buildViewsPanel();
     this.classList.add('a');
   } else {
     p.style.display='none';
     this.classList.remove('a');
   }
 });
+document.querySelectorAll('.sp-tab').forEach(function(t){
+  t.addEventListener('click',function(){
+    var tab=this.dataset.tab;
+    document.querySelectorAll('.sp-tab').forEach(function(x){
+      var act=x.dataset.tab===tab;
+      x.style.color=act?'var(--acc)':'#9ca3af';
+      x.style.borderBottomColor=act?'var(--acc)':'transparent';
+      x.classList.toggle('a',act);
+    });
+    el('sp-cats').style.display=tab==='cats'?'flex':'none';
+    el('sp-storeys').style.display=tab==='storeys'?'block':'none';
+    el('sp-views').style.display=tab==='views'?'flex':'none';
+    if(tab==='views')buildViewsPanel();
+  });
+});
+on('sp-view-save','click',function(){
+  if(!xv)return;
+  var name=prompt('Nombre de la vista:');
+  if(!name)return;
+  var cam=xv.camera;
+  var views=_loadViews();
+  views.push({name:name,eye:Array.from(cam.eye),look:Array.from(cam.look),up:Array.from(cam.up)});
+  localStorage.setItem('views_'+(curVR||'default'),JSON.stringify(views));
+  buildViewsPanel();
+});
+function _loadViews(){
+  try{var s=localStorage.getItem('views_'+(curVR||'default'));return s?JSON.parse(s):[];}catch(e){return[];}
+}
+function buildViewsPanel(){
+  var list=el('views-list');if(!list)return;
+  var views=_loadViews();
+  list.innerHTML='';
+  if(!views.length){
+    list.innerHTML='<div style="padding:12px;font-size:10px;color:#9ca3af;text-align:center;">Sin vistas guardadas</div>';
+    return;
+  }
+  views.forEach(function(v,i){
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:6px;padding:7px 12px;cursor:pointer;font-size:11px;color:#374151;';
+    row.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" stroke="#9ca3af" fill="none" stroke-width="1.75"><path d="M5 7h2l2-3h6l2 3h2a1 1 0 011 1v11a1 1 0 01-1 1H5a1 1 0 01-1-1V8a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+      +'<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(v.name)+'</span>'
+      +'<button data-del="'+i+'" style="border:none;background:none;cursor:pointer;color:#d1d5db;font-size:13px;padding:0 2px;line-height:1;">×</button>';
+    row.addEventListener('click',function(e){
+      if(e.target.dataset&&e.target.dataset.del!==undefined){
+        var views2=_loadViews();views2.splice(parseInt(e.target.dataset.del),1);
+        localStorage.setItem('views_'+(curVR||'default'),JSON.stringify(views2));
+        buildViewsPanel();e.stopPropagation();return;
+      }
+      if(xv)xv.cameraFlight.flyTo({eye:v.eye,look:v.look,up:v.up,duration:0.7});
+    });
+    list.appendChild(row);
+  });
+}
 on('bn-export','click',function(){if(curVR){exportVersion(curVR);hideM('m-archivos');}});
 on('bn-dark-p','click',function(){window.applyDark(!window._dark);});
 on('bn-dark-v','click',function(){window.applyDark(!window._dark);});
