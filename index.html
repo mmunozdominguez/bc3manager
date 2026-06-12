@@ -528,7 +528,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v15</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v16</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -688,8 +688,8 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
           </div>
         </div>
         <canvas id="cv"></canvas>
-        <div id="hc" style="display:none;position:absolute;bottom:36px;left:8px;max-width:420px;background:rgba(255,255,255,.93);color:#374151;border-radius:6px;padding:6px 9px;font-size:10px;z-index:30;pointer-events:none;border:1px solid rgba(0,0,0,.1);box-shadow:0 2px 6px rgba(0,0,0,.1);">
-          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px;" id="hct">—</div>
+        <div id="hc" style="display:none;position:absolute;bottom:36px;left:8px;width:max-content;max-width:70%;background:rgba(255,255,255,.93);color:#374151;border-radius:6px;padding:6px 9px;font-size:10px;z-index:30;pointer-events:none;border:1px solid rgba(0,0,0,.1);box-shadow:0 2px 6px rgba(0,0,0,.1);">
+          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="hct">—</div>
           <div id="hcp" style="color:#6b7280;font-size:9px;margin-top:1px;"></div>
         </div>
         <div id="pg" style="position:absolute;top:0;left:0;height:2px;background:var(--acc);width:0%;transition:width .3s;display:none;z-index:20;"></div>
@@ -1602,9 +1602,9 @@ function rMED(){
   ms.forEach(function(m){
     var parc=m.parc!=null?m.parc:(m.nd&&m.a?m.nd*m.a:m.a||0);
     tot+=parc;
-    h+='<tr><td>'+esc(m.txt||'—')+'</td><td class="nr">'+(m.nd||'')+'</td><td class="nr">'+(m.a||'')+'</td><td class="nr">'+(m.b||'')+'</td><td class="nr">'+(m.h||'')+'</td><td class="nr">'+(parc?parc.toFixed(3):'')+'</td></tr>';
+    h+='<tr><td>'+esc(m.txt||'—')+'</td><td class="nr">'+(m.nd||'')+'</td><td class="nr">'+(m.a||'')+'</td><td class="nr">'+(m.b||'')+'</td><td class="nr">'+(m.h||'')+'</td><td class="nr">'+(parc?parc.toFixed(2):'')+'</td></tr>';
   });
-  h+='<tr class="tf"><td>Total</td><td></td><td></td><td></td><td></td><td class="nr">'+tot.toFixed(3)+'</td></tr>';
+  h+='<tr class="tf"><td>Total</td><td></td><td></td><td></td><td></td><td class="nr">'+tot.toFixed(2)+'</td></tr>';
   h+='</tbody></table>';
   d.innerHTML=h;
 }
@@ -2091,7 +2091,12 @@ function showHC(name,partida,esp){
         }
       }
     }
-    txt=partida+(parc!=null&&parc?' - '+fmt(parc,3)+(ud?' '+ud:''):'');
+    var qtyHtml=(parc!=null&&parc)?' <span style="color:var(--acc);font-weight:700;">'+fmt(parc,2)+(ud?' '+esc(ud):'')+'</span>':'';
+    el('hct').innerHTML=esc(partida)+qtyHtml;
+    if(el('hcp'))el('hcp').textContent='';
+    hc.style.display='block';
+    clearTimeout(hc._t);hc._t=setTimeout(function(){hc.style.display='none';},4000);
+    return;
   }
   el('hct').textContent=txt;
   if(el('hcp'))el('hcp').textContent='';
