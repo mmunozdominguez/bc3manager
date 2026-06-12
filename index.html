@@ -521,7 +521,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v11</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2963,6 +2963,7 @@ on('bn-secbox','click',function(){if(_sb.active){_sbSavePos();sbClose();}else sb
 on('secbox-off','click',function(){_sbSavePos();sbClose();});
 on('sb-reset','click',function(){sbReset();_sbSavePos();});
 var _sbAlignMode=false;
+var _sbAlignPrevHidden=false;
 function _sbSetAlignMode(onOff){
   _sbAlignMode=onOff;
   var btn=el('sb-align');
@@ -2970,6 +2971,19 @@ function _sbSetAlignMode(onOff){
   var hint=el('sb-align-hint');
   if(hint)hint.textContent=onOff?'Clic en la cara de un muro…':'';
   var cv=el('cv');if(cv)cv.style.cursor=onOff?'crosshair':'';
+  // Ocultar caja durante el pick para que no intercepte el click
+  var btnH=el('sb-hide');
+  if(onOff){
+    _sbAlignPrevHidden=!!(btnH&&btnH.dataset.boxVisible==='0');
+    if(_sb.meshWire)_sb.meshWire.visible=false;
+    _sb.meshFaces.forEach(function(m){m.visible=false;m.pickable=false;});
+  } else {
+    // Restaurar solo si el usuario no la tenía oculta manualmente
+    if(!_sbAlignPrevHidden){
+      if(_sb.meshWire)_sb.meshWire.visible=true;
+      _sb.meshFaces.forEach(function(m){m.visible=true;m.pickable=true;});
+    }
+  }
 }
 on('sb-align','click',function(){_sbSetAlignMode(!_sbAlignMode);});
 on('sb-hide','click',function(){
