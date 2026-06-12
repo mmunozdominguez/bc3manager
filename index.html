@@ -543,7 +543,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v1.2</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v1.3</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2011,24 +2011,19 @@ function _hideIfcSpaces(){
   }
 }
 
-var _isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function _updateXrayTheme(){
   if(!window.xv||!window.xv.scene)return;
   var xm=window.xv.scene.xrayMaterial;
-  var col=window._dark?[0.62,0.71,0.85]:[0.49,0.58,0.72];
-  if(_isIOS){
-    // iOS/iPad: el relleno translúcido X-ray falla en WebKit con DTX → solo aristas
-    xm.fill=false;
-    xm.edges=true;
-    xm.edgeColor=col;
-    xm.edgeAlpha=window._dark?0.5:0.55;
+  // Solo aristas en todas las plataformas (el relleno translúcido falla en WebKit)
+  // Gris neutro adaptado al tema
+  xm.fill=false;
+  xm.edges=true;
+  if(window._dark){
+    xm.edgeColor=[0.72,0.74,0.77];
+    xm.edgeAlpha=0.5;
   } else {
-    xm.fill=true;
-    xm.edges=true;
-    xm.fillColor=col;
-    xm.fillAlpha=0.10;
-    xm.edgeColor=col;
-    xm.edgeAlpha=window._dark?0.28:0.30;
+    xm.edgeColor=[0.45,0.46,0.48];
+    xm.edgeAlpha=0.55;
   }
 }
 function showAll(){
