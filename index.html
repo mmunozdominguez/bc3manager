@@ -521,7 +521,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v4</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v5</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2234,6 +2234,12 @@ function sbOpen(){
   _sb.active=true;
   el('secbox-panel').style.display='block';
   el('bn-secbox').classList.add('a');
+  var btnH=el('sb-hide');
+  if(btnH){
+    btnH.dataset.boxVisible='1';
+    var txt=btnH.childNodes[btnH.childNodes.length-1];
+    if(txt&&txt.nodeType===3)txt.textContent=' Ocultar';
+  }
   _sbSyncRotSliders();
   setTimeout(function(){_sbSelectFace('ymax');},50);
 }
@@ -2420,7 +2426,12 @@ function sbReset(){
   _sbSyncRotSliders();
   if(_sb.meshWire)_sb.meshWire.visible=true;
   _sb.meshFaces.forEach(function(m){m.visible=true;m.pickable=true;});
-  var btnH=el('sb-hide');if(btnH)btnH.textContent='Ocultar caja';
+  var btnH=el('sb-hide');
+  if(btnH){
+    btnH.dataset.boxVisible='1';
+    var txt=btnH.childNodes[btnH.childNodes.length-1];
+    if(txt&&txt.nodeType===3)txt.textContent=' Ocultar';
+  }
   _sbApply();
   _sbSelectFace(_sbSelFace||'ymax');
 }
@@ -2858,10 +2869,15 @@ on('secbox-off','click',function(){_sbSavePos();sbClose();});
 on('sb-reset','click',function(){sbReset();_sbSavePos();});
 on('sb-save','click',function(){_sbSavePos();});
 on('sb-hide','click',function(){
-  var hiding=this.textContent.trim()==='Ocultar caja';
-  if(_sb.meshWire)_sb.meshWire.visible=!hiding;
-  _sb.meshFaces.forEach(function(m){m.visible=!hiding;m.pickable=!hiding;});
-  this.textContent=hiding?'Mostrar caja':'Ocultar caja';
+  // Flag de estado: visible por defecto
+  var isVisible=this.dataset.boxVisible!=='0';
+  var newVisible=!isVisible;
+  if(_sb.meshWire)_sb.meshWire.visible=newVisible;
+  _sb.meshFaces.forEach(function(m){m.visible=newVisible;m.pickable=newVisible;});
+  this.dataset.boxVisible=newVisible?'1':'0';
+  // Actualizar solo el nodo de texto (preservar SVG)
+  var txt=this.childNodes[this.childNodes.length-1];
+  if(txt&&txt.nodeType===3)txt.textContent=newVisible?' Ocultar':' Mostrar';
 });
 var _sbRotSlY=el('sb-rot-y');
 if(_sbRotSlY)_sbRotSlY.addEventListener('input',function(){_sbRotate('y',this.value);});
