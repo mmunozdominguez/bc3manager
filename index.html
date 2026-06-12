@@ -521,7 +521,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v3</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v4</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2199,15 +2199,18 @@ async function applyMetaFile(file){
 
 // ── SECCIÓN, PLANTAS Y MEDICIÓN ─────────────────────────────────────────
 var xSection=null, xSectionPlugin=null, xMeasurePlugin=null;
-// ── CAJA DE SECCIÓN FÍSICA ───────────────────────────────────────────────
+// ── CAJA DE SECCIÓN FÍSICA (optimizada: geometría creada 1 vez) ──────────
 var _sb={
   active:false,
   planes:{xmin:null,xmax:null,ymin:null,ymax:null,zmin:null,zmax:null},
   meshWire:null, meshFaces:[],
-  box:{xmin:0,xmax:1,ymin:0,ymax:1,zmin:0,zmax:1},
-  rot:{x:0,y:0,z:0},
-  drag:{active:false,face:null,startPos:null,startVal:0,axis:null,sign:0}
+  box:null,   // AABB base (fijo durante la sesión)
+  cur:null,   // coordenadas actuales de cada cara (local, sin rotar)
+  rot:{x:0,y:0,z:0}
 };
+var _sbHoverFace=null, _sbSelFace=null;
+var _SB_OPP={xmin:'xmax',xmax:'xmin',ymin:'ymax',ymax:'ymin',zmin:'zmax',zmax:'zmin'};
+var _SB_NLOCAL={xmin:[-1,0,0],xmax:[1,0,0],ymin:[0,-1,0],ymax:[0,1,0],zmin:[0,0,-1],zmax:[0,0,1]};
 
 function initSectionPlugin(){
   if(xSectionPlugin)return;
@@ -2221,175 +2224,133 @@ function sbOpen(){
   initSectionPlugin();if(!xSectionPlugin)return;
   if(_sb.active)sbClose();
   var aabb=xModel?xModel.aabb:xscene.aabb;
-  var initBox={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
+  _sb.box={xmin:aabb[0],xmax:aabb[3],ymin:aabb[1],ymax:aabb[4],zmin:aabb[2],zmax:aabb[5]};
   _sb.rot={x:0,y:0,z:0};
-  // Cargar posición guardada si existe
   var saved=_sbLoadPos();
-  if(saved){
-    _sb.box=saved.box;
-    _sb.rot=saved.rot||{x:0,y:0,z:0};
-  } else {
-    _sb.box=Object.assign({},initBox);
-  }
-  _sb.initBox=Object.assign({},initBox);
-  _sbSyncRotSliders();
-  _sbCreatePlanes();
-  _sbCreateMesh();
+  if(saved&&saved.cur){_sb.cur=saved.cur;_sb.rot=saved.rot||{x:0,y:0,z:0};if(saved.box)_sb.box=saved.box;}
+  else _sb.cur=Object.assign({},_sb.box);
+  _sbCreateSceneObjects();
+  _sbApply();
   _sb.active=true;
   el('secbox-panel').style.display='block';
   el('bn-secbox').classList.add('a');
-  // Pre-seleccionar cara ymax para que el slider esté siempre visible al abrir
+  _sbSyncRotSliders();
   setTimeout(function(){_sbSelectFace('ymax');},50);
 }
 
 function sbClose(){
-  // Destruir planos
   Object.keys(_sb.planes).forEach(function(k){
     if(_sb.planes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sb.planes[k]=null;
   });
-  // Destruir meshes
   if(_sb.meshWire){try{_sb.meshWire.destroy();}catch(e){}}_sb.meshWire=null;
   _sb.meshFaces.forEach(function(m){try{m.destroy();}catch(e){}});
   _sb.meshFaces=[];
+  _sbSelFace=null;_sbHoverFace=null;
   _sb.active=false;
   el('secbox-panel').style.display='none';
   el('bn-secbox').classList.remove('a');
 }
 
-// Matriz de rotación Euler XYZ (grados)
-function _sbRotMat(rx,ry,rz){
-  var cx=Math.cos(rx),sx=Math.sin(rx);
-  var cy=Math.cos(ry),sy=Math.sin(ry);
-  var cz=Math.cos(rz),sz=Math.sin(rz);
-  return[cy*cz,cy*sz,-sy,0,sx*sy*cz-cx*sz,sx*sy*sz+cx*cz,sx*cy,0,cx*sy*cz+sx*sz,cx*sy*sz-sx*cz,cx*cy,0,0,0,0,1];
-}
-function _mat4V(m,x,y,z){
-  return[m[0]*x+m[4]*y+m[8]*z+m[12],m[1]*x+m[5]*y+m[9]*z+m[13],m[2]*x+m[6]*y+m[10]*z+m[14]];
-}
-
-// Devuelve las 8 esquinas de la caja rotada en espacio mundo
-function _sbGetCorners(){
-  var b=_sb.box;
-  var rot=_sb.rot||{x:0,y:0,z:0};
-  var m=_sbRotMat(0,rot.y*Math.PI/180,0); // solo rotación Y
-  var cx=(b.xmin+b.xmax)/2,cy=(b.ymin+b.ymax)/2,cz=(b.zmin+b.zmax)/2;
-  var hx=(b.xmax-b.xmin)/2,hy=(b.ymax-b.ymin)/2,hz=(b.zmax-b.zmin)/2;
-  var pts=[[-hx,-hy,-hz],[hx,-hy,-hz],[hx,-hy,hz],[-hx,-hy,hz],
-           [-hx, hy,-hz],[hx, hy,-hz],[hx, hy,hz],[-hx, hy,hz]];
-  return pts.map(function(p){
-    var r=_mat4V(m,p[0],p[1],p[2]);
-    return[r[0]+cx,r[1]+cy,r[2]+cz];
-  });
-}
-
-// Normal de cada cara: eje local rotado por la matriz de rotación de la caja
-function _sbFaceNormal(faceId){
-  var rot=_sb.rot||{x:0,y:0,z:0};
-  var m=_sbRotMat(0,rot.y*Math.PI/180,0);
-  // Normales locales de cada cara (apuntan HACIA FUERA del interior de la caja)
-  var localNormals={
-    xmin:[-1,0,0], xmax:[1,0,0],
-    ymin:[0,-1,0], ymax:[0,1,0],
-    zmin:[0,0,-1], zmax:[0,0,1]
-  };
-  var ln=localNormals[faceId]||[0,1,0];
-  // Rotar la normal local al espacio mundo
-  var wn=_mat4V(m,ln[0],ln[1],ln[2]);
-  // dir para SectionPlane: apunta hacia el INTERIOR (lo que queda visible)
-  // → invertir la normal exterior
-  return[-wn[0],-wn[1],-wn[2]];
-}
-
-function _sbFaceCenter(c,ids){
-  var s=[0,0,0];
-  ids.forEach(function(i){s[0]+=c[i][0];s[1]+=c[i][1];s[2]+=c[i][2];});
-  return[s[0]/ids.length,s[1]/ids.length,s[2]/ids.length];
-}
-
-function _sbCreatePlanes(){
-  var c=_sbGetCorners();
-  var faceDefs={
-    xmin:[0,3,7,4], xmax:[1,2,6,5],
-    ymin:[0,1,2,3], ymax:[4,5,6,7],
-    zmin:[0,1,5,4], zmax:[3,2,6,7]
-  };
-  Object.keys(faceDefs).forEach(function(k){
-    if(_sb.planes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sb.planes[k]=null;
-    var pos=_sbFaceCenter(c,faceDefs[k]);
-    var dir=_sbFaceNormal(k);
-    _sb.planes[k]=xSectionPlugin.createSectionPlane({id:'sb_'+k,pos:pos,dir:dir});
-  });
-}
-
-function _sbCreateMesh(){
+// Crea los 6 planos + wireframe + 6 caras UNA VEZ con geometría unitaria
+function _sbCreateSceneObjects(){
   var XK=window._XK;if(!XK)return;
+  // Limpiar restos
+  Object.keys(_sb.planes).forEach(function(k){
+    if(_sb.planes[k]){try{xSectionPlugin.destroySectionPlane('sb_'+k);}catch(e){}}_sb.planes[k]=null;
+  });
   if(_sb.meshWire){try{_sb.meshWire.destroy();}catch(e){}}_sb.meshWire=null;
   _sb.meshFaces.forEach(function(m){try{m.destroy();}catch(e){}});_sb.meshFaces=[];
-  var c=_sbGetCorners();
+
+  // 6 planos de sección (pos/dir se actualizan en _sbApply)
+  Object.keys(_SB_NLOCAL).forEach(function(k){
+    _sb.planes[k]=xSectionPlugin.createSectionPlane({id:'sb_'+k,pos:[0,0,0],dir:[0,1,0]});
+  });
+
   if(!(XK.VBOGeometry&&XK.Mesh&&XK.PhongMaterial))return;
-  // Wireframe
+
+  // Wireframe: cubo unitario centrado en origen (escala/posición vía transform)
   try{
-    var verts=[].concat(c[0],c[1],c[2],c[3],c[4],c[5],c[6],c[7]);
-    var edges=[0,1,1,2,2,3,3,0,4,5,5,6,6,7,7,4,0,4,1,5,2,6,3,7];
+    var v=0.5;
+    var verts=[-v,-v,-v, v,-v,-v, v,-v,v, -v,-v,v, -v,v,-v, v,v,-v, v,v,v, -v,v,v];
+    var edges=[0,1,1,2,2,3,3,0, 4,5,5,6,6,7,7,4, 0,4,1,5,2,6,3,7];
     var wg=new XK.VBOGeometry(xscene,{primitive:'lines',positions:verts,indices:edges});
     var wm=new XK.PhongMaterial(xscene,{emissive:[0.2,0.6,1],lineWidth:2});
     _sb.meshWire=new XK.Mesh(xscene,{id:'sb_wire',geometry:wg,material:wm,pickable:false,collidable:false,clippable:false});
   }catch(e){console.warn('[SB] wire:',e);}
-  // 6 caras pickables
-  var fd=[
-    {id:'xmin',vi:[0,3,7,4]},{id:'xmax',vi:[1,2,6,5]},
-    {id:'ymin',vi:[0,1,2,3]},{id:'ymax',vi:[4,7,6,5]},
-    {id:'zmin',vi:[0,1,5,4]},{id:'zmax',vi:[3,2,6,7]}
-  ];
-  fd.forEach(function(f){
+
+  // 6 caras del cubo unitario — comparten transform con el wireframe
+  var faceVerts={
+    xmin:[-v,-v,-v, -v,-v,v, -v,v,v, -v,v,-v],
+    xmax:[ v,-v,-v,  v,v,-v,  v,v,v,  v,-v,v],
+    ymin:[-v,-v,-v,  v,-v,-v, v,-v,v, -v,-v,v],
+    ymax:[-v,v,-v,  -v,v,v,   v,v,v,   v,v,-v],
+    zmin:[-v,-v,-v, -v,v,-v,  v,v,-v,  v,-v,-v],
+    zmax:[-v,-v,v,   v,-v,v,  v,v,v,  -v,v,v]
+  };
+  Object.keys(faceVerts).forEach(function(k){
     try{
-      var vs=[].concat(c[f.vi[0]],c[f.vi[1]],c[f.vi[2]],c[f.vi[3]]);
-      var n=_sbFaceNormal(f.id);
+      var n=_SB_NLOCAL[k];
       var ns=[].concat(n,n,n,n);
-      var g=new XK.VBOGeometry(xscene,{primitive:'triangles',positions:vs,indices:[0,1,2,0,2,3],normals:ns});
+      var g=new XK.VBOGeometry(xscene,{primitive:'triangles',positions:faceVerts[k],indices:[0,1,2,0,2,3],normals:ns});
       var m2=new XK.PhongMaterial(xscene,{diffuse:[0.3,0.6,1],alpha:0.08,backfaces:true});
-      var mesh=new XK.Mesh(xscene,{id:'sb_face_'+f.id,geometry:g,material:m2,pickable:true,collidable:false,clippable:false});
-      mesh._sbFace=f.id;mesh._sbAxis=f.id.charAt(0);mesh._sbSign=f.id.endsWith('max')?1:-1;
+      var mesh=new XK.Mesh(xscene,{id:'sb_face_'+k,geometry:g,material:m2,pickable:true,collidable:false,clippable:false});
       _sb.meshFaces.push(mesh);
     }catch(e){console.warn('[SB] face:',e);}
   });
 }
 
-function sbUpdate(){
-  _sbCreatePlanes();
-  _sbCreateMesh();
-  // Re-aplicar highlight y actualizar posición del slider tras reconstruir
-  if(_sbSelFace){
-    _sbSetFaceHighlight(_sbSelFace,true);
-    // Recalcular p0 y span con las nuevas esquinas
-    var c=_sbGetCorners();
-    var faceVIdx={xmin:[0,3,7,4],xmax:[1,2,6,5],ymin:[0,1,2,3],ymax:[4,5,6,7],zmin:[0,1,5,4],zmax:[3,2,6,7]};
-    var oppFace={xmin:'xmax',xmax:'xmin',ymin:'ymax',ymax:'ymin',zmin:'zmax',zmax:'zmin'};
-    var p0=_sbFaceCenter(c,faceVIdx[_sbSelFace]);
-    var pOpp=_sbFaceCenter(c,faceVIdx[oppFace[_sbSelFace]]);
-    var span=Math.sqrt(Math.pow(pOpp[0]-p0[0],2)+Math.pow(pOpp[1]-p0[1],2)+Math.pow(pOpp[2]-p0[2],2));
-    var sl=el('sb-face-slider');
-    if(sl){
-      sl.dataset.p0x=p0[0];sl.dataset.p0y=p0[1];sl.dataset.p0z=p0[2];
-      sl.dataset.span=span;
-      sl.value=0; // reset posición al girar
-    }
-    // Re-aplicar la sección al plano con valor 0
-    _sbSliderChange(0);
+// Aplica el estado actual (cur + rot) a meshes y planos — SIN crear geometría
+function _sbApply(){
+  if(!_sb.box||!_sb.cur)return;
+  var b=_sb.box,c=_sb.cur;
+  var ry=(_sb.rot.y||0)*Math.PI/180;
+  var cy=Math.cos(ry),sy=Math.sin(ry);
+  // Pivote de rotación: centro del box base
+  var pv=[(b.xmin+b.xmax)/2,(b.ymin+b.ymax)/2,(b.zmin+b.zmax)/2];
+  function l2w(p){
+    var dx=p[0]-pv[0],dz=p[2]-pv[2];
+    return[pv[0]+dx*cy+dz*sy, p[1], pv[2]-dx*sy+dz*cy];
   }
-}
+  function rotV(nv){return[nv[0]*cy+nv[2]*sy, nv[1], -nv[0]*sy+nv[2]*cy];}
 
+  var sx=c.xmax-c.xmin, syy=c.ymax-c.ymin, sz=c.zmax-c.zmin;
+  var lc=[(c.xmin+c.xmax)/2,(c.ymin+c.ymax)/2,(c.zmin+c.zmax)/2];
+  var wc=l2w(lc);
+  var rotDeg=[0,(_sb.rot.y||0),0];
 
-// ── Interacción con la caja ───────────────────────────────────────────────
-var _sbHoverFace=null; // cara en hover
-var _sbSelFace=null;   // cara seleccionada actualmente
-
-function _sbSetFaceHighlight(faceId, on){
+  // Actualizar meshes (transform in-place — barato)
+  if(_sb.meshWire){
+    _sb.meshWire.position=wc;
+    _sb.meshWire.scale=[sx,syy,sz];
+    _sb.meshWire.rotation=rotDeg;
+  }
   _sb.meshFaces.forEach(function(m){
-    // Si estamos encendiendo una cara, apagar todas las demás primero
-    if(on && m.id!=='sb_face_'+faceId){
-      m.material.diffuse=[0.3,0.6,1];m.material.alpha=0.08;
-    }
+    m.position=wc;
+    m.scale=[sx,syy,sz];
+    m.rotation=rotDeg;
+  });
+
+  // Actualizar planos (pos/dir in-place) + activar solo los necesarios
+  var rotActive=Math.abs(_sb.rot.y||0)>0.01;
+  Object.keys(_SB_NLOCAL).forEach(function(k){
+    var plane=_sb.planes[k];if(!plane)return;
+    var axis=k.charAt(0);
+    var faceCtr;
+    if(axis==='x')faceCtr=[c[k],lc[1],lc[2]];
+    else if(axis==='y')faceCtr=[lc[0],c[k],lc[2]];
+    else faceCtr=[lc[0],lc[1],c[k]];
+    plane.pos=l2w(faceCtr);
+    var nW=rotV(_SB_NLOCAL[k]);
+    plane.dir=[-nW[0],-nW[1],-nW[2]]; // hacia el interior
+    var moved=Math.abs(c[k]-b[k])>0.001;
+    plane.active=moved||rotActive;
+  });
+}
+var sbUpdate=_sbApply; // compatibilidad
+
+function _sbSetFaceHighlight(faceId,on){
+  _sb.meshFaces.forEach(function(m){
+    if(on&&m.id!=='sb_face_'+faceId){m.material.diffuse=[0.3,0.6,1];m.material.alpha=0.08;}
     if(m.id==='sb_face_'+faceId){
       m.material.diffuse=on?[1,0.6,0.1]:[0.3,0.6,1];
       m.material.alpha=on?0.35:0.08;
@@ -2401,81 +2362,67 @@ function _sbSelectFace(faceId){
   if(_sbSelFace&&_sbSelFace!==faceId)_sbSetFaceHighlight(_sbSelFace,false);
   _sbSelFace=faceId;
   _sbSetFaceHighlight(faceId,true);
-  var axis=faceId.charAt(0);
-  var oppFace={xmin:'xmax',xmax:'xmin',ymin:'ymax',ymax:'ymin',zmin:'zmax',zmax:'zmin'};
-  var axisNames={x:'X — izquierda/derecha',y:'Y — abajo/arriba',z:'Z — fondo/frente'};
   var lbl=el('sb-face-label');
-  if(lbl)lbl.textContent=axisNames[axis];
-  // Posición inicial del plano y distancia hasta la cara opuesta (espacio mundo)
-  var c=_sbGetCorners();
-  var faceVIdx={xmin:[0,3,7,4],xmax:[1,2,6,5],ymin:[0,1,2,3],ymax:[4,5,6,7],zmin:[0,1,5,4],zmax:[3,2,6,7]};
-  var p0=_sbFaceCenter(c,faceVIdx[faceId]);
-  var pOpp=_sbFaceCenter(c,faceVIdx[oppFace[faceId]]);
-  var span=Math.sqrt(Math.pow(pOpp[0]-p0[0],2)+Math.pow(pOpp[1]-p0[1],2)+Math.pow(pOpp[2]-p0[2],2));
+  var names={xmin:'−X',xmax:'+X',ymin:'−Y',ymax:'+Y',zmin:'−Z',zmax:'+Z'};
+  if(lbl)lbl.textContent=names[faceId]||faceId;
+  // Slider: reflejar posición actual de la cara
   var sl=el('sb-face-slider');
   if(sl){
-    sl.value=0;
     sl.dataset.faceId=faceId;
-    sl.dataset.p0x=p0[0]; sl.dataset.p0y=p0[1]; sl.dataset.p0z=p0[2];
-    sl.dataset.span=span;
+    var b=_sb.box,c=_sb.cur,o=_SB_OPP[faceId];
+    var denom=(c[o]-b[faceId])*0.95;
+    var t=denom!==0?(c[faceId]-b[faceId])/denom:0;
+    sl.value=Math.round(Math.max(0,Math.min(100,t*100)));
   }
-  el('secbox-panel').style.display='block';
 }
 
 function _sbSliderChange(pct){
   var sl=el('sb-face-slider');if(!sl)return;
   var faceId=sl.dataset.faceId;if(!faceId)return;
-  var plane=_sb.planes[faceId];if(!plane)return;
-  var p0=[parseFloat(sl.dataset.p0x),parseFloat(sl.dataset.p0y),parseFloat(sl.dataset.p0z)];
-  var span=parseFloat(sl.dataset.span);
-  // Normal hacia el interior — es la dirección del SectionPlane
-  var n=_sbFaceNormal(faceId);
-  // t=0: plano en posición original | t=0.95: plano casi en cara opuesta
+  var b=_sb.box,c=_sb.cur,o=_SB_OPP[faceId];
   var t=(pct/100)*0.95;
-  plane.pos=[p0[0]+n[0]*span*t, p0[1]+n[1]*span*t, p0[2]+n[2]*span*t];
+  c[faceId]=b[faceId]+t*(c[o]-b[faceId]);
+  _sbApply();
 }
 
+var _sbPickT=0;
 function _sbInitCanvasEvents(){
   var cv=el('cv');if(!cv)return;
-
   cv.addEventListener('mousemove',function(e){
     if(!_sb.active)return;
+    var now=Date.now();
+    if(now-_sbPickT<70)return; // throttle pick
+    _sbPickT=now;
     var hit=xv.scene.pick({canvasPos:[e.offsetX,e.offsetY]});
     var faceId=hit&&hit.entity&&hit.entity.id&&hit.entity.id.startsWith('sb_face_')
                ?hit.entity.id.replace('sb_face_',''):null;
-    // Hover: iluminar solo si no está seleccionada
     if(faceId!==_sbHoverFace){
-      if(_sbHoverFace&&_sbHoverFace!==_sbSelFace) _sbSetFaceHighlight(_sbHoverFace,false);
-      if(faceId&&faceId!==_sbSelFace) _sbSetFaceHighlight(faceId,true);
+      if(_sbHoverFace&&_sbHoverFace!==_sbSelFace)_sbSetFaceHighlight(_sbHoverFace,false);
+      if(faceId&&faceId!==_sbSelFace)_sbSetFaceHighlight(faceId,true);
+      if(_sbSelFace)_sbSetFaceHighlight(_sbSelFace,true);
       _sbHoverFace=faceId;
       cv.style.cursor=faceId?'pointer':'';
     }
   });
-
   cv.addEventListener('click',function(e){
     if(!_sb.active)return;
     var hit=xv.scene.pick({canvasPos:[e.offsetX,e.offsetY]});
     if(!hit||!hit.entity||!hit.entity.id||!hit.entity.id.startsWith('sb_face_'))return;
-    var faceId=hit.entity.id.replace('sb_face_','');
-    _sbSelectFace(faceId);
+    _sbSelectFace(hit.entity.id.replace('sb_face_',''));
     e.stopPropagation();
   },{capture:true});
 }
 
 function sbReset(){
-  if(!_sb.initBox)return;
-  _sb.box=Object.assign({},_sb.initBox);
+  if(!_sb.box)return;
+  _sb.cur=Object.assign({},_sb.box);
   _sb.rot={x:0,y:0,z:0};
-  _sbSelFace=null;_sbHoverFace=null;
-  var sl=el('sb-face-slider');if(sl){sl.value=0;sl.dataset.faceId='';}
-
-
+  _sbSyncRotSliders();
   if(_sb.meshWire)_sb.meshWire.visible=true;
   _sb.meshFaces.forEach(function(m){m.visible=true;m.pickable=true;});
   var btnH=el('sb-hide');if(btnH)btnH.textContent='Ocultar caja';
-  _sbSyncRotSliders();
-  sbUpdate();
-  setTimeout(function(){_sbSelectFace('ymax');},50);
+  _sbApply();
+  _sbSelectFace(_sbSelFace||'ymax');
 }
 
 function _sbSyncRotSliders(){
@@ -2485,24 +2432,20 @@ function _sbSyncRotSliders(){
   if(vl)vl.textContent=(rot.y||0)+'°';
 }
 
-var _sbRotTimer=null;
 function _sbRotate(axis,deg){
   if(!_sb.rot)_sb.rot={x:0,y:0,z:0};
   _sb.rot[axis]=parseInt(deg);
   var vl=el('sb-rot-'+axis+'-val');
   if(vl)vl.textContent=deg+'°';
-  // Debounce: solo reconstruir mesh 80ms tras soltar
-  clearTimeout(_sbRotTimer);
-  _sbRotTimer=setTimeout(function(){sbUpdate();},80);
+  _sbApply();
 }
 
-// Persistencia — guarda en localStorage por versión
+// Persistencia por versión
 function _sbSaveKey(){return'sb_pos_'+(curVR||'default');}
 
 function _sbSavePos(){
   try{
-    var data=JSON.stringify({box:_sb.box,rot:_sb.rot});
-    localStorage.setItem(_sbSaveKey(),data);
+    localStorage.setItem(_sbSaveKey(),JSON.stringify({box:_sb.box,cur:_sb.cur,rot:_sb.rot}));
     st3('Posición de caja guardada','ok');
   }catch(e){st3('Error al guardar','');}
 }
@@ -2545,11 +2488,12 @@ function buildStoreysPanel(){
     row.innerHTML='<span style="flex:1">'+s.name+'</span>';
     row.addEventListener('click',function(){
       initSectionPlugin();
-      sbOpen();
-      var aabb=xscene.aabb,pct=(s.pct||50)/100;
-      var sp=Math.round((pct+0.08)*100);
-      var slYmax=el('sb-ymax');if(slYmax){slYmax.value=Math.min(100,sp);sbUpdate();}
-      if(el('slice-title'))el('slice-title').textContent='Planta: '+s.name;
+      if(!_sb.active)sbOpen();
+      // Cortar por encima de la planta: mover cara ymax
+      var b=_sb.box,pct=(s.pct||50)/100;
+      _sb.cur.ymax=b.ymin+(b.ymax-b.ymin)*Math.min(1,pct+0.08);
+      _sbApply();
+      _sbSelectFace('ymax');
     });
     list.appendChild(row);
   });
