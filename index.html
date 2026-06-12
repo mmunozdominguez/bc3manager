@@ -543,7 +543,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v21</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v22</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2017,15 +2017,17 @@ function _updateXrayTheme(){
   if(!window.xv||!window.xv.scene)return;
   var xm=window.xv.scene.xrayMaterial;
   if(window._dark){
-    xm.fillColor=[0.93,0.93,0.95];
-    xm.fillAlpha=0.15;
-    xm.edgeColor=[0.75,0.75,0.78];
+    // Tinte azul frío sobre fondo oscuro
+    xm.fillColor=[0.62,0.71,0.85];
+    xm.fillAlpha=0.10;
+    xm.edgeColor=[0.62,0.71,0.85];
     xm.edgeAlpha=0.28;
   } else {
-    xm.fillColor=[0.85,0.85,0.85];
-    xm.fillAlpha=0.1;
-    xm.edgeColor=[0.6,0.6,0.6];
-    xm.edgeAlpha=0.2;
+    // Tinte azul frío sobre fondo claro
+    xm.fillColor=[0.49,0.58,0.72];
+    xm.fillAlpha=0.10;
+    xm.edgeColor=[0.49,0.58,0.72];
+    xm.edgeAlpha=0.30;
   }
 }
 function showAll(){
