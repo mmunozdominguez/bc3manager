@@ -521,7 +521,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v9</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v10</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -700,9 +700,9 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
                 <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 10s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="3"/><line x1="3" y1="3" x2="17" y2="17"/></svg>
                 Ocultar
               </button>
-              <button id="sb-save" title="Guardar orientación" style="background:var(--acc);border:none;border-radius:6px;cursor:pointer;padding:4px 10px;display:flex;align-items:center;gap:5px;color:#fff;font-size:11px;font-weight:600;">
-                <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 17H5a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v7a2 2 0 01-2 2z"/><path d="M13 17v-6H7v6M7 3v4h6"/></svg>
-                Guardar
+              <button id="sb-align" title="Alinear caja con una cara del modelo (clic en un muro)" style="background:var(--acc);border:none;border-radius:6px;cursor:pointer;padding:4px 10px;display:flex;align-items:center;gap:5px;color:#fff;font-size:11px;font-weight:600;">
+                <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="1" transform="rotate(12 10 10)"/><path d="M10 1v4M10 15v4M1 10h4M15 10h4"/></svg>
+                Alinear
               </button>
               <button id="sb-reset" title="Resetear caja" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;cursor:pointer;padding:4px 10px;display:flex;align-items:center;gap:5px;color:rgba(255,255,255,.8);font-size:11px;">
                 <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4v5h5M16 16v-5h-5"/><path d="M4.93 9A8 8 0 1115 15.07"/></svg>
@@ -712,22 +712,12 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
                 <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/></svg>
               </button>
             </div>
-            <!-- Controles en la misma altura -->
-            <div style="display:flex;align-items:center;gap:16px;">
-              <!-- Traslación -->
-              <div style="display:flex;align-items:center;gap:8px;flex:1.2;min-width:0;">
-                <span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.5);white-space:nowrap;">Cara</span>
-                <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.9);white-space:nowrap;min-width:60px;" id="sb-face-label">—</span>
-                <input type="range" id="sb-face-slider" min="0" max="100" value="0" style="flex:1;accent-color:#6c63ff;height:4px;cursor:pointer;">
-              </div>
-              <!-- Separador -->
-              <div style="width:1px;background:rgba(255,255,255,.15);height:28px;flex-shrink:0;"></div>
-              <!-- Rotación Y -->
-              <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
-                <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.6" style="flex-shrink:0;"><path d="M14.5 3.5A7 7 0 106 16.5"/><polyline points="14 1 14 4 17 4"/></svg>
-                <input type="range" id="sb-rot-y" min="0" max="360" value="0" step="1" style="flex:1;accent-color:#27ae60;height:4px;cursor:pointer;">
-                <span style="font-size:11px;font-weight:700;color:#27ae60;width:34px;text-align:right;flex-shrink:0;" id="sb-rot-y-val">0°</span>
-              </div>
+            <!-- Control de traslación de cara -->
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.5);white-space:nowrap;">Cara</span>
+              <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.9);white-space:nowrap;min-width:34px;" id="sb-face-label">—</span>
+              <input type="range" id="sb-face-slider" min="0" max="100" value="0" style="flex:1;accent-color:#6c63ff;height:4px;cursor:pointer;">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap;" id="sb-align-hint"></span>
             </div>
           </div>
         </div>
@@ -1674,6 +1664,8 @@ async function initXeokit(){
     // ── Pick handler: mouse + touch ────────────────────────────────
     function handlePick(canvasPos){
       if(!xv||!xscene)return;
+      // En modo alinear, el click lo gestiona la caja de sección
+      if(typeof _sbAlignMode!=='undefined'&&_sbAlignMode)return;
       var hit=xv.scene.pick({canvasPos:canvasPos});
       if(!hit||!hit.entity)return;
       var entityId=hit.entity.id;
@@ -2325,6 +2317,7 @@ function sbClose(){
   _sb.meshFaces.forEach(function(m){try{m.destroy();}catch(e){}});
   _sb.meshFaces=[];
   _sbSelFace=null;_sbHoverFace=null;
+  if(typeof _sbSetAlignMode==='function')_sbSetAlignMode(false);
   _sb.active=false;
   el('secbox-panel').style.display='none';
   el('bn-secbox').classList.remove('a');
@@ -2487,6 +2480,32 @@ function _sbInitCanvasEvents(){
   });
   cv.addEventListener('click',function(e){
     if(!_sb.active)return;
+    // Modo alinear: pick de superficie sobre el modelo
+    if(_sbAlignMode){
+      var hitS=xv.scene.pick({canvasPos:[e.offsetX,e.offsetY],pickSurface:true});
+      if(hitS&&hitS.worldNormal&&hitS.entity&&hitS.entity.id&&hitS.entity.id.indexOf('sb_')!==0){
+        var n=hitS.worldNormal;
+        var hLen=Math.sqrt(n[0]*n[0]+n[2]*n[2]);
+        if(hLen<0.3){
+          st3('Selecciona una cara vertical (muro)','sp');
+        } else {
+          // Ángulo para que una cara de la caja quede paralela al muro
+          var deg=Math.atan2(-n[2]/hLen,n[0]/hLen)*180/Math.PI;
+          deg=((deg%90)+90)%90; // mínima rotación equivalente
+          _sb.rot.y=Math.round(deg*10)/10;
+          _sbApply();
+          _sbSavePos();
+          st3('Caja alineada ('+_sb.rot.y+'°)','ok');
+        }
+        _sbSetAlignMode(false);
+        e.stopPropagation();
+        return;
+      }
+      // Click en vacío o en la propia caja: salir del modo
+      _sbSetAlignMode(false);
+      e.stopPropagation();
+      return;
+    }
     var hit=xv.scene.pick({canvasPos:[e.offsetX,e.offsetY]});
     if(!hit||!hit.entity||!hit.entity.id||!hit.entity.id.startsWith('sb_face_'))return;
     _sbSelectFace(hit.entity.id.replace('sb_face_',''));
@@ -2943,7 +2962,16 @@ on('ms-clr','click',function(){
 on('bn-secbox','click',function(){if(_sb.active){_sbSavePos();sbClose();}else sbOpen();});
 on('secbox-off','click',function(){_sbSavePos();sbClose();});
 on('sb-reset','click',function(){sbReset();_sbSavePos();});
-on('sb-save','click',function(){_sbSavePos();});
+var _sbAlignMode=false;
+function _sbSetAlignMode(onOff){
+  _sbAlignMode=onOff;
+  var btn=el('sb-align');
+  if(btn)btn.style.background=onOff?'#e67e22':'var(--acc)';
+  var hint=el('sb-align-hint');
+  if(hint)hint.textContent=onOff?'Clic en la cara de un muro…':'';
+  var cv=el('cv');if(cv)cv.style.cursor=onOff?'crosshair':'';
+}
+on('sb-align','click',function(){_sbSetAlignMode(!_sbAlignMode);});
 on('sb-hide','click',function(){
   // Flag de estado: visible por defecto
   var isVisible=this.dataset.boxVisible!=='0';
@@ -2955,8 +2983,7 @@ on('sb-hide','click',function(){
   var txt=this.childNodes[this.childNodes.length-1];
   if(txt&&txt.nodeType===3)txt.textContent=newVisible?' Ocultar':' Mostrar';
 });
-var _sbRotSlY=el('sb-rot-y');
-if(_sbRotSlY)_sbRotSlY.addEventListener('input',function(){_sbRotate('y',this.value);});
+
 var _sbSl=el('sb-face-slider');
 if(_sbSl)_sbSl.addEventListener('input',function(){_sbSliderChange(parseInt(this.value));});
 on('bn-storeys','click',function(){
