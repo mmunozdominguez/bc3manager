@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
-<!-- BC3 Manager v2.9 — layout rewrite: full-width on IFC hide, portrait fix, col swap -->
+<!-- BC3 Manager v2.10 — layout rewrite: full-width on IFC hide, portrait fix, col swap -->
 <title>BC3 Manager</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f0f13">
@@ -553,7 +553,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.9</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.10</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -592,7 +592,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- PROYECTO -->
 <div class="view" id="v-proj">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.9</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.10</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bh2" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -625,7 +625,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- VISOR -->
 <div class="view" id="v-visor">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.9</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.10</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bp3" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -2873,65 +2873,56 @@ function _sbLoadPos(){
   function buildDOM(){
     var W = vbody.clientWidth;
     if(W<10) return;
-
-    // Devolver todos los paneles al body temporalmente
-    ['col1','col2','col3'].forEach(function(id){
-      var el=document.getElementById(id); if(el) vbody.appendChild(el);
-    });
-    // Quitar stacks y seps del DOM (los recrearemos)
-    vbody.querySelectorAll('.col-stack,.row-sep').forEach(function(e){ e.remove(); });
-    var s12=document.getElementById('col-sep12');
-    var s23=document.getElementById('col-sep23');
-    if(s12) vbody.appendChild(s12);
-    if(s23) vbody.appendChild(s23);
-
     var L = LAYOUTS[curLayout];
     if(!L) return;
 
-    // Orden de construcción según slots
-    vbody.innerHTML=''; // limpio y reconstruyo
-    // Volver a añadir file inputs (no deben perderse)
-    ['fxkt','fmeta','fbc3r'].forEach(function(id){
-      var inp=document.getElementById(id); if(inp) vbody.appendChild(inp);
+    // Mover paneles a document.body temporalmente (fuera de stacks)
+    // visibility hidden para evitar flash
+    ['col1','col2','col3'].forEach(function(id){
+      var p=document.getElementById(id);
+      if(p){ p.style.visibility='hidden'; document.body.appendChild(p); }
     });
 
-    var numCols = 0;
+    // Limpiar stacks y seps de vbody
+    Array.from(vbody.children).forEach(function(child){
+      if(child.classList.contains('col-stack')||
+         child.classList.contains('col-sep')||
+         child.classList.contains('row-sep'))
+        child.remove();
+    });
+
+    // Reconstruir orden en vbody
     L.slots.forEach(function(slot, idx){
       if(idx>0){
-        var sep = document.createElement('div');
+        var sep=document.createElement('div');
         sep.className='col-sep'; sep.id='col-sep-'+idx;
         vbody.appendChild(sep);
       }
-      if(typeof slot === 'string'){
-        // Slot simple
-        var panelId = slotAssign[slot]||'col1';
-        var panel   = document.getElementById(panelId);
-        if(panel){
-          vbody.appendChild(panel);
-          numCols++;
-        }
+      if(typeof slot==='string'){
+        var panel=document.getElementById(slotAssign[slot]||'col1');
+        if(panel) vbody.appendChild(panel);
       } else if(slot.stack){
-        // Slot con stack vertical
-        var stack = document.createElement('div');
+        var stack=document.createElement('div');
         stack.className='col-stack'; stack.id='col-stack-'+idx;
         vbody.appendChild(stack);
-        slot.stack.forEach(function(s, si){
+        slot.stack.forEach(function(s,si){
           if(si>0){
-            var rs=document.createElement('div'); rs.className='row-sep'; rs.id='row-sep-'+idx+'-'+si;
+            var rs=document.createElement('div');
+            rs.className='row-sep'; rs.id='row-sep-'+idx+'-'+si;
             stack.appendChild(rs);
           }
-          var panelId = slotAssign[s]||'col1';
-          var panel   = document.getElementById(panelId);
+          var panel=document.getElementById(slotAssign[s]||'col1');
           if(panel) stack.appendChild(panel);
         });
-        numCols++;
       }
     });
 
-    // Asignar flex según layout
     applyFlex(W);
-    // Re-inicializar separadores
     initSeps();
+    // Restaurar visibilidad
+    ['col1','col2','col3'].forEach(function(id){
+      var p=document.getElementById(id); if(p) p.style.visibility='';
+    });
   }
 
   function applyFlex(W){
