@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
-<!-- BC3 Manager v2.8 — layout rewrite: full-width on IFC hide, portrait fix, col swap -->
+<!-- BC3 Manager v2.9 — layout rewrite: full-width on IFC hide, portrait fix, col swap -->
 <title>BC3 Manager</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f0f13">
@@ -211,6 +211,15 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .lp-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;background:var(--panel2);cursor:pointer;font-size:9px;color:var(--muted);transition:all .12s;}
 .lp-btn:hover{border-color:var(--acc);background:var(--acc-bg);}
 .lp-btn.active{border-color:var(--acc);background:var(--acc-bg);color:var(--acc);font-weight:600;}
+/* Gear panel sections */
+.gear-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted2);margin-bottom:8px;}
+.gear-file-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--bd);border-radius:7px;cursor:pointer;background:var(--panel2);transition:border-color .12s;}
+.gear-file-row:hover{border-color:var(--acc);}
+.gear-file-icon{width:28px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+/* Slot selector */
+.slot-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--panel2);}
+.slot-label{font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.05em;width:30px;flex-shrink:0;}
+.slot-select{flex:1;border:none;background:transparent;font-size:11px;color:var(--text);cursor:pointer;outline:none;}
 .mb.o{display:flex;}
 .md{background:var(--panel);border-radius:12px;padding:22px;width:420px;max-width:95vw;border:1px solid var(--bd);}
 .md h3{font-size:15px;font-weight:600;margin-bottom:14px;}
@@ -544,7 +553,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.8</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.9</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -583,7 +592,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- PROYECTO -->
 <div class="view" id="v-proj">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.8</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.9</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bh2" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -616,7 +625,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- VISOR -->
 <div class="view" id="v-visor">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.8</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.9</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bp3" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -630,14 +639,11 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
       <input type="file" id="fmeta" style="position:absolute;left:-9999px;" accept=".json">
       <input type="file" id="fbc3r" style="position:absolute;left:-9999px;" accept=".bc3,.BC3">
       <button class="btn" id="bn-search" style="display:inline-flex;align-items:center;gap:5px;" title="Buscar partida"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar</button>
-      <button class="btn" id="bn-layout" style="display:inline-flex;align-items:center;gap:5px;" title="Cambiar distribución de paneles"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="10" rx="1"/><rect x="14" y="17" width="7" height="4" rx="1"/></svg>Layout</button>
       <button class="btn p" id="bn-ifc" style="display:inline-flex;align-items:center;gap:5px;" title="Modelo IFC / XKT"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>IFC</button>
-      <button class="btn" id="bn-vbackup" style="display:inline-flex;align-items:center;gap:5px;" title="Copia de seguridad"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Backup</button>
       <span class="sd" id="sd"></span>
       <span id="sm" style="font-size:11px;color:var(--muted);">—</span>
-      <button class="btn" id="bn-dark-v" title="Cambiar tema" style="display:flex;align-items:center;justify-content:center;padding:0;width:32px;height:32px;margin-left:2px;">
-        <svg id="icon-dark-v" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <svg id="icon-light-v" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <button class="btn" id="bn-gear" title="Opciones" style="display:flex;align-items:center;justify-content:center;padding:0;width:32px;height:32px;margin-left:2px;">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
   </div>
@@ -772,40 +778,122 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 
 <!-- ══ MODAL ARCHIVOS ════════════════════════════════════════════════════ -->
 <!-- ══ LAYOUT PICKER ════════════════════════════════════════════════════ -->
-<div id="layout-picker" style="display:none;position:fixed;z-index:300;background:var(--panel);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:14px 16px;min-width:260px;">
-  <div style="font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Distribución de paneles</div>
-  <div id="layout-2-section" style="margin-bottom:10px;">
-    <div style="font-size:9px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Sin modelo 3D</div>
-    <div style="display:flex;gap:8px;">
-      <button class="lp-btn" data-layout="2col" title="Presupuesto | Detalle">
-        <svg viewBox="0 0 44 28" width="44" height="28"><rect x="1" y="1" width="19" height="26" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/><rect x="24" y="1" width="19" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/></svg>
-        <span>½ · ½</span>
-      </button>
-      <button class="lp-btn" data-layout="2col-wide" title="Presupuesto amplio | Detalle">
-        <svg viewBox="0 0 44 28" width="44" height="28"><rect x="1" y="1" width="12" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="17" y="1" width="26" height="26" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/></svg>
-        <span>⅓ · ⅔</span>
-      </button>
-    </div>
+<!-- ══ PANEL OPCIONES (gear) ════════════════════════════════════════════ -->
+<div id="gear-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:300px;z-index:400;background:var(--panel);border-left:1px solid var(--bd);box-shadow:-4px 0 24px rgba(0,0,0,.15);display:none;flex-direction:column;overflow:hidden;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;">
+    <span style="font-size:12px;font-weight:700;color:var(--text);">Opciones</span>
+    <button id="bn-gear-close" style="border:none;background:none;cursor:pointer;color:var(--muted);font-size:18px;padding:2px 6px;border-radius:4px;line-height:1;">✕</button>
   </div>
-  <div id="layout-3-section">
-    <div style="font-size:9px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Con modelo 3D</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="lp-btn" data-layout="3col" title="3 columnas">
-        <svg viewBox="0 0 60 28" width="60" height="28"><rect x="1" y="1" width="17" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="22" y="1" width="16" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="42" y="1" width="17" height="26" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/></svg>
-        <span>3 col</span>
-      </button>
-      <button class="lp-btn" data-layout="left2" title="[Pres+Det] | Visor">
-        <svg viewBox="0 0 60 28" width="60" height="28"><rect x="1" y="1" width="24" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="1" y="15" width="24" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="29" y="1" width="30" height="26" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/></svg>
-        <span>2f+visor</span>
-      </button>
-      <button class="lp-btn" data-layout="right2" title="Pres | [Det+Visor]">
-        <svg viewBox="0 0 60 28" width="60" height="28"><rect x="1" y="1" width="24" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="29" y="1" width="30" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="29" y="15" width="30" height="12" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/></svg>
-        <span>pres+2f</span>
-      </button>
+  <div style="flex:1;overflow-y:auto;padding:14px;">
+
+    <!-- SECCIÓN: LAYOUT -->
+    <div class="gear-section">
+      <div class="gear-section-title">Distribución</div>
+      <!-- Selector de layout -->
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Plantilla</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="gear-layout-btns">
+          <button class="lp-btn" data-layout="2col-wide" title="⅓ Presupuesto · ⅔ Detalle">
+            <svg viewBox="0 0 44 28" width="44" height="28"><rect x="1" y="1" width="13" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="17" y="1" width="26" height="26" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/></svg>
+            <span>⅓·⅔</span>
+          </button>
+          <button class="lp-btn" data-layout="2col" title="½ · ½">
+            <svg viewBox="0 0 44 28" width="44" height="28"><rect x="1" y="1" width="19" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="24" y="1" width="19" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/></svg>
+            <span>½·½</span>
+          </button>
+          <button class="lp-btn" data-layout="3col" title="3 columnas">
+            <svg viewBox="0 0 60 28" width="60" height="28"><rect x="1" y="1" width="17" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="22" y="1" width="16" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="42" y="1" width="17" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/></svg>
+            <span>3 col</span>
+          </button>
+          <button class="lp-btn" data-layout="left2" title="2 filas izq · Visor der">
+            <svg viewBox="0 0 60 28" width="60" height="28"><rect x="1" y="1" width="24" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="1" y="15" width="24" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="29" y="1" width="30" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/></svg>
+            <span>2f·1</span>
+          </button>
+          <button class="lp-btn" data-layout="right2" title="Izq · 2 filas der">
+            <svg viewBox="0 0 60 28" width="60" height="28"><rect x="1" y="1" width="24" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="29" y="1" width="30" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="29" y="15" width="30" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/></svg>
+            <span>1·2f</span>
+          </button>
+        </div>
+      </div>
+      <!-- Asignación de contenido por slot -->
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Contenido por hueco</div>
+      <div id="gear-slots" style="display:flex;flex-direction:column;gap:6px;"></div>
     </div>
+
+    <div style="height:1px;background:var(--bd);margin:14px 0;"></div>
+
+    <!-- SECCIÓN: APARIENCIA -->
+    <div class="gear-section">
+      <div class="gear-section-title">Apariencia</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
+        <span style="font-size:12px;">Modo oscuro</span>
+        <button id="gear-dark-toggle" style="display:flex;align-items:center;gap:6px;border:1px solid var(--bd);background:var(--panel2);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;color:var(--text);">
+          <svg id="gear-icon-dark" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg id="gear-icon-light" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span id="gear-dark-label">Oscuro</span>
+        </button>
+      </div>
+    </div>
+
+    <div style="height:1px;background:var(--bd);margin:14px 0;"></div>
+
+    <!-- SECCIÓN: ARCHIVOS -->
+    <div class="gear-section">
+      <div class="gear-section-title">Archivos</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <!-- XKT -->
+        <label for="fxkt" class="gear-file-row" id="gear-row-xkt">
+          <span class="gear-file-icon" style="background:var(--acc-bg);">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--acc)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </span>
+          <div style="flex:1;">
+            <div style="font-size:11px;font-weight:600;">Modelo XKT</div>
+            <div id="gear-sub-xkt" style="font-size:10px;color:var(--muted);">Geometría 3D del BIM</div>
+          </div>
+          <span id="gear-check-xkt" style="display:none;color:var(--ok);font-size:14px;">✓</span>
+          <svg viewBox="0 0 24 24" width="12" height="12" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </label>
+        <!-- JSON -->
+        <label for="fmeta" class="gear-file-row" id="gear-row-meta" style="opacity:0.5;pointer-events:none;">
+          <span class="gear-file-icon" style="background:var(--ok-bg);">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--ok)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </span>
+          <div style="flex:1;">
+            <div style="font-size:11px;font-weight:600;">Metadatos JSON</div>
+            <div id="gear-sub-meta" style="font-size:10px;color:var(--muted);">Categorías IFC</div>
+          </div>
+          <span id="gear-check-meta" style="display:none;color:var(--ok);font-size:14px;">✓</span>
+          <svg viewBox="0 0 24 24" width="12" height="12" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </label>
+        <!-- BC3 reimport -->
+        <label for="fbc3r" class="gear-file-row">
+          <span class="gear-file-icon" style="background:var(--warn-bg);">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--warn)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+          </span>
+          <div style="flex:1;">
+            <div style="font-size:11px;font-weight:600;">Reimportar BC3</div>
+            <div style="font-size:10px;color:var(--muted);">Actualizar presupuesto</div>
+          </div>
+          <svg viewBox="0 0 24 24" width="12" height="12" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </label>
+        <!-- Export -->
+        <button id="bn-export" class="gear-file-row" style="text-align:left;width:100%;">
+          <span class="gear-file-icon" style="background:#f5f3ff;">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="#7c3aed" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </span>
+          <div style="flex:1;">
+            <div style="font-size:11px;font-weight:600;">Exportar .bc3m</div>
+            <div style="font-size:10px;color:var(--muted);">Guardar copia de seguridad</div>
+          </div>
+          <svg viewBox="0 0 24 24" width="12" height="12" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+      </div>
+    </div>
+
   </div>
-  <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);font-size:9px;color:var(--muted);">Arrastra los separadores para ajustar anchos</div>
 </div>
+<!-- Overlay gear panel -->
+<div id="gear-overlay" style="display:none;position:fixed;inset:0;z-index:399;"></div>
 
 <!-- ══ MODAL IFC ═══════════════════════════════════════════════════════════ -->
 <div class="mb" id="m-ifc">
@@ -2729,186 +2817,375 @@ function _sbLoadPos(){
 
 
 
-// ── LAYOUT SYSTEM ─────────────────────────────────────────────────────────
-(function(){
-  var body = document.getElementById('vb-body');
-  if(!body) return;
 
-  // Layout activo: '2col'|'2col-wide'|'3col'|'left2'|'right2'
-  var curLayout = '2col-wide';
+// ── LAYOUT + GEAR SYSTEM ──────────────────────────────────────────────────
+(function(){
+  var vbody = document.getElementById('vb-body');
+  if(!vbody) return;
+
+  // ── Definiciones ──────────────────────────────────────────────────────────
+  var PANELS = {
+    presupuesto: 'col1',
+    detalle:     'col2',
+    visor:       'col3'
+  };
+  var PANEL_NAMES = { col1:'Presupuesto', col2:'Detalle', col3:'Visor 3D' };
   var MIN = 160;
 
-  // Tamaños guardados por layout (px de col1 y col2)
-  var sizes = { col1: 300, col2: 260 };
+  // Layouts: array de slots. Cada slot: { id, flex, stack? }
+  // slot.stack = array de 2 sub-slots apilados verticalmente
+  var LAYOUTS = {
+    '2col-wide': { slots:['A','B'], ncols:2 },
+    '2col':      { slots:['A','B'], ncols:2 },
+    '3col':      { slots:['A','B','C'], ncols:3 },
+    'left2':     { slots:[{stack:['A','B']},'C'], ncols:2 },
+    'right2':    { slots:['A',{stack:['B','C']}], ncols:2 }
+  };
 
-  // ── Aplicar layout ───────────────────────────────────────────────────────
-  function applyLayout(layout){
-    if(layout) curLayout = layout;
-    var noIfc = body.classList.contains('no-model') || body.classList.contains('ifc-hidden');
+  // Asignación slot → panel. Defaults sensatos.
+  var slotAssign = { A:'col1', B:'col2', C:'col3' };
+  var curLayout  = '2col-wide';
+  // Tamaños de columna principales (px, para col flexible izquierda)
+  var colW = [300, 260]; // [col izq, col centro] en layouts 3col
 
-    // Si no hay IFC, forzar layout 2 col
-    if(noIfc && (curLayout==='3col'||curLayout==='left2'||curLayout==='right2')){
-      curLayout = '2col-wide';
-    }
-
-    var W = body.clientWidth, H = body.clientHeight;
-    if(W < 10) return;
-
-    // Limpiar estructura anterior
-    body.className = body.className.replace(/\blayout-\S+/g,'').trim();
-    // Reconstruir según layout
-    rebuild(curLayout, noIfc, W, H);
-    markActive(curLayout);
+  function isPortrait(){
+    return window.matchMedia('(orientation:portrait),(max-width:700px)').matches;
+  }
+  function noIfc(){
+    return vbody.classList.contains('no-model')||vbody.classList.contains('ifc-hidden');
   }
 
-  function rebuild(layout, noIfc, W, H){
-    var c1 = document.getElementById('col1');
-    var c2 = document.getElementById('col2');
-    var c3 = document.getElementById('col3');
-    var s12 = document.getElementById('col-sep12');
-    var s23 = document.getElementById('col-sep23');
-    if(!c1||!c2) return;
-
-    // Restaurar todos al flujo normal del body
-    [c1,c2,c3,s12,s23].forEach(function(el){ if(el) body.appendChild(el); });
-
-    // Eliminar col-stacks previos
-    body.querySelectorAll('.col-stack').forEach(function(s){ s.remove(); });
-
-    if(layout === '2col'){
-      setFlex(c1, '0 0 '+Math.round(W*0.5-2)+'px'); setFlex(c2,'1 1 0');
-      show(s12); hide(s23); if(c3) hide(c3); else {}
-    } else if(layout === '2col-wide'){
-      setFlex(c1, '0 0 '+clamp(sizes.col1,MIN,W*0.5)+'px'); setFlex(c2,'1 1 0');
-      show(s12); hide(s23); hide(c3);
-    } else if(layout === '3col'){
-      var w1=clamp(sizes.col1,MIN,W*0.4), w2=clamp(sizes.col2,MIN,W*0.35);
-      setFlex(c1,'0 0 '+w1+'px'); setFlex(c2,'0 0 '+w2+'px'); setFlex(c3,'1 1 0');
-      show(s12); show(s23); show(c3);
-    } else if(layout === 'left2'){
-      // [col1 / col2] stack izquierda | col3 derecha
-      var stack = makeStack('stack-left');
-      body.insertBefore(stack, c1);
-      var rs = makeRowSep('row-sep-12');
-      stack.appendChild(c1); stack.appendChild(rs); stack.appendChild(c2);
-      setFlex(c1,'1 1 0'); setFlex(c2,'1 1 0');
-      setFlex(stack,'0 0 '+clamp(sizes.col1,MIN,W*0.45)+'px');
-      hide(s12);
-      show(s23); setFlex(c3,'1 1 0'); show(c3);
-      initRowResize(rs, c1, c2, H);
-    } else if(layout === 'right2'){
-      // col1 izquierda | [col2 / col3] stack derecha
-      var stack = makeStack('stack-right');
-      body.appendChild(stack);
-      var rs = makeRowSep('row-sep-23');
-      stack.appendChild(c2); stack.appendChild(rs); stack.appendChild(c3);
-      setFlex(c2,'1 1 0'); setFlex(c3,'1 1 0');
-      setFlex(c1,'0 0 '+clamp(sizes.col1,MIN,W*0.4)+'px');
-      setFlex(stack,'1 1 0');
-      show(s12); hide(s23); show(c3);
-      initRowResize(rs, c2, c3, H);
+  // ── Aplicar layout ────────────────────────────────────────────────────────
+  function applyLayout(layout){
+    if(layout) curLayout = layout;
+    // Si no hay IFC forzar layout 2 col
+    if(noIfc() && (curLayout==='3col'||curLayout==='left2'||curLayout==='right2')){
+      curLayout='2col-wide';
     }
-
-    // Rearrancar xeokit canvas
+    if(!isPortrait()) buildDOM();
+    else buildPortrait();
+    markActive(curLayout);
+    buildSlotUI();
     notifyXeokit();
   }
 
-  function makeStack(id){
-    var s = document.getElementById(id);
-    if(!s){ s = document.createElement('div'); s.className='col-stack'; s.id=id; }
-    return s;
+  // ── Construir DOM flex ────────────────────────────────────────────────────
+  function buildDOM(){
+    var W = vbody.clientWidth;
+    if(W<10) return;
+
+    // Devolver todos los paneles al body temporalmente
+    ['col1','col2','col3'].forEach(function(id){
+      var el=document.getElementById(id); if(el) vbody.appendChild(el);
+    });
+    // Quitar stacks y seps del DOM (los recrearemos)
+    vbody.querySelectorAll('.col-stack,.row-sep').forEach(function(e){ e.remove(); });
+    var s12=document.getElementById('col-sep12');
+    var s23=document.getElementById('col-sep23');
+    if(s12) vbody.appendChild(s12);
+    if(s23) vbody.appendChild(s23);
+
+    var L = LAYOUTS[curLayout];
+    if(!L) return;
+
+    // Orden de construcción según slots
+    vbody.innerHTML=''; // limpio y reconstruyo
+    // Volver a añadir file inputs (no deben perderse)
+    ['fxkt','fmeta','fbc3r'].forEach(function(id){
+      var inp=document.getElementById(id); if(inp) vbody.appendChild(inp);
+    });
+
+    var numCols = 0;
+    L.slots.forEach(function(slot, idx){
+      if(idx>0){
+        var sep = document.createElement('div');
+        sep.className='col-sep'; sep.id='col-sep-'+idx;
+        vbody.appendChild(sep);
+      }
+      if(typeof slot === 'string'){
+        // Slot simple
+        var panelId = slotAssign[slot]||'col1';
+        var panel   = document.getElementById(panelId);
+        if(panel){
+          vbody.appendChild(panel);
+          numCols++;
+        }
+      } else if(slot.stack){
+        // Slot con stack vertical
+        var stack = document.createElement('div');
+        stack.className='col-stack'; stack.id='col-stack-'+idx;
+        vbody.appendChild(stack);
+        slot.stack.forEach(function(s, si){
+          if(si>0){
+            var rs=document.createElement('div'); rs.className='row-sep'; rs.id='row-sep-'+idx+'-'+si;
+            stack.appendChild(rs);
+          }
+          var panelId = slotAssign[s]||'col1';
+          var panel   = document.getElementById(panelId);
+          if(panel) stack.appendChild(panel);
+        });
+        numCols++;
+      }
+    });
+
+    // Asignar flex según layout
+    applyFlex(W);
+    // Re-inicializar separadores
+    initSeps();
   }
-  function makeRowSep(id){
-    var s = document.getElementById(id);
-    if(!s){ s = document.createElement('div'); s.className='row-sep'; s.id=id; }
-    initRowResize._seps = initRowResize._seps||{};
-    return s;
+
+  function applyFlex(W){
+    var L = LAYOUTS[curLayout];
+    if(!L) return;
+    var seps = vbody.querySelectorAll('.col-sep').length;
+    var avail = W - seps*4;
+
+    if(curLayout==='2col-wide'){
+      var w1=Math.max(MIN, Math.min(colW[0], avail-MIN));
+      flexEl(slotAssign['A'], '0 0 '+w1+'px');
+      flexEl(slotAssign['B'], '1 1 0');
+      hideVisor(true);
+    } else if(curLayout==='2col'){
+      var w1=Math.round(avail/2);
+      flexEl(slotAssign['A'], '0 0 '+w1+'px');
+      flexEl(slotAssign['B'], '1 1 0');
+      hideVisor(true);
+    } else if(curLayout==='3col'){
+      var w1=Math.max(MIN,Math.min(colW[0],avail*0.32));
+      var w2=Math.max(MIN,Math.min(colW[1],avail*0.28));
+      flexEl(slotAssign['A'], '0 0 '+w1+'px');
+      flexEl(slotAssign['B'], '0 0 '+w2+'px');
+      flexEl(slotAssign['C'], '1 1 0');
+      hideVisor(false);
+    } else if(curLayout==='left2'){
+      // stack izq, col der
+      var stackEl=vbody.querySelector('.col-stack');
+      var colRight=document.getElementById(slotAssign['C']);
+      var w=Math.max(MIN,Math.min(colW[0],avail*0.4));
+      if(stackEl) stackEl.style.flex='0 0 '+w+'px';
+      if(colRight) colRight.style.flex='1 1 0';
+      flexEl(slotAssign['A'],'1 1 0'); flexEl(slotAssign['B'],'1 1 0');
+      hideVisor(false);
+    } else if(curLayout==='right2'){
+      var colLeft=document.getElementById(slotAssign['A']);
+      var stackEl=vbody.querySelector('.col-stack');
+      var w=Math.max(MIN,Math.min(colW[0],avail*0.38));
+      if(colLeft) colLeft.style.flex='0 0 '+w+'px';
+      if(stackEl) stackEl.style.flex='1 1 0';
+      flexEl(slotAssign['B'],'1 1 0'); flexEl(slotAssign['C'],'1 1 0');
+      hideVisor(false);
+    }
   }
 
-  function setFlex(el, val){ if(el) el.style.flex = val; }
-  function show(el){ if(el) el.style.display=''; }
-  function hide(el){ if(el) el.style.display='none'; }
-  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
-
-  // ── Col resize (horizontal) ──────────────────────────────────────────────
-  function initColResize(sep, getLeft, getRight, getAvail){
-    var active=false, startX=0, startW=0;
-    sep.addEventListener('mousedown', start); sep.addEventListener('touchstart', startT, {passive:false});
-    function start(e){ active=true; startX=clientX(e); startW=getLeft().offsetWidth; sep.classList.add('active'); document.body.style.cursor='col-resize'; document.body.style.userSelect='none'; e.preventDefault(); }
-    function startT(e){ start(e.touches[0]); }
-    document.addEventListener('mousemove', move); document.addEventListener('touchmove', moveT, {passive:false});
-    function move(e){ if(!active)return; var nw=clamp(startW+(clientX(e)-startX),MIN,getAvail()-MIN); getLeft().style.flex='0 0 '+nw+'px'; if(sep.id==='col-sep12') sizes.col1=nw; else sizes.col2=nw; notifyXeokit(); }
-    function moveT(e){ if(active){move(e.touches[0]); e.preventDefault();} }
-    document.addEventListener('mouseup', end); document.addEventListener('touchend', end, {passive:true});
-    function end(){ if(!active)return; active=false; sep.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; }
-    function clientX(e){ return e.clientX!==undefined?e.clientX:e.pageX; }
+  function flexEl(id, val){
+    var el=document.getElementById(id); if(el) el.style.flex=val;
+  }
+  function hideVisor(hide){
+    // En 2 col sin IFC el visor puede no existir visualmente
+    var col3=document.getElementById(slotAssign['C']||'col3');
+    // No ocultar col3 desde aquí — lo controla no-model/ifc-hidden
   }
 
-  // ── Row resize (vertical) ────────────────────────────────────────────────
-  function initRowResize(sep, top, bot, totalH){
-    var active=false, startY=0, startH=0;
-    sep.addEventListener('mousedown', start); sep.addEventListener('touchstart', startT, {passive:false});
-    function start(e){ active=true; startY=clientY(e); startH=top.offsetHeight; sep.classList.add('active'); document.body.style.cursor='row-resize'; document.body.style.userSelect='none'; e.preventDefault(); }
-    function startT(e){ start(e.touches[0]); }
-    document.addEventListener('mousemove', move); document.addEventListener('touchmove', moveT, {passive:false});
-    function move(e){ if(!active)return; var avail=body.clientHeight; var nh=clamp(startH+(clientY(e)-startY),MIN,avail-MIN); top.style.flex='0 0 '+nh+'px'; notifyXeokit(); }
-    function moveT(e){ if(active){move(e.touches[0]); e.preventDefault();} }
-    document.addEventListener('mouseup', end); document.addEventListener('touchend', end, {passive:true});
-    function end(){ if(!active)return; active=false; sep.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; }
-    function clientY(e){ return e.clientY!==undefined?e.clientY:e.pageY; }
+  function buildPortrait(){
+    ['col1','col2','col3'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){ el.style.flex='1 1 0'; vbody.appendChild(el); }
+    });
+    vbody.querySelectorAll('.col-stack,.row-sep,.col-sep').forEach(function(e){e.remove();});
   }
 
-  // Inicializar separadores col fijos
-  var sep12 = document.getElementById('col-sep12');
-  var sep23 = document.getElementById('col-sep23');
-  if(sep12) initColResize(sep12, function(){return document.getElementById('col1');}, function(){return document.getElementById('col2');}, function(){return body.clientWidth;});
-  if(sep23) initColResize(sep23, function(){return document.getElementById('col2');}, function(){return document.getElementById('col3');}, function(){return body.clientWidth;});
-
-  // ── Layout picker popup ──────────────────────────────────────────────────
-  var picker = document.getElementById('layout-picker');
-  var btnLayout = document.getElementById('bn-layout');
-
-  function showPicker(){
-    var noIfc = body.classList.contains('no-model')||body.classList.contains('ifc-hidden');
-    var s3 = document.getElementById('layout-3-section');
-    if(s3) s3.style.display = noIfc ? 'none' : '';
-    var rect = btnLayout.getBoundingClientRect();
-    picker.style.top  = (rect.bottom + 6) + 'px';
-    picker.style.right = (window.innerWidth - rect.right) + 'px';
-    picker.style.left  = 'auto';
-    picker.style.display = 'block';
+  // ── Separadores redimensionables ──────────────────────────────────────────
+  function initSeps(){
+    // Col seps (horizontal)
+    vbody.querySelectorAll('.col-sep').forEach(function(sep, idx){
+      makeDraggable(sep, 'col', idx);
+    });
+    // Row seps (vertical)
+    vbody.querySelectorAll('.row-sep').forEach(function(sep){
+      makeRowDraggable(sep);
+    });
   }
-  function hidePicker(){ picker.style.display='none'; }
 
-  if(btnLayout) btnLayout.addEventListener('click', function(e){
-    e.stopPropagation();
-    picker.style.display === 'none' ? showPicker() : hidePicker();
-  });
-  document.addEventListener('click', function(e){
-    if(picker && !picker.contains(e.target) && e.target !== btnLayout) hidePicker();
-  });
+  function makeDraggable(sep, axis, idx){
+    var active=false, start=0, startW=0, leftEl=null;
+    sep.addEventListener('mousedown', on); sep.addEventListener('touchstart', onT, {passive:false});
+    function on(e){
+      active=true; start=e.clientX; sep.classList.add('active');
+      // El elemento a la izquierda del separador
+      leftEl=sep.previousElementSibling;
+      startW=leftEl?leftEl.offsetWidth:0;
+      document.body.style.cursor='col-resize'; document.body.style.userSelect='none';
+      e.preventDefault();
+    }
+    function onT(e){ on({clientX:e.touches[0].clientX,preventDefault:function(){e.preventDefault();}}); }
+    document.addEventListener('mousemove', mv); document.addEventListener('touchmove', mvT, {passive:false});
+    function mv(e){
+      if(!active||!leftEl)return;
+      var avail=vbody.clientWidth - vbody.querySelectorAll('.col-sep').length*4;
+      var nw=Math.max(MIN, Math.min(startW+(e.clientX-start), avail-MIN));
+      leftEl.style.flex='0 0 '+nw+'px';
+      // Actualizar colW
+      if(idx===0) colW[0]=nw; else colW[1]=nw;
+      notifyXeokit();
+    }
+    function mvT(e){ if(active){ mv({clientX:e.touches[0].clientX}); e.preventDefault(); } }
+    document.addEventListener('mouseup', up); document.addEventListener('touchend', up, {passive:true});
+    function up(){ if(!active)return; active=false; sep.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; }
+  }
 
-  picker && picker.querySelectorAll('.lp-btn').forEach(function(btn){
+  function makeRowDraggable(sep){
+    var active=false, startY=0, startH=0, topEl=null;
+    sep.addEventListener('mousedown', on); sep.addEventListener('touchstart', onT, {passive:false});
+    function on(e){
+      active=true; startY=e.clientY; sep.classList.add('active');
+      topEl=sep.previousElementSibling;
+      startH=topEl?topEl.offsetHeight:0;
+      document.body.style.cursor='row-resize'; document.body.style.userSelect='none'; e.preventDefault();
+    }
+    function onT(e){ on({clientY:e.touches[0].clientY,preventDefault:function(){e.preventDefault();}}); }
+    document.addEventListener('mousemove', mv); document.addEventListener('touchmove', mvT, {passive:false});
+    function mv(e){
+      if(!active||!topEl)return;
+      var stack=sep.closest('.col-stack');
+      var avail=stack?stack.clientHeight:vbody.clientHeight;
+      var nh=Math.max(MIN, Math.min(startH+(e.clientY-startY), avail-MIN));
+      topEl.style.flex='0 0 '+nh+'px';
+      notifyXeokit();
+    }
+    function mvT(e){ if(active){ mv({clientY:e.touches[0].clientY}); e.preventDefault(); } }
+    document.addEventListener('mouseup', up); document.addEventListener('touchend', up, {passive:true});
+    function up(){ if(!active)return; active=false; sep.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; }
+  }
+
+  // ── Gear panel ────────────────────────────────────────────────────────────
+  var gearPanel   = document.getElementById('gear-panel');
+  var gearOverlay = document.getElementById('gear-overlay');
+  var btnGear     = document.getElementById('bn-gear');
+  var btnClose    = document.getElementById('bn-gear-close');
+
+  function openGear(){
+    if(!gearPanel) return;
+    gearPanel.style.display='flex';
+    gearOverlay.style.display='block';
+    syncGearDark();
+    buildSlotUI();
+    markActive(curLayout);
+  }
+  function closeGear(){
+    if(gearPanel) gearPanel.style.display='none';
+    if(gearOverlay) gearOverlay.style.display='none';
+  }
+
+  if(btnGear)    btnGear.addEventListener('click', function(e){ e.stopPropagation(); gearPanel.style.display==='none'?openGear():closeGear(); });
+  if(btnClose)   btnClose.addEventListener('click', closeGear);
+  if(gearOverlay) gearOverlay.addEventListener('click', closeGear);
+
+  // Layout buttons inside gear
+  var gearLayoutBtns = document.getElementById('gear-layout-btns');
+  if(gearLayoutBtns) gearLayoutBtns.querySelectorAll('.lp-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
       applyLayout(btn.dataset.layout);
-      hidePicker();
     });
   });
 
   function markActive(layout){
-    picker && picker.querySelectorAll('.lp-btn').forEach(function(b){
+    if(gearLayoutBtns) gearLayoutBtns.querySelectorAll('.lp-btn').forEach(function(b){
       b.classList.toggle('active', b.dataset.layout===layout);
     });
-    if(btnLayout) btnLayout.classList.toggle('a', layout!=='2col-wide');
+    // Ocultar layouts de 3 paneles si no hay IFC
+    if(gearLayoutBtns){
+      ['3col','left2','right2'].forEach(function(l){
+        var b=gearLayoutBtns.querySelector('[data-layout="'+l+'"]');
+        if(b) b.style.display=noIfc()?'none':'';
+      });
+    }
+    if(btnGear) btnGear.classList.toggle('a', layout!=='2col-wide');
   }
 
-  function notifyXeokit(){
-    if(window.xv&&window.xv.scene) setTimeout(function(){
-      try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
-    },100);
+  // ── Slot UI — asignar contenido a cada hueco ─────────────────────────────
+  var SLOT_OPTIONS = [
+    {value:'col1', label:'Presupuesto'},
+    {value:'col2', label:'Detalle'},
+    {value:'col3', label:'Visor 3D'}
+  ];
+  var SLOT_KEYS_MAP = {
+    '2col-wide': ['A','B'],
+    '2col':      ['A','B'],
+    '3col':      ['A','B','C'],
+    'left2':     ['A','B','C'],
+    'right2':    ['A','B','C']
+  };
+
+  function buildSlotUI(){
+    var container = document.getElementById('gear-slots');
+    if(!container) return;
+    var keys = SLOT_KEYS_MAP[curLayout]||['A','B'];
+    container.innerHTML='';
+    keys.forEach(function(key){
+      var row = document.createElement('div');
+      row.className='slot-row';
+      var lbl = document.createElement('span');
+      lbl.className='slot-label'; lbl.textContent=key;
+      var sel = document.createElement('select');
+      sel.className='slot-select';
+      SLOT_OPTIONS.forEach(function(opt){
+        if(noIfc() && opt.value==='col3') return; // hide visor if no IFC
+        var o=document.createElement('option');
+        o.value=opt.value; o.textContent=opt.label;
+        if(slotAssign[key]===opt.value) o.selected=true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', function(){
+        var prev=slotAssign[key];
+        var next=sel.value;
+        // Swap si el nuevo ya está asignado a otro slot
+        keys.forEach(function(k){ if(k!==key && slotAssign[k]===next) slotAssign[k]=prev; });
+        slotAssign[key]=next;
+        applyLayout();
+      });
+      row.appendChild(lbl); row.appendChild(sel);
+      container.appendChild(row);
+    });
   }
 
-  // Toggle códigos árbol
+  // ── Tema oscuro ───────────────────────────────────────────────────────────
+  var darkToggle = document.getElementById('gear-dark-toggle');
+  if(darkToggle) darkToggle.addEventListener('click', function(){
+    if(window.applyDark) window.applyDark(!window._dark);
+    syncGearDark();
+  });
+  function syncGearDark(){
+    var d=window._dark;
+    var iconD=document.getElementById('gear-icon-dark');
+    var iconL=document.getElementById('gear-icon-light');
+    var lbl=document.getElementById('gear-dark-label');
+    if(iconD) iconD.style.display=d?'none':'';
+    if(iconL) iconL.style.display=d?'':'none';
+    if(lbl)   lbl.textContent=d?'Claro':'Oscuro';
+  }
+
+  // ── Archivos en gear ──────────────────────────────────────────────────────
+  // bn-export ya tiene handler, redirigimos closeGear tras exportar
+  var bnExp=document.getElementById('bn-export');
+  if(bnExp) bnExp.addEventListener('click', function(){ if(curVR){exportVersion(curVR);} });
+
+  // ── Sincronizar iconos XKT/meta en gear cuando se carga ──────────────────
+  window.gearSetXktDone=function(name){
+    var sub=document.getElementById('gear-sub-xkt');
+    var chk=document.getElementById('gear-check-xkt');
+    var row=document.getElementById('gear-row-meta');
+    if(sub) sub.textContent=name||'Cargado ✓';
+    if(chk) chk.style.display='';
+    if(row){ row.style.opacity='1'; row.style.pointerEvents='auto'; }
+  };
+  window.gearSetMetaDone=function(name){
+    var sub=document.getElementById('gear-sub-meta');
+    var chk=document.getElementById('gear-check-meta');
+    if(sub) sub.textContent=name||'Cargado ✓';
+    if(chk) chk.style.display='';
+  };
+
+  // ── Toggle códigos árbol ──────────────────────────────────────────────────
   on('bn-showcodes','click',function(e){
     e.stopPropagation();
     if(!curBC)return;
@@ -2917,13 +3194,23 @@ function _sbLoadPos(){
     renderTree();
   });
 
-  // Exponer para uso externo (IFC toggle etc.)
-  window._layout = { apply: applyLayout, current: function(){ return curLayout; } };
+  function notifyXeokit(){
+    if(window.xv&&window.xv.scene) setTimeout(function(){
+      try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
+    },100);
+  }
 
   window.addEventListener('resize', function(){ applyLayout(); });
-  window.addEventListener('orientationchange', function(){ setTimeout(applyLayout, 300); });
-  setTimeout(applyLayout, 30);
+  window.addEventListener('orientationchange', function(){ setTimeout(applyLayout,300); });
 
+  window._layout = {
+    apply: applyLayout,
+    current: function(){ return curLayout; },
+    syncGearXkt: function(n){ if(window.gearSetXktDone) window.gearSetXktDone(n); },
+    syncGearMeta: function(n){ if(window.gearSetMetaDone) window.gearSetMetaDone(n); }
+  };
+
+  setTimeout(applyLayout, 40);
 })();
 
 // ── EVENTOS ───────────────────────────────────────────────────────────────
@@ -3011,16 +3298,16 @@ on('fxkt','change',function(){
   var fname=this.files[0].name;
   loadXktFile(this.files[0], null);
   this.value='';
-  // Marcar paso 1 completado en el modal IFC (si está abierto)
-  ifcModalSetXktDone(fname);
+  // Marcar en gear panel
+  if(window._layout) window._layout.syncGearXkt(fname);
 });
 on('fmeta','change',function(){
   if(!this.files[0]||!curVR){this.value='';return;}
   var fname=this.files[0].name;
   applyMetaFile(this.files[0]);
   this.value='';
-  // Marcar paso 2 completado en el modal IFC
-  ifcModalSetMetaDone(fname);
+  // Marcar en gear panel
+  if(window._layout) window._layout.syncGearMeta(fname);
 });
 
 // Visor — BC3 reimport
@@ -3181,9 +3468,7 @@ function buildViewsPanel(){
     list.appendChild(row);
   });
 }
-on('bn-export','click',function(){if(curVR){exportVersion(curVR);hideM('m-backup');}});
-on('bn-dark-p','click',function(){window.applyDark(!window._dark);});
-on('bn-dark-v','click',function(){window.applyDark(!window._dark);});
+// bn-export handled inside gear panel JS
 
 // Import .bc3m
 on('fimport-home','change',function(){if(this.files[0])importBc3m(this.files[0]);this.value='';});
@@ -3219,9 +3504,8 @@ on('bn-ifc','click',function(){
   var body=el('vb-body');
   var noModel=body&&body.classList.contains('no-model');
   if(noModel){
-    // Sin modelo → abrir modal para cargar XKT
-    ifcModalRefresh();
-    showM('m-ifc');
+    // Sin modelo → abrir gear panel en sección archivos
+    if(window.gearSetXktDone||true){ var gp=document.getElementById('gear-panel'); var go=document.getElementById('gear-overlay'); if(gp){gp.style.display='flex';if(go)go.style.display='block';} }
   } else {
     // Con modelo → toggle visibilidad col3
     body.classList.toggle('ifc-hidden');
