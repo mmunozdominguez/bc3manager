@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
-<!-- BC3 Manager v2.7 — layout rewrite: full-width on IFC hide, portrait fix, col swap -->
+<!-- BC3 Manager v2.8 — layout rewrite: full-width on IFC hide, portrait fix, col swap -->
 <title>BC3 Manager</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f0f13">
@@ -85,88 +85,44 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .vbg.wn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd);}
 .vbg.bl{background:var(--sub-bg);color:var(--sub);border:1px solid var(--sub-bd);}
 .vbg.pu{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;}
-/* ── Panel flotante system ───────────────────────────────────────────────── */
-#vb-body{flex:1;position:relative;overflow:hidden;background:var(--bg);}
-/* Cada panel es position:absolute */
-.vpanel{
-  position:absolute;
-  display:flex;flex-direction:column;
-  background:var(--panel);
-  border:1px solid var(--bd);
-  border-radius:8px;
-  box-shadow:0 2px 12px rgba(0,0,0,.10);
-  overflow:hidden;
-  min-width:200px;min-height:120px;
-  z-index:10;
-  transition:box-shadow .15s;
-}
-.vpanel:focus-within,.vpanel.dragging-panel{
-  box-shadow:0 8px 32px rgba(0,0,0,.18);
-  z-index:20;
-}
-/* Header del panel — zona de drag */
-.col-header{
-  display:flex;align-items:center;gap:6px;
-  padding:7px 10px;
-  border-bottom:1px solid var(--bd);
-  background:var(--panel2);
-  flex-shrink:0;min-height:34px;
-  cursor:grab;user-select:none;
-}
-.col-header:active{cursor:grabbing;}
-.col-header>span:first-of-type{
-  font-size:11px;font-weight:600;text-transform:uppercase;
-  letter-spacing:.07em;color:var(--muted2);white-space:nowrap;
-  pointer-events:none;
-}
+/* ── Layout grid ────────────────────────────────────────────────────────── */
+#vb-body{flex:1;display:flex;overflow:hidden;background:var(--bg);}
+.vcol{display:flex;flex-direction:column;overflow:hidden;background:var(--panel);min-width:0;position:relative;flex-shrink:0;}
+/* Sin modelo IFC */
+#vb-body.no-model #col3,#vb-body.no-model #col-sep23{display:none!important;}
+#vb-body.ifc-hidden #col3,#vb-body.ifc-hidden #col-sep23{display:none!important;}
+/* Separadores redimensionables */
+.col-sep{flex:0 0 4px;background:var(--bd);cursor:col-resize;position:relative;z-index:5;touch-action:none;transition:background .12s;}
+.col-sep:hover,.col-sep.active{background:var(--acc);}
+.col-sep::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:20px;border-radius:2px;background:var(--acc);opacity:0;transition:opacity .12s;}
+.col-sep:hover::after,.col-sep.active::after{opacity:1;}
+/* Separador horizontal */
+.row-sep{flex:0 0 4px;background:var(--bd);cursor:row-resize;touch-action:none;transition:background .12s;}
+.row-sep:hover,.row-sep.active{background:var(--acc);}
+/* Cabecera de columna */
+.col-header{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;min-height:34px;}
+.col-header>span:first-of-type{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted2);white-space:nowrap;}
 .col-meta{flex:1;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.col-tog{
-  border:none;background:none;cursor:pointer;color:var(--muted);
-  font-size:14px;padding:4px 6px;min-width:28px;min-height:28px;
-  display:flex;align-items:center;justify-content:center;border-radius:4px;
-  flex-shrink:0;
-}
+.col-tog{border:none;background:none;cursor:pointer;color:var(--muted);font-size:16px;padding:6px 8px;min-width:32px;min-height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;}
 .col-tog:hover{background:var(--bd);color:var(--text);}
-/* Panel minimizado */
-.vpanel.minimized{
-  height:34px!important;min-height:34px!important;
-  overflow:hidden;
-  resize:none;
-}
-.vpanel.minimized .col-header{cursor:grab;border-bottom:none;}
 /* Scroll interno */
 .col-scroll{flex:1;overflow-y:auto;}
-/* Resize handle — esquina inferior derecha */
-.panel-resize{
-  position:absolute;bottom:0;right:0;
-  width:14px;height:14px;cursor:nwse-resize;
-  z-index:5;touch-action:none;
-}
-.panel-resize::after{
-  content:'';position:absolute;bottom:3px;right:3px;
-  width:6px;height:6px;
-  border-right:2px solid var(--muted2);border-bottom:2px solid var(--muted2);
-  border-radius:1px;opacity:.5;
-}
-.panel-resize:hover::after{opacity:1;border-color:var(--acc);}
-/* Panel col3 (visor 3D): fondo diferente */
-#col3.vpanel{background:#f0eff8;border-color:var(--bd);}
-/* Oculto */
-.vpanel.panel-hidden{display:none!important;}
-/* Portrait: stack vertical automático */
+/* Sub-stack para layouts con filas */
+.col-stack{display:flex;flex-direction:column;overflow:hidden;flex:1;min-width:0;}
+/* Minimizar */
+.vcol.col-min .col-scroll,.vcol.col-min .tabs,.vcol.col-min .vtb,
+.vcol.col-min .sb,.vcol.col-min #dc,.vcol.col-min #tv,
+.vcol.col-min .vtoolbar,.vcol.col-min #bn-showcodes{display:none!important;}
+.vcol.col-min{flex:0 0 32px!important;min-width:32px!important;}
+.vcol.col-min .col-header{writing-mode:vertical-rl;justify-content:center;padding:10px 4px;}
+/* Portrait */
 @media (orientation:portrait),(max-width:700px){
-  .vpanel{
-    position:relative!important;
-    left:auto!important;top:auto!important;
-    width:100%!important;
-    border-radius:0;border-left:none;border-right:none;
-    box-shadow:none;
-  }
-  #vb-body{display:flex;flex-direction:column;overflow-y:auto;}
-  #col1.vpanel,#col2.vpanel{flex:1 1 0;min-height:200px;}
-  #col3.vpanel{flex:2 1 0;min-height:260px;}
-  .panel-resize{display:none;}
-  .vpanel.minimized{flex:0 0 34px!important;}
+  #vb-body{flex-direction:column!important;}
+  .vcol,.col-stack{flex:1 1 0!important;width:100%!important;min-height:120px;}
+  .col-sep{display:none!important;}
+  .row-sep{display:none!important;}
+  .vcol.col-min{flex:0 0 32px!important;min-width:0!important;width:100%!important;}
+  .vcol.col-min .col-header{writing-mode:horizontal-tb;padding:4px 10px;}
 }
 @media (pointer:coarse){
   .btn,.t3,.col-tog,.tab{min-height:38px;min-width:38px;}
@@ -251,6 +207,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .cs{display:flex;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;margin-bottom:12px;}
 .css .n{font-size:16px;font-weight:600;display:block;}
 .mb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;align-items:center;justify-content:center;}
+/* Layout picker buttons */
+.lp-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;background:var(--panel2);cursor:pointer;font-size:9px;color:var(--muted);transition:all .12s;}
+.lp-btn:hover{border-color:var(--acc);background:var(--acc-bg);}
+.lp-btn.active{border-color:var(--acc);background:var(--acc-bg);color:var(--acc);font-weight:600;}
 .mb.o{display:flex;}
 .md{background:var(--panel);border-radius:12px;padding:22px;width:420px;max-width:95vw;border:1px solid var(--bd);}
 .md h3{font-size:15px;font-weight:600;margin-bottom:14px;}
@@ -584,7 +544,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- HOME -->
 <div class="view active" id="v-home">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.7</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span id="dev-ind" style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.8</span></div>
     <div class="tr">
       <button class="btn p" id="bn-np">
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -623,7 +583,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- PROYECTO -->
 <div class="view" id="v-proj">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.7</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:4px;">v2.8</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bh2" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -656,7 +616,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- VISOR -->
 <div class="view" id="v-visor">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.7</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.8</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bp3" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -670,6 +630,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
       <input type="file" id="fmeta" style="position:absolute;left:-9999px;" accept=".json">
       <input type="file" id="fbc3r" style="position:absolute;left:-9999px;" accept=".bc3,.BC3">
       <button class="btn" id="bn-search" style="display:inline-flex;align-items:center;gap:5px;" title="Buscar partida"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar</button>
+      <button class="btn" id="bn-layout" style="display:inline-flex;align-items:center;gap:5px;" title="Cambiar distribución de paneles"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="10" rx="1"/><rect x="14" y="17" width="7" height="4" rx="1"/></svg>Layout</button>
       <button class="btn p" id="bn-ifc" style="display:inline-flex;align-items:center;gap:5px;" title="Modelo IFC / XKT"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>IFC</button>
       <button class="btn" id="bn-vbackup" style="display:inline-flex;align-items:center;gap:5px;" title="Copia de seguridad"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Backup</button>
       <span class="sd" id="sd"></span>
@@ -683,7 +644,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
   <!-- 3 columnas -->
   <div id="vb-body" class="no-model">
     <!-- COL 1: Árbol BC3 -->
-    <div class="vpanel" id="col1">
+    <div class="vcol" id="col1" style="flex:0 0 300px;">
       <div class="col-header">
         
         <span>Presupuesto</span>
@@ -705,9 +666,9 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <button id="ms-iso" class="btn p" style="font-size:11px;padding:4px 12px;display:flex;align-items:center;justify-content:center;">Aislar en visor</button>
         <button id="ms-clr" class="btn" style="font-size:13px;padding:0;width:32px;display:flex;align-items:center;justify-content:center;" title="Limpiar selección">✕</button>
       </div>
-      <div class="panel-resize" data-panel="col1"></div>
     </div>
-    <div class="vpanel" id="col2">
+    <div class="col-sep" id="col-sep12"></div>
+    <div class="vcol" id="col2" style="flex:0 0 280px;">
       <div class="col-header">
         
         <span>Detalle</span>
@@ -721,10 +682,10 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <div class="tab" data-t="des" title="Precio descompuesto"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       </div>
       <div id="dc" class="col-scroll"><div class="ed"><p>Selecciona una partida</p></div></div>
-      <div class="panel-resize" data-panel="col2"></div>
     </div>
+    <div class="col-sep" id="col-sep23"></div>
     <!-- COL 3: Visor 3D -->
-    <div class="vpanel" id="col3">
+    <div class="vcol" id="col3" style="flex:1 1 0;">
       <div class="col-header">
         <span>Modelo 3D</span>
         <div class="vtoolbar" style="display:flex;gap:3px;align-items:center;flex:1;justify-content:flex-end;padding-right:4px;flex-wrap:wrap;">
@@ -805,12 +766,47 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         </div>
         </div>
       </div>
-      <div class="panel-resize" data-panel="col3"></div>
     </div>
   </div>
 </div>
 
 <!-- ══ MODAL ARCHIVOS ════════════════════════════════════════════════════ -->
+<!-- ══ LAYOUT PICKER ════════════════════════════════════════════════════ -->
+<div id="layout-picker" style="display:none;position:fixed;z-index:300;background:var(--panel);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);padding:14px 16px;min-width:260px;">
+  <div style="font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Distribución de paneles</div>
+  <div id="layout-2-section" style="margin-bottom:10px;">
+    <div style="font-size:9px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Sin modelo 3D</div>
+    <div style="display:flex;gap:8px;">
+      <button class="lp-btn" data-layout="2col" title="Presupuesto | Detalle">
+        <svg viewBox="0 0 44 28" width="44" height="28"><rect x="1" y="1" width="19" height="26" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/><rect x="24" y="1" width="19" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/></svg>
+        <span>½ · ½</span>
+      </button>
+      <button class="lp-btn" data-layout="2col-wide" title="Presupuesto amplio | Detalle">
+        <svg viewBox="0 0 44 28" width="44" height="28"><rect x="1" y="1" width="12" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="17" y="1" width="26" height="26" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/></svg>
+        <span>⅓ · ⅔</span>
+      </button>
+    </div>
+  </div>
+  <div id="layout-3-section">
+    <div style="font-size:9px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Con modelo 3D</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="lp-btn" data-layout="3col" title="3 columnas">
+        <svg viewBox="0 0 60 28" width="60" height="28"><rect x="1" y="1" width="17" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="22" y="1" width="16" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="42" y="1" width="17" height="26" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/></svg>
+        <span>3 col</span>
+      </button>
+      <button class="lp-btn" data-layout="left2" title="[Pres+Det] | Visor">
+        <svg viewBox="0 0 60 28" width="60" height="28"><rect x="1" y="1" width="24" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="1" y="15" width="24" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="29" y="1" width="30" height="26" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/></svg>
+        <span>2f+visor</span>
+      </button>
+      <button class="lp-btn" data-layout="right2" title="Pres | [Det+Visor]">
+        <svg viewBox="0 0 60 28" width="60" height="28"><rect x="1" y="1" width="24" height="26" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="29" y="1" width="30" height="12" rx="2" fill="var(--panel2)" stroke="var(--bd)" stroke-width="1.5"/><rect x="29" y="15" width="30" height="12" rx="2" fill="var(--acc-bg)" stroke="var(--acc)" stroke-width="1.5"/></svg>
+        <span>pres+2f</span>
+      </button>
+    </div>
+  </div>
+  <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);font-size:9px;color:var(--muted);">Arrastra los separadores para ajustar anchos</div>
+</div>
+
 <!-- ══ MODAL IFC ═══════════════════════════════════════════════════════════ -->
 <div class="mb" id="m-ifc">
   <div class="md" style="width:400px;">
@@ -1183,7 +1179,7 @@ function openVer(vid){
       if(typeof syncIfcBtn==='function')syncIfcBtn();
     }
     showV('visor');
-    setTimeout(function(){ if(window._panelLayout)window._panelLayout.init(); },30);
+    setTimeout(function(){ if(window._layout)window._layout.apply(); },30);
   });
 }
 
@@ -2317,7 +2313,7 @@ async function loadXktFile(xktFile, metaFile){
   var vbBody=el('vb-body');
   if(vbBody){vbBody.classList.remove('no-model');vbBody.classList.remove('ifc-hidden');}
   if(typeof syncIfcBtn==='function')syncIfcBtn();
-  if(window._panelLayout)window._panelLayout.init();
+  if(window._layout)window._layout.apply('3col');
   await initXeokit();
   loadXkt(xktUint,metaJson);
 }
@@ -2731,232 +2727,188 @@ function _sbLoadPos(){
 }
 
 
-// ── PANEL FLOTANTE SYSTEM ─────────────────────────────────────────────────
+
+
+// ── LAYOUT SYSTEM ─────────────────────────────────────────────────────────
 (function(){
-  var container = document.getElementById('vb-body');
-  if(!container) return;
+  var body = document.getElementById('vb-body');
+  if(!body) return;
 
-  var PANEL_IDS = ['col1','col2','col3'];
-  var MIN_W = 200, MIN_H = 120;
-  var GAP = 6; // gap entre paneles en layout inicial
+  // Layout activo: '2col'|'2col-wide'|'3col'|'left2'|'right2'
+  var curLayout = '2col-wide';
+  var MIN = 160;
 
-  // Estado por panel
-  var panels = {};
-  PANEL_IDS.forEach(function(id){
-    panels[id] = {
-      x:0, y:0, w:0, h:0,
-      minimized: false,
-      hidden: false
-    };
+  // Tamaños guardados por layout (px de col1 y col2)
+  var sizes = { col1: 300, col2: 260 };
+
+  // ── Aplicar layout ───────────────────────────────────────────────────────
+  function applyLayout(layout){
+    if(layout) curLayout = layout;
+    var noIfc = body.classList.contains('no-model') || body.classList.contains('ifc-hidden');
+
+    // Si no hay IFC, forzar layout 2 col
+    if(noIfc && (curLayout==='3col'||curLayout==='left2'||curLayout==='right2')){
+      curLayout = '2col-wide';
+    }
+
+    var W = body.clientWidth, H = body.clientHeight;
+    if(W < 10) return;
+
+    // Limpiar estructura anterior
+    body.className = body.className.replace(/\blayout-\S+/g,'').trim();
+    // Reconstruir según layout
+    rebuild(curLayout, noIfc, W, H);
+    markActive(curLayout);
+  }
+
+  function rebuild(layout, noIfc, W, H){
+    var c1 = document.getElementById('col1');
+    var c2 = document.getElementById('col2');
+    var c3 = document.getElementById('col3');
+    var s12 = document.getElementById('col-sep12');
+    var s23 = document.getElementById('col-sep23');
+    if(!c1||!c2) return;
+
+    // Restaurar todos al flujo normal del body
+    [c1,c2,c3,s12,s23].forEach(function(el){ if(el) body.appendChild(el); });
+
+    // Eliminar col-stacks previos
+    body.querySelectorAll('.col-stack').forEach(function(s){ s.remove(); });
+
+    if(layout === '2col'){
+      setFlex(c1, '0 0 '+Math.round(W*0.5-2)+'px'); setFlex(c2,'1 1 0');
+      show(s12); hide(s23); if(c3) hide(c3); else {}
+    } else if(layout === '2col-wide'){
+      setFlex(c1, '0 0 '+clamp(sizes.col1,MIN,W*0.5)+'px'); setFlex(c2,'1 1 0');
+      show(s12); hide(s23); hide(c3);
+    } else if(layout === '3col'){
+      var w1=clamp(sizes.col1,MIN,W*0.4), w2=clamp(sizes.col2,MIN,W*0.35);
+      setFlex(c1,'0 0 '+w1+'px'); setFlex(c2,'0 0 '+w2+'px'); setFlex(c3,'1 1 0');
+      show(s12); show(s23); show(c3);
+    } else if(layout === 'left2'){
+      // [col1 / col2] stack izquierda | col3 derecha
+      var stack = makeStack('stack-left');
+      body.insertBefore(stack, c1);
+      var rs = makeRowSep('row-sep-12');
+      stack.appendChild(c1); stack.appendChild(rs); stack.appendChild(c2);
+      setFlex(c1,'1 1 0'); setFlex(c2,'1 1 0');
+      setFlex(stack,'0 0 '+clamp(sizes.col1,MIN,W*0.45)+'px');
+      hide(s12);
+      show(s23); setFlex(c3,'1 1 0'); show(c3);
+      initRowResize(rs, c1, c2, H);
+    } else if(layout === 'right2'){
+      // col1 izquierda | [col2 / col3] stack derecha
+      var stack = makeStack('stack-right');
+      body.appendChild(stack);
+      var rs = makeRowSep('row-sep-23');
+      stack.appendChild(c2); stack.appendChild(rs); stack.appendChild(c3);
+      setFlex(c2,'1 1 0'); setFlex(c3,'1 1 0');
+      setFlex(c1,'0 0 '+clamp(sizes.col1,MIN,W*0.4)+'px');
+      setFlex(stack,'1 1 0');
+      show(s12); hide(s23); show(c3);
+      initRowResize(rs, c2, c3, H);
+    }
+
+    // Rearrancar xeokit canvas
+    notifyXeokit();
+  }
+
+  function makeStack(id){
+    var s = document.getElementById(id);
+    if(!s){ s = document.createElement('div'); s.className='col-stack'; s.id=id; }
+    return s;
+  }
+  function makeRowSep(id){
+    var s = document.getElementById(id);
+    if(!s){ s = document.createElement('div'); s.className='row-sep'; s.id=id; }
+    initRowResize._seps = initRowResize._seps||{};
+    return s;
+  }
+
+  function setFlex(el, val){ if(el) el.style.flex = val; }
+  function show(el){ if(el) el.style.display=''; }
+  function hide(el){ if(el) el.style.display='none'; }
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+  // ── Col resize (horizontal) ──────────────────────────────────────────────
+  function initColResize(sep, getLeft, getRight, getAvail){
+    var active=false, startX=0, startW=0;
+    sep.addEventListener('mousedown', start); sep.addEventListener('touchstart', startT, {passive:false});
+    function start(e){ active=true; startX=clientX(e); startW=getLeft().offsetWidth; sep.classList.add('active'); document.body.style.cursor='col-resize'; document.body.style.userSelect='none'; e.preventDefault(); }
+    function startT(e){ start(e.touches[0]); }
+    document.addEventListener('mousemove', move); document.addEventListener('touchmove', moveT, {passive:false});
+    function move(e){ if(!active)return; var nw=clamp(startW+(clientX(e)-startX),MIN,getAvail()-MIN); getLeft().style.flex='0 0 '+nw+'px'; if(sep.id==='col-sep12') sizes.col1=nw; else sizes.col2=nw; notifyXeokit(); }
+    function moveT(e){ if(active){move(e.touches[0]); e.preventDefault();} }
+    document.addEventListener('mouseup', end); document.addEventListener('touchend', end, {passive:true});
+    function end(){ if(!active)return; active=false; sep.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; }
+    function clientX(e){ return e.clientX!==undefined?e.clientX:e.pageX; }
+  }
+
+  // ── Row resize (vertical) ────────────────────────────────────────────────
+  function initRowResize(sep, top, bot, totalH){
+    var active=false, startY=0, startH=0;
+    sep.addEventListener('mousedown', start); sep.addEventListener('touchstart', startT, {passive:false});
+    function start(e){ active=true; startY=clientY(e); startH=top.offsetHeight; sep.classList.add('active'); document.body.style.cursor='row-resize'; document.body.style.userSelect='none'; e.preventDefault(); }
+    function startT(e){ start(e.touches[0]); }
+    document.addEventListener('mousemove', move); document.addEventListener('touchmove', moveT, {passive:false});
+    function move(e){ if(!active)return; var avail=body.clientHeight; var nh=clamp(startH+(clientY(e)-startY),MIN,avail-MIN); top.style.flex='0 0 '+nh+'px'; notifyXeokit(); }
+    function moveT(e){ if(active){move(e.touches[0]); e.preventDefault();} }
+    document.addEventListener('mouseup', end); document.addEventListener('touchend', end, {passive:true});
+    function end(){ if(!active)return; active=false; sep.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; }
+    function clientY(e){ return e.clientY!==undefined?e.clientY:e.pageY; }
+  }
+
+  // Inicializar separadores col fijos
+  var sep12 = document.getElementById('col-sep12');
+  var sep23 = document.getElementById('col-sep23');
+  if(sep12) initColResize(sep12, function(){return document.getElementById('col1');}, function(){return document.getElementById('col2');}, function(){return body.clientWidth;});
+  if(sep23) initColResize(sep23, function(){return document.getElementById('col2');}, function(){return document.getElementById('col3');}, function(){return body.clientWidth;});
+
+  // ── Layout picker popup ──────────────────────────────────────────────────
+  var picker = document.getElementById('layout-picker');
+  var btnLayout = document.getElementById('bn-layout');
+
+  function showPicker(){
+    var noIfc = body.classList.contains('no-model')||body.classList.contains('ifc-hidden');
+    var s3 = document.getElementById('layout-3-section');
+    if(s3) s3.style.display = noIfc ? 'none' : '';
+    var rect = btnLayout.getBoundingClientRect();
+    picker.style.top  = (rect.bottom + 6) + 'px';
+    picker.style.right = (window.innerWidth - rect.right) + 'px';
+    picker.style.left  = 'auto';
+    picker.style.display = 'block';
+  }
+  function hidePicker(){ picker.style.display='none'; }
+
+  if(btnLayout) btnLayout.addEventListener('click', function(e){
+    e.stopPropagation();
+    picker.style.display === 'none' ? showPicker() : hidePicker();
+  });
+  document.addEventListener('click', function(e){
+    if(picker && !picker.contains(e.target) && e.target !== btnLayout) hidePicker();
   });
 
-  function isPortrait(){
-    return window.matchMedia('(orientation:portrait),(max-width:700px)').matches;
-  }
-
-  // ── Layout inicial: distribuye paneles tiled ────────────────────────────
-  function initLayout(){
-    var W = container.clientWidth;
-    var H = container.clientHeight;
-    if(W<10||H<10) return;
-
-    var noViewer = container.classList.contains('no-model') ||
-                   container.classList.contains('ifc-hidden');
-
-    if(noViewer){
-      // col1 33% | col2 resto
-      var w1 = Math.round((W - GAP) * 0.35);
-      var w2 = W - w1 - GAP;
-      setPanel('col1', GAP/2, GAP/2, w1-GAP/2, H-GAP);
-      setPanel('col2', w1+GAP/2, GAP/2, w2-GAP/2, H-GAP);
-      hidePanel('col3', true);
-    } else {
-      // col1 28% | col2 22% | col3 resto
-      var w1 = Math.round((W - GAP*2) * 0.28);
-      var w2 = Math.round((W - GAP*2) * 0.22);
-      var w3 = W - w1 - w2 - GAP*2;
-      setPanel('col1', GAP/2,         GAP/2, w1-GAP/2, H-GAP);
-      setPanel('col2', w1+GAP,        GAP/2, w2-GAP/2, H-GAP);
-      setPanel('col3', w1+w2+GAP*1.5, GAP/2, w3-GAP/2, H-GAP);
-      hidePanel('col3', false);
-    }
-    hidePanel('col1', false);
-    hidePanel('col2', false);
-  }
-
-  function setPanel(id, x, y, w, h){
-    var el = document.getElementById(id);
-    if(!el) return;
-    var p = panels[id];
-    p.x=Math.round(x); p.y=Math.round(y);
-    p.w=Math.round(Math.max(MIN_W,w));
-    p.h=Math.round(Math.max(MIN_H,h));
-    applyPanelStyle(id);
-  }
-
-  function applyPanelStyle(id){
-    var el = document.getElementById(id);
-    if(!el) return;
-    var p = panels[id];
-    if(p.hidden){ el.style.display='none'; return; }
-    el.style.display='flex';
-    el.style.left   = p.x+'px';
-    el.style.top    = p.y+'px';
-    el.style.width  = p.w+'px';
-    el.style.height = p.minimized ? '34px' : p.h+'px';
-  }
-
-  function hidePanel(id, hide){
-    panels[id].hidden = hide;
-    var el = document.getElementById(id);
-    if(el) el.style.display = hide ? 'none' : 'flex';
-  }
-
-  function bringToFront(id){
-    var maxZ = 10;
-    PANEL_IDS.forEach(function(pid){
-      var el=document.getElementById(pid);
-      if(el){ var z=parseInt(el.style.zIndex)||10; if(z>maxZ)maxZ=z; }
-    });
-    var el=document.getElementById(id);
-    if(el) el.style.zIndex = maxZ+1;
-  }
-
-  // ── Drag desde col-header ───────────────────────────────────────────────
-  PANEL_IDS.forEach(function(id){
-    var el = document.getElementById(id);
-    if(!el) return;
-    var header = el.querySelector('.col-header');
-    if(!header) return;
-
-    var dragging=false, startX=0, startY=0, startPX=0, startPY=0;
-
-    function onStart(cx,cy){
-      if(isPortrait()) return;
-      dragging=true;
-      startX=cx; startY=cy;
-      startPX=panels[id].x; startPY=panels[id].y;
-      el.classList.add('dragging-panel');
-      bringToFront(id);
-      document.body.style.userSelect='none';
-    }
-    function onMove(cx,cy){
-      if(!dragging) return;
-      var dx=cx-startX, dy=cy-startY;
-      var W=container.clientWidth, H=container.clientHeight;
-      panels[id].x = Math.max(0, Math.min(W-60, startPX+dx));
-      panels[id].y = Math.max(0, Math.min(H-34, startPY+dy));
-      applyPanelStyle(id);
-    }
-    function onEnd(){
-      if(!dragging) return;
-      dragging=false;
-      el.classList.remove('dragging-panel');
-      document.body.style.userSelect='';
-      notifyXeokit();
-    }
-
-    header.addEventListener('mousedown',function(e){
-      if(e.target.closest('.col-tog,.btn,.t3')) return;
-      onStart(e.clientX,e.clientY); e.preventDefault();
-    });
-    header.addEventListener('touchstart',function(e){
-      if(e.target.closest('.col-tog,.btn,.t3')) return;
-      onStart(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault();
-    },{passive:false});
-    document.addEventListener('mousemove',function(e){ onMove(e.clientX,e.clientY); });
-    document.addEventListener('touchmove',function(e){
-      if(dragging){ onMove(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); }
-    },{passive:false});
-    document.addEventListener('mouseup',onEnd);
-    document.addEventListener('touchend',onEnd,{passive:true});
-
-    // Click en panel → traer al frente
-    el.addEventListener('mousedown',function(){ bringToFront(id); },{capture:true});
-  });
-
-  // ── Resize desde panel-resize handle ────────────────────────────────────
-  document.querySelectorAll('.panel-resize').forEach(function(handle){
-    var id = handle.dataset.panel;
-    if(!id) return;
-    var resizing=false, startX=0, startY=0, startW=0, startH=0;
-
-    function onStart(cx,cy){
-      if(isPortrait()) return;
-      resizing=true;
-      startX=cx; startY=cy;
-      startW=panels[id].w; startH=panels[id].h;
-      bringToFront(id);
-      document.body.style.cursor='nwse-resize';
-      document.body.style.userSelect='none';
-    }
-    function onMove(cx,cy){
-      if(!resizing) return;
-      panels[id].w = Math.max(MIN_W, startW+(cx-startX));
-      panels[id].h = Math.max(MIN_H, startH+(cy-startY));
-      applyPanelStyle(id);
-      if(id==='col3') notifyXeokit();
-    }
-    function onEnd(){
-      if(!resizing) return;
-      resizing=false;
-      document.body.style.cursor='';
-      document.body.style.userSelect='';
-      notifyXeokit();
-    }
-
-    handle.addEventListener('mousedown',function(e){ onStart(e.clientX,e.clientY); e.preventDefault(); e.stopPropagation(); });
-    handle.addEventListener('touchstart',function(e){ onStart(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); },{passive:false});
-    document.addEventListener('mousemove',function(e){ onMove(e.clientX,e.clientY); });
-    document.addEventListener('touchmove',function(e){
-      if(resizing){ onMove(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); }
-    },{passive:false});
-    document.addEventListener('mouseup',onEnd);
-    document.addEventListener('touchend',onEnd,{passive:true});
-  });
-
-  // ── Minimizar / restaurar ────────────────────────────────────────────────
-  document.querySelectorAll('.col-tog').forEach(function(btn){
-    btn.addEventListener('click',function(e){
-      e.stopPropagation();
-      var panel = btn.closest('.vpanel');
-      if(!panel) return;
-      var id = panel.id;
-      panels[id].minimized = !panels[id].minimized;
-      btn.textContent = panels[id].minimized ? '□' : '—';
-      applyPanelStyle(id);
-      notifyXeokit();
+  picker && picker.querySelectorAll('.lp-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      applyLayout(btn.dataset.layout);
+      hidePicker();
     });
   });
 
-  // ── Botón reset layout (doble click en zona vacía) ───────────────────────
-  container.addEventListener('dblclick',function(e){
-    if(e.target !== container) return;
-    initLayout();
-  });
-
-  // ── Resize ventana ───────────────────────────────────────────────────────
-  var resizeTimer;
-  window.addEventListener('resize',function(){
-    clearTimeout(resizeTimer);
-    resizeTimer=setTimeout(initLayout,100);
-  });
-  window.addEventListener('orientationchange',function(){
-    setTimeout(initLayout,300);
-  });
+  function markActive(layout){
+    picker && picker.querySelectorAll('.lp-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.layout===layout);
+    });
+    if(btnLayout) btnLayout.classList.toggle('a', layout!=='2col-wide');
+  }
 
   function notifyXeokit(){
-    if(window.xv&&window.xv.scene){
-      setTimeout(function(){
-        try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
-      },120);
-    }
+    if(window.xv&&window.xv.scene) setTimeout(function(){
+      try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
+    },100);
   }
 
-  // Exponer para uso externo
-  window._panelLayout = { init: initLayout, hide: hidePanel, panels: panels, apply: applyPanelStyle };
-
-  // Toggle códigos en árbol
+  // Toggle códigos árbol
   on('bn-showcodes','click',function(e){
     e.stopPropagation();
     if(!curBC)return;
@@ -2965,13 +2917,14 @@ function _sbLoadPos(){
     renderTree();
   });
 
-  // Init
-  // Esperar a que el container tenga dimensiones reales
-  if(container.clientWidth>0){ initLayout(); }
-  else { setTimeout(initLayout, 50); }
+  // Exponer para uso externo (IFC toggle etc.)
+  window._layout = { apply: applyLayout, current: function(){ return curLayout; } };
+
+  window.addEventListener('resize', function(){ applyLayout(); });
+  window.addEventListener('orientationchange', function(){ setTimeout(applyLayout, 300); });
+  setTimeout(applyLayout, 30);
 
 })();
-
 
 // ── EVENTOS ───────────────────────────────────────────────────────────────
 // Navegación
@@ -3273,11 +3226,7 @@ on('bn-ifc','click',function(){
     // Con modelo → toggle visibilidad col3
     body.classList.toggle('ifc-hidden');
     syncIfcBtn();
-    if(window._panelLayout)window._panelLayout.init();
-    setTimeout(function(){
-      if(window.xv&&window.xv.scene)
-        try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
-    },100);
+    if(window._layout)window._layout.apply();
   }
 });
 on('bn-can-ifc','click',function(){hideM('m-ifc');});
