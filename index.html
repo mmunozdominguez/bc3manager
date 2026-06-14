@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
-<!-- BC3 Manager v2.3 — IFC viewer hidden when no model -->
+<!-- BC3 Manager v2.4 — IFC/Backup split, no-model layout 1/3+2/3 -->
 <title>BC3 Manager</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f0f13">
@@ -622,7 +622,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- VISOR -->
 <div class="view" id="v-visor">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.3</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.4</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bp3" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -636,7 +636,8 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
       <input type="file" id="fmeta" style="position:absolute;left:-9999px;" accept=".json">
       <input type="file" id="fbc3r" style="position:absolute;left:-9999px;" accept=".bc3,.BC3">
       <button class="btn" id="bn-search" style="display:inline-flex;align-items:center;gap:5px;" title="Buscar partida"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar</button>
-      <button class="btn" id="bn-archivos" style="display:inline-flex;align-items:center;gap:5px;" title="Gestión de archivos"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Archivos</button>
+      <button class="btn p" id="bn-ifc" style="display:inline-flex;align-items:center;gap:5px;" title="Modelo IFC / XKT"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>IFC</button>
+      <button class="btn" id="bn-vbackup" style="display:inline-flex;align-items:center;gap:5px;" title="Copia de seguridad"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Backup</button>
       <span class="sd" id="sd"></span>
       <span id="sm" style="font-size:11px;color:var(--muted);">—</span>
       <button class="btn" id="bn-dark-v" title="Cambiar tema" style="display:flex;align-items:center;justify-content:center;padding:0;width:32px;height:32px;margin-left:2px;">
@@ -685,12 +686,6 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <div class="tab" data-t="des" title="Precio descompuesto"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       </div>
       <div id="dc" class="col-scroll"><div class="ed"><p>Selecciona una partida</p></div></div>
-      <!-- Banner visible solo cuando no hay modelo IFC -->
-      <div id="ifc-banner" style="flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 14px;border-top:1px solid var(--bd);background:var(--panel2);text-align:center;">
-        <svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--muted2)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        <div style="font-size:11px;color:var(--muted);line-height:1.5;">Sin modelo 3D.<br>Carga un XKT para vincular partidas al BIM.</div>
-        <button class="btn" style="font-size:10px;padding:4px 10px;" onclick="showM('m-archivos')">Cargar modelo XKT</button>
-      </div>
     </div>
     <div class="col-div" id="div23" data-cols="col2,col3"></div>
     <!-- COL 3: Visor 3D -->
@@ -780,30 +775,49 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 </div>
 
 <!-- ══ MODAL ARCHIVOS ════════════════════════════════════════════════════ -->
-<div class="mb" id="m-archivos">
-  <div class="md" style="width:380px;">
-    <h3 style="display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Gestión de archivos</h3>
+<!-- ══ MODAL IFC ═══════════════════════════════════════════════════════════ -->
+<div class="mb" id="m-ifc">
+  <div class="md" style="width:400px;">
+    <h3 style="display:flex;align-items:center;gap:8px;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Modelo IFC
+    </h3>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-      <label for="fxkt" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
-        <span style="width:32px;height:32px;border-radius:6px;background:var(--acc-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <!-- Paso 1: XKT -->
+      <label for="fxkt" id="ifc-row-xkt" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
+        <span id="ifc-icon-xkt" style="width:32px;height:32px;border-radius:6px;background:var(--acc-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--acc)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         </span>
         <div style="flex:1;">
-          <div style="font-size:12px;font-weight:600;">Cargar modelo XKT</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Modelo 3D en formato XKT para el visor</div>
+          <div style="font-size:12px;font-weight:600;">1 · Cargar modelo XKT</div>
+          <div id="ifc-sub-xkt" style="font-size:10px;color:var(--muted);margin-top:1px;">Geometría 3D del modelo BIM</div>
         </div>
-        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <svg id="ifc-arr-xkt" viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       </label>
-      <label for="fmeta" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
-        <span style="width:32px;height:32px;border-radius:6px;background:var(--ok-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--ok)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <!-- Paso 2: JSON (deshabilitado hasta que se suba XKT) -->
+      <label for="fmeta" id="ifc-row-meta" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--panel2);transition:all .12s;opacity:0.45;pointer-events:none;">
+        <span id="ifc-icon-meta" style="width:32px;height:32px;border-radius:6px;background:var(--ok-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--ok)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
         </span>
         <div style="flex:1;">
-          <div style="font-size:12px;font-weight:600;">Cargar metadatos JSON</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:1px;">Categorías IFC para filtrado por tipo</div>
+          <div style="font-size:12px;font-weight:600;">2 · Cargar metadatos JSON</div>
+          <div id="ifc-sub-meta" style="font-size:10px;color:var(--muted);margin-top:1px;">Categorías IFC para filtrado por tipo</div>
         </div>
-        <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <svg id="ifc-arr-meta" viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       </label>
+    </div>
+    <div class="ma"><button class="btn" id="bn-can-ifc">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- ══ MODAL BACKUP ════════════════════════════════════════════════════════ -->
+<div class="mb" id="m-backup">
+  <div class="md" style="width:380px;">
+    <h3 style="display:flex;align-items:center;gap:8px;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Copia de seguridad
+    </h3>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
       <label for="fbc3r" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:var(--panel2);transition:all .12s;" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bd)'">
         <span style="width:32px;height:32px;border-radius:6px;background:var(--warn-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--warn)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
@@ -825,7 +839,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--muted2)" fill="none" stroke-width="2"><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </button>
     </div>
-    <div class="ma"><button class="btn" id="bn-can-archivos">Cerrar</button></div>
+    <div class="ma"><button class="btn" id="bn-can-backup">Cerrar</button></div>
   </div>
 </div>
 
@@ -2682,7 +2696,7 @@ function _sbLoadPos(){
 
   // Estado de columnas: 'open' | 'collapsed'
   var colState = {col1:'open', col2:'open', col3:'open'};
-  var colSizes = {col1:260, col2:220}; // col3 ocupa el resto
+  var colSizes = {col1:300, col2:340}; // col3 ocupa el resto
 
   function applyLayout(){
     var col1=document.getElementById('col1');
@@ -2692,7 +2706,7 @@ function _sbLoadPos(){
     var d23=document.getElementById('div23');
     if(!col1||!col2||!col3) return;
 
-    // Modo sin modelo IFC: col1+col2 ocupan todo el ancho
+    // Modo sin modelo IFC: col1+col2 ocupan todo el ancho (1/3 + 2/3)
     var noModel=body.classList.contains('no-model');
     if(noModel){
       var c1o=colState.col1==='open';
@@ -2700,8 +2714,10 @@ function _sbLoadPos(){
       col1.classList.toggle('collapsed',!c1o);
       col2.classList.toggle('collapsed',!c2o);
       col3.classList.remove('collapsed');
+      var avail=body.clientWidth-5; // div12
       if(c1o&&c2o){
-        col1.style.flex='0 0 '+Math.min(colSizes.col1,body.clientWidth*0.45)+'px';
+        var w1=Math.round(avail/3);
+        col1.style.flex='0 0 '+w1+'px';
         col2.style.flex='1 1 auto';
       } else if(!c1o&&c2o){
         col1.style.flex='0 0 32px';
@@ -2959,13 +2975,19 @@ on('bn-okv','click',function(){
 // Visor — XKT upload
 on('fxkt','change',function(){
   if(!this.files[0]||!curVR){this.value='';return;}
+  var fname=this.files[0].name;
   loadXktFile(this.files[0], null);
   this.value='';
+  // Marcar paso 1 completado en el modal IFC (si está abierto)
+  ifcModalSetXktDone(fname);
 });
 on('fmeta','change',function(){
   if(!this.files[0]||!curVR){this.value='';return;}
+  var fname=this.files[0].name;
   applyMetaFile(this.files[0]);
   this.value='';
+  // Marcar paso 2 completado en el modal IFC
+  ifcModalSetMetaDone(fname);
 });
 
 // Visor — BC3 reimport
@@ -2981,7 +3003,8 @@ on('fbc3r','change',function(){
     dbP('bc3data',{vid:curVR,bc3:bc3});
     dbG('versions',curVR,function(v){if(v){v.nPartidas=nP;v.nBimLinked=nB;dbP('versions',v);}});
     renderTree();
-    alert('BC3 reimportado: '+Object.keys(bc3.c).length+' conceptos');
+    hideM('m-backup');
+    st3('BC3 reimportado: '+Object.keys(bc3.c).length+' conceptos','ok');
   };
   rd.readAsText(f,'latin1');this.value='';
 });
@@ -3125,7 +3148,7 @@ function buildViewsPanel(){
     list.appendChild(row);
   });
 }
-on('bn-export','click',function(){if(curVR){exportVersion(curVR);hideM('m-archivos');}});
+on('bn-export','click',function(){if(curVR){exportVersion(curVR);hideM('m-backup');}});
 on('bn-dark-p','click',function(){window.applyDark(!window._dark);});
 on('bn-dark-v','click',function(){window.applyDark(!window._dark);});
 
@@ -3141,12 +3164,62 @@ document.querySelectorAll('.tab').forEach(function(t){
 });
 
 // Búsqueda árbol
-on('bn-archivos','click',function(){showM('m-archivos');});
-on('bn-can-archivos','click',function(){hideM('m-archivos');});
-// Close archivos modal when a file input is triggered
-['fxkt','fmeta','fbc3r'].forEach(function(id){
-  on(id,'change',function(){hideM('m-archivos');});
+on('bn-ifc','click',function(){
+  ifcModalRefresh();
+  showM('m-ifc');
 });
+on('bn-can-ifc','click',function(){hideM('m-ifc');});
+on('bn-vbackup','click',function(){showM('m-backup');});
+on('bn-can-backup','click',function(){hideM('m-backup');});
+
+// Función para actualizar el estado visual del modal IFC
+function ifcModalSetXktDone(name){
+  var icon=el('ifc-icon-xkt'), sub=el('ifc-sub-xkt'), arr=el('ifc-arr-xkt');
+  var row=el('ifc-row-xkt');
+  if(icon)icon.innerHTML='<svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--ok)" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  if(icon)icon.style.background='var(--ok-bg)';
+  if(sub)sub.textContent=name||'Cargado ✓';
+  if(arr)arr.style.display='none';
+  if(row){row.style.cursor='default';row.onmouseover=null;row.onmouseout=null;row.style.borderColor='var(--ok-bd)';}
+  // Habilitar paso 2
+  var rowMeta=el('ifc-row-meta');
+  if(rowMeta){rowMeta.style.opacity='1';rowMeta.style.pointerEvents='auto';rowMeta.style.cursor='pointer';
+    rowMeta.onmouseover=function(){this.style.borderColor='var(--acc)';};
+    rowMeta.onmouseout=function(){this.style.borderColor='var(--bd)';};
+  }
+}
+function ifcModalSetMetaDone(name){
+  var icon=el('ifc-icon-meta'), sub=el('ifc-sub-meta'), arr=el('ifc-arr-meta');
+  var row=el('ifc-row-meta');
+  if(icon)icon.innerHTML='<svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--ok)" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  if(icon)icon.style.background='var(--ok-bg)';
+  if(sub)sub.textContent=name||'Cargado ✓';
+  if(arr)arr.style.display='none';
+  if(row){row.style.cursor='default';row.onmouseover=null;row.onmouseout=null;row.style.borderColor='var(--ok-bd)';}
+}
+function ifcModalRefresh(){
+  // Restaurar estado según datos actuales de la versión
+  if(!curVR)return;
+  dbG('versions',curVR,function(v){
+    if(v&&v.hasXkt) ifcModalSetXktDone(v.ifcName||'Modelo cargado');
+    else {
+      // Resetear XKT a estado inicial
+      var icon=el('ifc-icon-xkt'),sub=el('ifc-sub-xkt'),arr=el('ifc-arr-xkt'),row=el('ifc-row-xkt');
+      if(icon){icon.style.background='var(--acc-bg)';icon.innerHTML='<svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--acc)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>';}
+      if(sub)sub.textContent='Geometría 3D del modelo BIM';
+      if(arr)arr.style.display='';
+      if(row){row.style.borderColor='';row.onmouseover=function(){this.style.borderColor='var(--acc)';};row.onmouseout=function(){this.style.borderColor='var(--bd)';};}
+      var rowMeta=el('ifc-row-meta');
+      if(rowMeta){rowMeta.style.opacity='0.45';rowMeta.style.pointerEvents='none';rowMeta.style.cursor='';}
+    }
+  });
+  // Resetear estado meta visualmente (se marcará done si se carga)
+  var iconM=el('ifc-icon-meta'),subM=el('ifc-sub-meta'),arrM=el('ifc-arr-meta'),rowM=el('ifc-row-meta');
+  if(iconM){iconM.style.background='var(--ok-bg)';iconM.innerHTML='<svg viewBox="0 0 24 24" width="15" height="15" stroke="var(--ok)" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>';}
+  if(subM)subM.textContent='Categorías IFC para filtrado por tipo';
+  if(arrM)arrM.style.display='';
+  if(rowM)rowM.style.borderColor='';
+}
 
 // ── FILTROS POR CATEGORÍA ─────────────────────────────────────────────────
 var IFC_LABELS={'IfcSpace':'Habitaciones/Espacios','IfcWall':'Muros','IfcWallStandardCase':'Muros',
