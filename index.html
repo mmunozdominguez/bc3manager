@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
-<!-- BC3 Manager v2.5 — IFC toggle button, col2 full width when no viewer -->
+<!-- BC3 Manager v2.6 — layout rewrite: full-width on IFC hide, portrait fix, col swap -->
 <title>BC3 Manager</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f0f13">
@@ -85,39 +85,60 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .vbg.wn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd);}
 .vbg.bl{background:var(--sub-bg);color:var(--sub);border:1px solid var(--sub-bd);}
 .vbg.pu{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;}
-/* ── Layout responsive 3 columnas ── */
+/* ── Layout 3 columnas ──────────────────────────────────────────────────── */
 #vb-body{flex:1;display:flex;overflow:hidden;position:relative;}
-.vcol{display:flex;flex-direction:column;overflow:hidden;background:var(--panel);min-width:0;position:relative;}
-.vcol.collapsed{flex:0 0 32px!important;min-width:32px!important;max-width:32px!important;}
-/* Sin modelo IFC: ocultar visor y divisor */
-#vb-body.no-model #col3{display:none!important;}
-#vb-body.no-model #div23{display:none!important;}
-#vb-body.no-model #col2{border-right:none;}
-/* Visor oculto por toggle (modelo cargado pero col3 ocultada) */
-#vb-body.ifc-hidden #col3{display:none!important;}
-#vb-body.ifc-hidden #div23{display:none!important;}
-#vb-body.ifc-hidden #col2{border-right:none;}
+.vcol{display:flex;flex-direction:column;overflow:hidden;background:var(--panel);min-width:0;position:relative;transition:flex .15s ease;}
+.vcol.collapsed{flex:0 0 32px!important;min-width:32px!important;max-width:32px!important;transition:none;}
 .vcol.collapsed .col-scroll,.vcol.collapsed .tabs,.vcol.collapsed .vtb,.vcol.collapsed .sb,.vcol.collapsed #dc,.vcol.collapsed #tv,.vcol.collapsed .vtoolbar,.vcol.collapsed #bn-showcodes{display:none!important;}
-#p3d{flex:1;position:relative;overflow:hidden;background:#f0eff8;min-height:0;}
-.vcol.collapsed .col-header{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--bd);background:var(--panel);flex-shrink:0;min-height:36px;overflow:visible;flex-wrap:wrap;}
 .vcol.collapsed .col-header{writing-mode:vertical-rl;text-orientation:mixed;justify-content:center;padding:12px 4px;flex-wrap:nowrap;}
 .vcol.collapsed .col-meta{display:none;}
-#col1{flex:0 0 300px;border-right:1px solid var(--bd);}
-#col2{flex:0 0 240px;border-right:1px solid var(--bd);}
-#col3{flex:1;background:#f0eff8;display:flex;flex-direction:column;position:relative;}
+#col1{border-right:1px solid var(--bd);}
+#col2{border-right:1px solid var(--bd);}
+#col3{background:#f0eff8;display:flex;flex-direction:column;position:relative;}
+/* Sin modelo IFC o visor oculto: col3 y divisor desaparecen */
+#vb-body.no-model #col3,#vb-body.no-model #div23{display:none!important;}
+#vb-body.ifc-hidden #col3,#vb-body.ifc-hidden #div23{display:none!important;}
+#vb-body.no-model #col2,#vb-body.ifc-hidden #col2{border-right:none;}
 /* Cabecera de columna */
 .col-header{display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);flex-shrink:0;min-height:34px;}
 .col-header>span:first-of-type{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted2);white-space:nowrap;}
 .col-meta{flex:1;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .col-tog{border:none;background:none;cursor:pointer;color:var(--muted);font-size:16px;padding:6px 8px;min-width:32px;min-height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;}
 .col-tog:hover{background:var(--bd);color:var(--text);}
-.col-tog.a{background:var(--acc-bg);color:var(--acc);}
-.col-tog-r{margin-right:auto;}
 /* Divisores arrastrables */
-.col-div{flex:0 0 8px;background:var(--bd);cursor:col-resize;position:relative;z-index:10;touch-action:none;}
+.col-div{flex:0 0 5px;background:var(--bd);cursor:col-resize;position:relative;z-index:10;touch-action:none;transition:background .12s;}
 .col-div:hover,.col-div.dragging{background:var(--acc);}
 .col-div::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:24px;border-radius:2px;background:var(--acc);opacity:0;transition:opacity .15s;}
 .col-div:hover::after,.col-div.dragging::after{opacity:1;}
+/* Handle de reordenación en col-header */
+.col-drag-handle{cursor:grab;color:var(--muted2);padding:4px 2px;display:flex;align-items:center;opacity:0.5;touch-action:none;}
+.col-drag-handle:active{cursor:grabbing;}
+.col-drag-handle:hover{opacity:1;}
+/* Animación de swap */
+.vcol.swapping{outline:2px solid var(--acc);outline-offset:-2px;}
+/* Portrait: col1+col2 arriba, col3 abajo */
+@media (orientation:portrait),(max-width:700px){
+  #vb-body{flex-direction:row;flex-wrap:wrap;}
+  .col-div{display:none!important;}
+  #col1,#col2{height:44%;flex:1 1 0!important;min-width:0;border-bottom:1px solid var(--bd);}
+  #col1{border-right:1px solid var(--bd);}
+  #col2{border-right:none;}
+  #col3{flex:1 1 100%!important;width:100%;height:56%;min-height:0;}
+  #col1.collapsed,#col2.collapsed{flex:0 0 32px!important;height:44%!important;}
+  #col3.collapsed{flex:1 1 100%!important;height:36px!important;min-height:36px!important;}
+  #col3.collapsed .col-header{writing-mode:horizontal-tb;padding:4px 10px;}
+  #vb-body.no-model #col1,#vb-body.no-model #col2,
+  #vb-body.ifc-hidden #col1,#vb-body.ifc-hidden #col2{height:100%!important;border-bottom:none;}
+  #vb-body.no-model #col1,#vb-body.ifc-hidden #col1{border-right:1px solid var(--bd);}
+  #vb-body.no-model #col1.collapsed,#vb-body.ifc-hidden #col1.collapsed{flex:0 0 32px!important;}
+}
+@media (pointer:coarse){
+  .btn,.t3,.col-tog,.tab{min-height:38px;min-width:38px;}
+  .tn{min-height:36px;}
+  .col-div{flex:0 0 8px;}
+}
+.vcol.collapsed .col-scroll,.vcol.collapsed .tabs,.vcol.collapsed .vtb,.vcol.collapsed .sb,.vcol.collapsed #dc,.vcol.collapsed #tv,.vcol.collapsed .vtoolbar,.vcol.collapsed #bn-showcodes{display:none!important;}
+#p3d{flex:1;position:relative;overflow:hidden;background:#f0eff8;min-height:0;}
 /* Scroll interno */
 .col-scroll{flex:1;overflow-y:auto;}
 /* Panel 3D ocupa todo col3 */
@@ -148,7 +169,6 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 @keyframes blink3{0%,100%{opacity:1}50%{opacity:.3}}
 /* Type panel */
 #tp{position:absolute;top:50px;right:48px;background:rgba(255,255,255,.93);border-radius:7px;padding:8px 10px;min-width:90px;z-index:20;border:1px solid var(--bd);box-shadow:0 2px 6px rgba(0,0,0,.1);}
-
 /* Stats bar */
 .sb{display:none;padding:4px 10px;border-bottom:1px solid var(--bd);background:var(--panel2);gap:10px;flex-shrink:0;align-items:center;}
 .st{font-size:10px;color:var(--muted);}
@@ -178,29 +198,6 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 .tab:hover{color:var(--text);}
 .tab.a{color:var(--acc);border-bottom-color:var(--acc);}
 #dc{flex:1;overflow-y:auto;padding:10px 10px;}
-/* Responsive: portrait → visor debajo */
-@media (orientation:portrait),(max-width:700px){
-  /* Fila superior: presupuesto + detalle lado a lado · Fila inferior: visor a todo el ancho */
-  #vb-body{flex-direction:row;flex-wrap:wrap;}
-  .col-div{display:none;}
-  #col1,#col2{flex:1 1 0;min-width:0;height:44%;max-height:none;border-bottom:1px solid var(--bd);}
-  #col1{border-right:1px solid var(--bd);}
-  #col2{border-right:none;}
-  #col3{flex:1 1 100%;width:100%;height:56%;min-height:0;}
-  /* Columna superior colapsada → barra vertical estrecha, la otra ocupa el ancho */
-  #col1.collapsed,#col2.collapsed{flex:0 0 32px!important;min-width:32px!important;max-width:32px!important;height:44%;max-height:none!important;}
-  /* Visor colapsado → barra horizontal, columnas toman toda la altura */
-  #col3.collapsed{flex:1 1 100%!important;height:36px!important;min-height:36px!important;max-height:36px!important;min-width:0!important;max-width:none!important;}
-  #col3.collapsed .col-header{writing-mode:horizontal-tb;padding:4px 10px;}
-  #vb-body:has(#col3.collapsed) #col1,
-  #vb-body:has(#col3.collapsed) #col2{height:calc(100% - 36px);}
-  /* Ambas columnas colapsadas → barras horizontales arriba, visor casi a pantalla completa */
-  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col1,
-  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col2{height:36px;flex:1 1 0!important;min-width:0!important;max-width:none!important;}
-  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col1 .col-header,
-  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col2 .col-header{writing-mode:horizontal-tb;padding:4px 10px;}
-  #vb-body:has(#col1.collapsed):has(#col2.collapsed) #col3{height:calc(100% - 36px);}
-}
 /* Header/status del visor */
 #sm-wrap{display:flex;align-items:center;gap:4px;flex:1;justify-content:flex-end;}
 .cg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
@@ -624,7 +621,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- VISOR -->
 <div class="view" id="v-visor">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.5</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.6</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bp3" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -653,6 +650,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
     <!-- COL 1: Árbol BC3 -->
     <div class="vcol" id="col1">
       <div class="col-header">
+        <span class="col-drag-handle" title="Arrastrar para intercambiar columna"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></span>
         <span>Presupuesto</span>
         <div class="col-meta"><span id="bt">—</span></div>
         <button class="btn" id="bn-showcodes" title="Mostrar/ocultar códigos" style="font-size:11px;font-family:var(--mono);padding:0 8px;min-width:28px;min-height:28px;line-height:1;display:flex;align-items:center;justify-content:center;">#</button>
@@ -677,6 +675,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
     <!-- COL 2: Detalle -->
     <div class="vcol" id="col2">
       <div class="col-header">
+        <span class="col-drag-handle" title="Arrastrar para intercambiar columna"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></span>
         <span>Detalle</span>
         <div class="col-meta" id="dt" style="display:none;"></div>
         <button class="col-tog" id="tog-col2" title="Colapsar">‹</button>
@@ -2701,204 +2700,283 @@ function _sbLoadPos(){
   var body = document.getElementById('vb-body');
   if(!body) return;
 
-  // Estado de columnas: 'open' | 'collapsed'
+  // Estado de columnas
   var colState = {col1:'open', col2:'open', col3:'open'};
-  var colSizes = {col1:300, col2:340}; // col3 ocupa el resto
+  // Ancho guardado como porcentaje del espacio disponible (0–1)
+  var col1Pct = 0.33; // col1 ocupa 33% del espacio libre
+  var MIN_W = 180; // px mínimo
+
+  function isPortrait(){
+    return window.matchMedia('(orientation:portrait),(max-width:700px)').matches;
+  }
+
+  function isViewerHidden(){
+    return body.classList.contains('no-model')||body.classList.contains('ifc-hidden');
+  }
 
   function applyLayout(){
     var col1=document.getElementById('col1');
     var col2=document.getElementById('col2');
     var col3=document.getElementById('col3');
-    var d12=document.getElementById('div12');
-    var d23=document.getElementById('div23');
     if(!col1||!col2||!col3) return;
 
-    // Modo sin modelo IFC: col1+col2 ocupan todo el ancho (1/3 + 2/3)
-    var noModel=body.classList.contains('no-model')||body.classList.contains('ifc-hidden');
-    if(noModel){
-      var c1o=colState.col1==='open';
-      var c2o=colState.col2==='open';
-      col1.classList.toggle('collapsed',!c1o);
-      col2.classList.toggle('collapsed',!c2o);
-      col3.classList.remove('collapsed');
-      var avail=body.clientWidth-5; // div12
-      if(c1o&&c2o){
-        var w1=Math.round(avail/3);
-        col1.style.flex='0 0 '+w1+'px';
-        col2.style.flex='1 1 auto';
-      } else if(!c1o&&c2o){
-        col1.style.flex='0 0 32px';
-        col2.style.flex='1 1 auto';
-      } else if(c1o&&!c2o){
-        col1.style.flex='1 1 auto';
-        col2.style.flex='0 0 32px';
-      } else {
-        col1.style.flex='0 0 32px';
-        col2.style.flex='1 1 auto';
-        colState.col2='open';
-      }
-      var btn1=col1.querySelector('.col-tog'),btn2=col2.querySelector('.col-tog');
-      if(btn1)btn1.textContent=c1o?'‹':'›';
-      if(btn2)btn2.textContent=c2o?'‹':'›';
+    // En portrait el CSS media query controla layout (flex-wrap)
+    // Solo necesitamos gestionar collapsed state y notificar xeokit
+    if(isPortrait()){
+      [col1,col2,col3].forEach(function(col){
+        col.classList.toggle('collapsed', colState[col.id]==='collapsed');
+      });
+      updateToggleBtns();
+      notifyXeokit();
       return;
     }
 
-    var totalW = body.clientWidth;
-    var divW = 5;
+    var c1=colState.col1==='open';
+    var c2=colState.col2==='open';
+    var c3=colState.col3==='open';
+    var noViewer=isViewerHidden();
 
-    var c1open = colState.col1==='open';
-    var c2open = colState.col2==='open';
-    var c3open = colState.col3==='open';
+    // Collapsed classes
+    col1.classList.toggle('collapsed',!c1);
+    col2.classList.toggle('collapsed',!c2);
+    col3.classList.toggle('collapsed',!c3);
 
-    var used = (c1open?0:32) + (c2open?0:32) + (c3open?0:32);
-    var openCols = (c1open?1:0)+(c2open?1:0)+(c3open?1:0);
-    var divCount = 2;
-    var available = totalW - used - divCount*divW;
+    var DIV=5; // divisor width
+    var totalW=body.clientWidth;
 
-    if(c1open&&c2open&&c3open){
-      // Tutti aperti - usa colSizes
-      var w1=Math.min(colSizes.col1, available*0.45);
-      var w2=Math.min(colSizes.col2, available*0.35);
-      var w3=Math.max(200, available-w1-w2);
-      col1.style.flex='0 0 '+w1+'px';
-      col2.style.flex='0 0 '+w2+'px';
-      col3.style.flex='1 1 auto';
-    } else if(c1open&&!c2open&&c3open){
-      col1.style.flex='0 0 '+Math.min(colSizes.col1,available*0.4)+'px';
-      col2.style.flex='0 0 32px';
-      col3.style.flex='1 1 auto';
-    } else if(!c1open&&c2open&&c3open){
-      col1.style.flex='0 0 32px';
-      col2.style.flex='0 0 '+Math.min(colSizes.col2,available*0.4)+'px';
-      col3.style.flex='1 1 auto';
-    } else if(c1open&&c2open&&!c3open){
-      col1.style.flex='0 0 '+Math.min(colSizes.col1,available*0.5)+'px';
-      col2.style.flex='1 1 auto';
-      col3.style.flex='0 0 32px';
-    } else if(c1open&&!c2open&&!c3open){
-      col1.style.flex='1 1 auto';
-      col2.style.flex='0 0 32px';
-      col3.style.flex='0 0 32px';
-    } else if(!c1open&&c2open&&!c3open){
-      col1.style.flex='0 0 32px';
-      col2.style.flex='1 1 auto';
-      col3.style.flex='0 0 32px';
-    } else if(!c1open&&!c2open&&c3open){
-      col1.style.flex='0 0 32px';
-      col2.style.flex='0 0 32px';
-      col3.style.flex='1 1 auto';
-    } else {
-      // Todos colapsados - expandir col3
-      col1.style.flex='0 0 32px';
-      col2.style.flex='0 0 32px';
-      col3.style.flex='1 1 auto';
-      colState.col3='open';
-    }
-
-    // Collapsed state
-    [col1,col2,col3].forEach(function(col){
-      var id=col.id;
-      var isOpen=colState[id]==='open';
-      col.classList.toggle('collapsed',!isOpen);
-      var btn=col.querySelector('.col-tog');
-      if(btn){
-        // col3 está a la derecha: flecha apunta izquierda cuando abierta, derecha cuando colapsada
-        // col1/col2 están a la izquierda: flecha apunta derecha cuando abierta, izquierda cuando colapsada — no, al revés
-        // col1: abierta → ‹ cierra hacia izq. Colapsada → › abre hacia der. ✓
-        // col3: abierta → › cierra hacia der. Colapsada → ‹ abre hacia izq.
-        if(id==='col3') btn.textContent=isOpen?'›':'‹';
-        else btn.textContent=isOpen?'‹':'›';
+    if(noViewer){
+      // 2 columnas: col1 + col2
+      var avail=totalW - (c1&&c2?DIV:0) - (!c1?32:0) - (!c2?32:0);
+      if(c1&&c2){
+        var w1=Math.max(MIN_W, Math.min(avail*col1Pct, avail-MIN_W));
+        col1.style.flex='0 0 '+w1+'px';
+        col2.style.flex='1 1 auto';
+      } else if(!c1&&c2){
+        col1.style.flex='0 0 32px';
+        col2.style.flex='1 1 auto';
+      } else if(c1&&!c2){
+        col1.style.flex='1 1 auto';
+        col2.style.flex='0 0 32px';
+      } else {
+        col1.style.flex='1 1 auto';
+        col2.style.flex='0 0 32px';
+        colState.col1='open'; col1.classList.remove('collapsed');
       }
-    });
+      col3.style.flex=''; // CSS display:none handles it
+    } else {
+      // 3 columnas
+      var numDiv=2;
+      var collW=(!c1?32:0)+(!c2?32:0)+(!c3?32:0);
+      var avail3=totalW-numDiv*DIV-collW;
+      if(c1&&c2&&c3){
+        var w1=Math.max(MIN_W, Math.min(avail3*col1Pct, avail3*0.5));
+        var w2=Math.max(MIN_W, Math.min(avail3*0.28, avail3*0.4));
+        col1.style.flex='0 0 '+w1+'px';
+        col2.style.flex='0 0 '+w2+'px';
+        col3.style.flex='1 1 auto';
+      } else if(!c1&&c2&&c3){
+        col1.style.flex='0 0 32px';
+        col2.style.flex='0 0 '+Math.max(MIN_W,avail3*0.35)+'px';
+        col3.style.flex='1 1 auto';
+      } else if(c1&&!c2&&c3){
+        col1.style.flex='0 0 '+Math.max(MIN_W,avail3*0.35)+'px';
+        col2.style.flex='0 0 32px';
+        col3.style.flex='1 1 auto';
+      } else if(c1&&c2&&!c3){
+        col1.style.flex='0 0 '+Math.max(MIN_W,avail3*col1Pct)+'px';
+        col2.style.flex='1 1 auto';
+        col3.style.flex='0 0 32px';
+      } else if(c1&&!c2&&!c3){
+        col1.style.flex='1 1 auto'; col2.style.flex='0 0 32px'; col3.style.flex='0 0 32px';
+      } else if(!c1&&c2&&!c3){
+        col1.style.flex='0 0 32px'; col2.style.flex='1 1 auto'; col3.style.flex='0 0 32px';
+      } else if(!c1&&!c2&&c3){
+        col1.style.flex='0 0 32px'; col2.style.flex='0 0 32px'; col3.style.flex='1 1 auto';
+      } else {
+        // todos colapsados → abrir col3
+        colState.col3='open'; col3.classList.remove('collapsed');
+        col1.style.flex='0 0 32px'; col2.style.flex='0 0 32px'; col3.style.flex='1 1 auto';
+      }
+    }
+    updateToggleBtns();
+    notifyXeokit();
+  }
 
-    // Notify xeokit of resize
-    if(window.xv && window.xv.scene) {
+  function updateToggleBtns(){
+    var noViewer=isViewerHidden();
+    ['col1','col2','col3'].forEach(function(id){
+      var col=document.getElementById(id);
+      if(!col)return;
+      var open=colState[id]==='open';
+      var btn=col.querySelector('.col-tog');
+      if(!btn)return;
+      // col1: abierta→‹ cierra izq / col2 igual / col3: abierta→› cierra der
+      // cuando col1 está a la derecha (swapped) la lógica se invierte
+      if(id==='col3') btn.textContent=open?'›':'‹';
+      else btn.textContent=open?'‹':'›';
+    });
+  }
+
+  function notifyXeokit(){
+    if(window.xv&&window.xv.scene){
       setTimeout(function(){
         try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
-      },100);
+      },120);
     }
   }
+
+  // Toggle colapsar columnas
+  document.querySelectorAll('.col-tog').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var col=btn.closest('.vcol');
+      if(!col)return;
+      var id=col.id;
+      colState[id]=colState[id]==='open'?'collapsed':'open';
+      applyLayout();
+    });
+  });
+
+  // ── Resize divisores (mouse + touch) ──────────────────────────────────
+  document.querySelectorAll('.col-div').forEach(function(div){
+    var cols=(div.dataset.cols||'').split(',');
+    if(cols.length<2)return;
+    var dragging=false, startX=0, startPct=0, availW=0;
+
+    function startResize(clientX){
+      if(isPortrait())return false;
+      if(colState[cols[0]]==='collapsed'||colState[cols[1]]==='collapsed')return false;
+      dragging=true;
+      startX=clientX;
+      startPct=col1Pct;
+      var col1el=document.getElementById('col1');
+      var col2el=document.getElementById('col2');
+      var col3el=document.getElementById('col3');
+      var noViewer=isViewerHidden();
+      var DIV=5;
+      var collW=(colState.col1==='collapsed'?32:0)+(colState.col2==='collapsed'?32:0)+(noViewer?0:(colState.col3==='collapsed'?32:0));
+      var divCount=noViewer?1:2;
+      availW=body.clientWidth-divCount*DIV-collW;
+      div.classList.add('dragging');
+      document.body.style.cursor='col-resize';
+      document.body.style.userSelect='none';
+      return true;
+    }
+
+    function doResize(clientX){
+      if(!dragging)return;
+      var delta=clientX-startX;
+      var newPct=startPct+delta/availW;
+      col1Pct=Math.max(MIN_W/availW, Math.min(0.7, newPct));
+      applyLayout();
+    }
+
+    function endResize(){
+      if(!dragging)return;
+      dragging=false;
+      div.classList.remove('dragging');
+      document.body.style.cursor='';
+      document.body.style.userSelect='';
+    }
+
+    div.addEventListener('mousedown',function(e){if(startResize(e.clientX))e.preventDefault();});
+    document.addEventListener('mousemove',function(e){doResize(e.clientX);});
+    document.addEventListener('mouseup',endResize);
+
+    div.addEventListener('touchstart',function(e){
+      if(startResize(e.touches[0].clientX))e.preventDefault();
+    },{passive:false});
+    div.addEventListener('touchmove',function(e){
+      doResize(e.touches[0].clientX);e.preventDefault();
+    },{passive:false});
+    div.addEventListener('touchend',endResize,{passive:true});
+  });
+
+  // ── Swap de columnas (drag desde col-drag-handle) ──────────────────────
+  var swapSrc=null, swapOver=null;
+
+  document.querySelectorAll('.col-drag-handle').forEach(function(handle){
+    var col=handle.closest('.vcol');
+    if(!col)return;
+
+    function startSwap(e){
+      swapSrc=col.id;
+      col.classList.add('swapping');
+      e.stopPropagation();
+    }
+    function moveSwap(e){
+      if(!swapSrc)return;
+      var clientX=e.clientX||( e.touches&&e.touches[0].clientX);
+      var clientY=e.clientY||(e.touches&&e.touches[0].clientY);
+      // Detectar sobre qué columna está
+      var target=document.elementFromPoint(clientX,clientY);
+      var targetCol=target&&target.closest('.vcol');
+      var newOver=targetCol?targetCol.id:null;
+      if(newOver&&newOver!==swapSrc&&newOver!==swapOver){
+        if(swapOver){var old=document.getElementById(swapOver);if(old)old.classList.remove('swapping');}
+        swapOver=newOver;
+        var ov=document.getElementById(swapOver);if(ov)ov.classList.add('swapping');
+      }
+      e.preventDefault();
+    }
+    function endSwap(e){
+      if(!swapSrc)return;
+      // Limpiar highlights
+      document.querySelectorAll('.vcol.swapping').forEach(function(c){c.classList.remove('swapping');});
+      if(swapOver&&swapOver!==swapSrc){
+        swapColumns(swapSrc,swapOver);
+      }
+      swapSrc=null;swapOver=null;
+    }
+
+    handle.addEventListener('mousedown',startSwap);
+    handle.addEventListener('touchstart',startSwap,{passive:false});
+    document.addEventListener('mousemove',moveSwap);
+    document.addEventListener('touchmove',moveSwap,{passive:false});
+    document.addEventListener('mouseup',endSwap);
+    document.addEventListener('touchend',endSwap,{passive:true});
+  });
+
+  function swapColumns(idA,idB){
+    var colA=document.getElementById(idA);
+    var colB=document.getElementById(idB);
+    if(!colA||!colB)return;
+    // Solo swap col1↔col2 (no swap con col3 el visor)
+    if(idA==='col3'||idB==='col3')return;
+    var parent=body;
+    // Guardar posición relativa e intercambiar nodos
+    var divider=document.getElementById('div12');
+    // Simplemente intercambiar el contenido interno (header label + scroll)
+    // Más seguro: intercambiar los IDs y el dataset del divisor
+    // Swap ids
+    colA.id=idB; colB.id=idA;
+    // Swap colState entries
+    var tmp=colState[idA]; colState[idA]=colState[idB]; colState[idB]=tmp;
+    // Swap flex sizes — reset col1Pct stays the same (col1 now refers to new col1)
+    applyLayout();
+  }
+
+  // ── Resize / orientación ──────────────────────────────────────────────
+  window.addEventListener('resize',function(){applyLayout();});
+  window.addEventListener('orientationchange',function(){setTimeout(applyLayout,300);});
+
+  // Exponer applyLayout globalmente para que syncIfcBtn pueda llamarlo
+  window._applyLayout=applyLayout;
 
   // Toggle códigos en árbol
   on('bn-showcodes','click',function(e){
     e.stopPropagation();
     if(!curBC)return;
     curBC._showCodes=!curBC._showCodes;
-    el('bn-showcodes').classList.toggle('a', !!curBC._showCodes);
+    el('bn-showcodes').classList.toggle('a',!!curBC._showCodes);
     renderTree();
-  });
-
-  // Toggle buttons
-  document.querySelectorAll('.col-tog').forEach(function(btn){
-    btn.addEventListener('click',function(e){
-      e.stopPropagation();
-      var col=btn.closest('.vcol');
-      if(!col) return;
-      var id=col.id;
-      colState[id] = colState[id]==='open'?'collapsed':'open';
-      applyLayout();
-    });
-  });
-
-  // ── Resize dividers — mouse ──────────────────────────────────────────
-  document.querySelectorAll('.col-div').forEach(function(div){
-    var cols=(div.dataset.cols||'').split(',');
-    if(cols.length<2) return;
-    var dragging=false, startX=0, sw=0;
-
-    div.addEventListener('mousedown',function(e){
-      if(colState[cols[0]]==='collapsed'||colState[cols[1]]==='collapsed') return;
-      dragging=true; startX=e.clientX;
-      var c1=document.getElementById(cols[0]);
-      sw=c1?c1.offsetWidth:260;
-      document.body.style.cursor='col-resize';
-      document.body.style.userSelect='none';
-      e.preventDefault();
-    });
-
-    document.addEventListener('mousemove',function(e){
-      if(!dragging) return;
-      var delta=e.clientX-startX;
-      var nw=Math.max(160, sw+delta);
-      if(cols[0]==='col1') colSizes.col1=nw;
-      if(cols[0]==='col2') colSizes.col2=nw;
-      applyLayout();
-    });
-
-    document.addEventListener('mouseup',function(){
-      if(dragging){dragging=false;document.body.style.cursor='';document.body.style.userSelect='';}
-    });
-
-    // ── Touch resize ──────────────────────────────────────────────────
-    var touchStartX=0, touchSW=0;
-    div.addEventListener('touchstart',function(e){
-      if(colState[cols[0]]==='collapsed'||colState[cols[1]]==='collapsed') return;
-      touchStartX=e.touches[0].clientX;
-      var c1=document.getElementById(cols[0]);
-      touchSW=c1?c1.offsetWidth:260;
-      e.preventDefault();
-    },{passive:false});
-
-    div.addEventListener('touchmove',function(e){
-      var delta=e.touches[0].clientX-touchStartX;
-      var nw=Math.max(160, touchSW+delta);
-      if(cols[0]==='col1') colSizes.col1=nw;
-      if(cols[0]==='col2') colSizes.col2=nw;
-      applyLayout();
-      e.preventDefault();
-    },{passive:false});
-  });
-
-  // ── Orientation change / resize ────────────────────────────────────
-  window.addEventListener('resize', function(){applyLayout();});
-  window.addEventListener('orientationchange',function(){
-    setTimeout(applyLayout, 300);
   });
 
   // Initial layout
   applyLayout();
 
 })();
+
 
 // ── EVENTOS ───────────────────────────────────────────────────────────────
 // Navegación
@@ -3200,7 +3278,7 @@ on('bn-ifc','click',function(){
     // Con modelo → toggle visibilidad col3
     body.classList.toggle('ifc-hidden');
     syncIfcBtn();
-    // Forzar recalculo de layout
+    if(window._applyLayout)window._applyLayout();
     setTimeout(function(){
       if(window.xv&&window.xv.scene)
         try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
