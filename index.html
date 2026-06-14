@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
-<!-- BC3 Manager v2.4 — IFC/Backup split, no-model layout 1/3+2/3 -->
+<!-- BC3 Manager v2.5 — IFC toggle button, col2 full width when no viewer -->
 <title>BC3 Manager</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f0f13">
@@ -93,8 +93,10 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 #vb-body.no-model #col3{display:none!important;}
 #vb-body.no-model #div23{display:none!important;}
 #vb-body.no-model #col2{border-right:none;}
-#vb-body.no-model #ifc-banner{display:flex!important;}
-#vb-body:not(.no-model) #ifc-banner{display:none!important;}
+/* Visor oculto por toggle (modelo cargado pero col3 ocultada) */
+#vb-body.ifc-hidden #col3{display:none!important;}
+#vb-body.ifc-hidden #div23{display:none!important;}
+#vb-body.ifc-hidden #col2{border-right:none;}
 .vcol.collapsed .col-scroll,.vcol.collapsed .tabs,.vcol.collapsed .vtb,.vcol.collapsed .sb,.vcol.collapsed #dc,.vcol.collapsed #tv,.vcol.collapsed .vtoolbar,.vcol.collapsed #bn-showcodes{display:none!important;}
 #p3d{flex:1;position:relative;overflow:hidden;background:#f0eff8;min-height:0;}
 .vcol.collapsed .col-header{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--bd);background:var(--panel);flex-shrink:0;min-height:36px;overflow:visible;flex-wrap:wrap;}
@@ -622,7 +624,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- VISOR -->
 <div class="view" id="v-visor">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.4</span></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.5</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bp3" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -1129,6 +1131,8 @@ function openVer(vid){
     });
     // Cargar XKT si existe — ocultar/mostrar visor según disponibilidad
     var vbBody=el('vb-body');
+    // Resetear toggle IFC al entrar
+    if(vbBody)vbBody.classList.remove('ifc-hidden');
     if(v.hasXkt){
       if(vbBody)vbBody.classList.remove('no-model');
       dbG('ifcbin',vid,function(rec){
@@ -1138,9 +1142,11 @@ function openVer(vid){
         } else {
           if(vbBody)vbBody.classList.add('no-model');
         }
+        if(typeof syncIfcBtn==='function')syncIfcBtn();
       });
     } else {
       if(vbBody)vbBody.classList.add('no-model');
+      if(typeof syncIfcBtn==='function')syncIfcBtn();
     }
     showV('visor');
   });
@@ -2274,7 +2280,8 @@ async function loadXktFile(xktFile, metaFile){
   pg3(30);
   // Mostrar visor
   var vbBody=el('vb-body');
-  if(vbBody)vbBody.classList.remove('no-model');
+  if(vbBody){vbBody.classList.remove('no-model');vbBody.classList.remove('ifc-hidden');}
+  if(typeof syncIfcBtn==='function')syncIfcBtn();
   await initXeokit();
   loadXkt(xktUint,metaJson);
 }
@@ -2707,7 +2714,7 @@ function _sbLoadPos(){
     if(!col1||!col2||!col3) return;
 
     // Modo sin modelo IFC: col1+col2 ocupan todo el ancho (1/3 + 2/3)
-    var noModel=body.classList.contains('no-model');
+    var noModel=body.classList.contains('no-model')||body.classList.contains('ifc-hidden');
     if(noModel){
       var c1o=colState.col1==='open';
       var c2o=colState.col2==='open';
@@ -3164,9 +3171,41 @@ document.querySelectorAll('.tab').forEach(function(t){
 });
 
 // Búsqueda árbol
+// Sincroniza el aspecto del botón IFC según estado actual
+function syncIfcBtn(){
+  var btn=el('bn-ifc');
+  if(!btn)return;
+  var body=el('vb-body');
+  var noModel=body&&body.classList.contains('no-model');
+  if(noModel){
+    // Sin modelo: botón abre modal, aspecto neutro
+    btn.classList.remove('a');
+    btn.title='Cargar modelo IFC/XKT';
+  } else {
+    // Con modelo: botón es toggle — activo cuando el visor está visible
+    var hidden=body&&body.classList.contains('ifc-hidden');
+    btn.classList.toggle('a',!hidden);
+    btn.title=hidden?'Mostrar visor 3D':'Ocultar visor 3D';
+  }
+}
+
 on('bn-ifc','click',function(){
-  ifcModalRefresh();
-  showM('m-ifc');
+  var body=el('vb-body');
+  var noModel=body&&body.classList.contains('no-model');
+  if(noModel){
+    // Sin modelo → abrir modal para cargar XKT
+    ifcModalRefresh();
+    showM('m-ifc');
+  } else {
+    // Con modelo → toggle visibilidad col3
+    body.classList.toggle('ifc-hidden');
+    syncIfcBtn();
+    // Forzar recalculo de layout
+    setTimeout(function(){
+      if(window.xv&&window.xv.scene)
+        try{window.xv.scene.canvas.resolutionScale=window.xv.scene.canvas.resolutionScale;}catch(e){}
+    },100);
+  }
 });
 on('bn-can-ifc','click',function(){hideM('m-ifc');});
 on('bn-vbackup','click',function(){showM('m-backup');});
