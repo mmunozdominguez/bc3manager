@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
+<!-- BC3 Manager v2.3 — IFC viewer hidden when no model -->
 <title>BC3 Manager</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f0f13">
@@ -88,6 +89,12 @@ button,input,select,textarea{font-family:'Inter',sans-serif;font-size:13px;}
 #vb-body{flex:1;display:flex;overflow:hidden;position:relative;}
 .vcol{display:flex;flex-direction:column;overflow:hidden;background:var(--panel);min-width:0;position:relative;}
 .vcol.collapsed{flex:0 0 32px!important;min-width:32px!important;max-width:32px!important;}
+/* Sin modelo IFC: ocultar visor y divisor */
+#vb-body.no-model #col3{display:none!important;}
+#vb-body.no-model #div23{display:none!important;}
+#vb-body.no-model #col2{border-right:none;}
+#vb-body.no-model #ifc-banner{display:flex!important;}
+#vb-body:not(.no-model) #ifc-banner{display:none!important;}
 .vcol.collapsed .col-scroll,.vcol.collapsed .tabs,.vcol.collapsed .vtb,.vcol.collapsed .sb,.vcol.collapsed #dc,.vcol.collapsed #tv,.vcol.collapsed .vtoolbar,.vcol.collapsed #bn-showcodes{display:none!important;}
 #p3d{flex:1;position:relative;overflow:hidden;background:#f0eff8;min-height:0;}
 .vcol.collapsed .col-header{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--bd);background:var(--panel);flex-shrink:0;min-height:36px;overflow:visible;flex-wrap:wrap;}
@@ -615,7 +622,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
 <!-- VISOR -->
 <div class="view" id="v-visor">
   <div class="topbar">
-    <div class="logo">BC3 <em>Manager</em></div>
+    <div class="logo">BC3 <em>Manager</em> <span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:2px;">v2.3</span></div>
     <span style="color:var(--bd2);font-size:16px;">|</span>
     <button class="btn" id="bp3" style="display:inline-flex;align-items:center;gap:5px;font-weight:500;">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -639,7 +646,7 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
     </div>
   </div>
   <!-- 3 columnas -->
-  <div id="vb-body">
+  <div id="vb-body" class="no-model">
     <!-- COL 1: Árbol BC3 -->
     <div class="vcol" id="col1">
       <div class="col-header">
@@ -678,6 +685,12 @@ html.dark .sri-snippet mark{background:rgba(59,130,246,.22);}
         <div class="tab" data-t="des" title="Precio descompuesto"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       </div>
       <div id="dc" class="col-scroll"><div class="ed"><p>Selecciona una partida</p></div></div>
+      <!-- Banner visible solo cuando no hay modelo IFC -->
+      <div id="ifc-banner" style="flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 14px;border-top:1px solid var(--bd);background:var(--panel2);text-align:center;">
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--muted2)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5;">Sin modelo 3D.<br>Carga un XKT para vincular partidas al BIM.</div>
+        <button class="btn" style="font-size:10px;padding:4px 10px;" onclick="showM('m-archivos')">Cargar modelo XKT</button>
+      </div>
     </div>
     <div class="col-div" id="div23" data-cols="col2,col3"></div>
     <!-- COL 3: Visor 3D -->
@@ -1100,15 +1113,20 @@ function openVer(vid){
         renderTree();
       }
     });
-    // Cargar XKT si existe
+    // Cargar XKT si existe — ocultar/mostrar visor según disponibilidad
+    var vbBody=el('vb-body');
     if(v.hasXkt){
+      if(vbBody)vbBody.classList.remove('no-model');
       dbG('ifcbin',vid,function(rec){
         if(rec&&rec.xkt){
-          // Restaurar _metaJson para que funcionen los filtros
           if(rec.meta) _metaJson = rec.meta;
           initXeokit().then(function(){loadXkt(rec.xkt, rec.meta||null);});
+        } else {
+          if(vbBody)vbBody.classList.add('no-model');
         }
       });
+    } else {
+      if(vbBody)vbBody.classList.add('no-model');
     }
     showV('visor');
   });
@@ -2240,6 +2258,9 @@ async function loadXktFile(xktFile, metaFile){
   });
   dbP('ifcbin',{vid:curVR,xkt:xktUint,meta:metaJson,name:xktFile.name,savedAt:Date.now()});
   pg3(30);
+  // Mostrar visor
+  var vbBody=el('vb-body');
+  if(vbBody)vbBody.classList.remove('no-model');
   await initXeokit();
   loadXkt(xktUint,metaJson);
 }
@@ -2670,6 +2691,34 @@ function _sbLoadPos(){
     var d12=document.getElementById('div12');
     var d23=document.getElementById('div23');
     if(!col1||!col2||!col3) return;
+
+    // Modo sin modelo IFC: col1+col2 ocupan todo el ancho
+    var noModel=body.classList.contains('no-model');
+    if(noModel){
+      var c1o=colState.col1==='open';
+      var c2o=colState.col2==='open';
+      col1.classList.toggle('collapsed',!c1o);
+      col2.classList.toggle('collapsed',!c2o);
+      col3.classList.remove('collapsed');
+      if(c1o&&c2o){
+        col1.style.flex='0 0 '+Math.min(colSizes.col1,body.clientWidth*0.45)+'px';
+        col2.style.flex='1 1 auto';
+      } else if(!c1o&&c2o){
+        col1.style.flex='0 0 32px';
+        col2.style.flex='1 1 auto';
+      } else if(c1o&&!c2o){
+        col1.style.flex='1 1 auto';
+        col2.style.flex='0 0 32px';
+      } else {
+        col1.style.flex='0 0 32px';
+        col2.style.flex='1 1 auto';
+        colState.col2='open';
+      }
+      var btn1=col1.querySelector('.col-tog'),btn2=col2.querySelector('.col-tog');
+      if(btn1)btn1.textContent=c1o?'‹':'›';
+      if(btn2)btn2.textContent=c2o?'‹':'›';
+      return;
+    }
 
     var totalW = body.clientWidth;
     var divW = 5;
